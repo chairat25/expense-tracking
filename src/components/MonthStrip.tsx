@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { ChevronLeft, ChevronRight, Lock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Lock, LogOut } from "lucide-react";
 import clsx from "clsx";
 import { formatBaht, formatMonthTH, shiftMonth, thisMonthKey } from "@/lib/shared";
 
@@ -93,7 +93,7 @@ export default function MonthStrip({
           </button>
         </div>
 
-        <div className="mt-2 flex items-center justify-center gap-2">
+        <div className="relative mt-2 flex items-center justify-center gap-2">
           <h1 className="text-center text-[15px] font-semibold">
             {formatMonthTH(ym)}
           </h1>
@@ -102,6 +102,15 @@ export default function MonthStrip({
               <Lock size={11} /> ปิดยอดแล้ว
             </span>
           )}
+          <form action="/auth/signout" method="post" className="absolute right-0">
+            <button
+              type="submit"
+              aria-label="ออกจากระบบ"
+              className="grid size-7 place-items-center rounded-full text-muted transition hover:bg-expense-soft hover:text-expense active:scale-95"
+            >
+              <LogOut size={14} />
+            </button>
+          </form>
         </div>
 
         <dl className="mt-2 grid grid-cols-3 gap-2 text-center">
