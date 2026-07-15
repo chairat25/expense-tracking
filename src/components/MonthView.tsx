@@ -72,6 +72,15 @@ export default function MonthView({
 
   const closed = closedAt !== null;
   const today = todayKey();
+  
+  // Allow closing if:
+  // - It's already closed (so they can reopen it)
+  // - The month is in the past
+  // - It's the current month and the day is >= 25th
+  const isPastMonth = ym < today.slice(0, 7);
+  const isCurrentMonth = ym === today.slice(0, 7);
+  const currentDay = Number(today.slice(8, 10));
+  const canClose = closed || isPastMonth || (isCurrentMonth && currentDay >= 25);
 
   return (
     <div className="space-y-3">
@@ -150,12 +159,15 @@ export default function MonthView({
         </div>
 
         <button
+          disabled={!canClose}
           onClick={() => void onToggleClose(!closed)}
           className={clsx(
             "flex w-full items-center justify-center gap-2 border-t border-border py-3 text-sm font-semibold transition",
             closed
               ? "text-muted hover:bg-surface-2"
-              : "bg-accent text-white hover:brightness-110",
+              : !canClose
+                ? "bg-accent/50 text-white/50 cursor-not-allowed"
+                : "bg-accent text-white hover:brightness-110",
           )}
         >
           {closed ? (

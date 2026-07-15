@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
+import { Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 type Mode = "signin" | "signup";
@@ -76,63 +77,63 @@ export default function LoginPage() {
         </p>
       </div>
 
-      <button
-        onClick={google}
-        disabled={busy}
-        className="card flex items-center justify-center gap-2.5 py-3 text-sm font-semibold transition active:scale-[0.98] disabled:opacity-50"
-      >
-        <GoogleIcon />
-        เข้าสู่ระบบด้วย Google
-      </button>
-
-      <div className="my-5 flex items-center gap-3">
-        <span className="h-px flex-1 bg-border" />
-        <span className="text-[11px] text-muted">หรือใช้อีเมล</span>
-        <span className="h-px flex-1 bg-border" />
-      </div>
-
-      <form onSubmit={submit} className="space-y-2.5">
-        <input
-          type="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="อีเมล"
-          autoComplete="email"
-          className="w-full rounded-xl border border-border bg-surface px-3.5 py-3 text-sm outline-none focus:border-accent"
-        />
-        <input
-          type="password"
-          required
-          minLength={6}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="รหัสผ่าน (อย่างน้อย 6 ตัว)"
-          autoComplete={mode === "signin" ? "current-password" : "new-password"}
-          className="w-full rounded-xl border border-border bg-surface px-3.5 py-3 text-sm outline-none focus:border-accent"
-        />
-
-        {error && (
-          <p className="rounded-xl bg-expense-soft px-3 py-2 text-[13px] text-expense">
-            {error}
-          </p>
-        )}
-        {info && (
-          <p className="rounded-xl bg-income-soft px-3 py-2 text-[13px] text-income">
-            {info}
-          </p>
-        )}
-
         <button
-          type="submit"
+          onClick={google}
           disabled={busy}
-          className={clsx(
-            "w-full rounded-xl bg-accent py-3 text-sm font-semibold text-white transition active:scale-[0.98] disabled:opacity-50",
-          )}
+          className="card flex items-center justify-center gap-2.5 py-3 text-sm font-semibold transition active:scale-[0.98] disabled:opacity-50"
         >
-          {busy ? "กำลังดำเนินการ…" : mode === "signin" ? "เข้าสู่ระบบ" : "สมัครสมาชิก"}
+          <GoogleIcon />
+          เข้าสู่ระบบด้วย Google
         </button>
-      </form>
+
+        <div className="my-5 flex items-center gap-3">
+          <span className="h-px flex-1 bg-border" />
+          <span className="text-[11px] text-muted">หรือใช้อีเมล</span>
+          <span className="h-px flex-1 bg-border" />
+        </div>
+
+        <form onSubmit={submit} className="space-y-2.5">
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="อีเมล"
+            autoComplete="email"
+            className="w-full rounded-xl border border-border bg-surface px-3.5 py-3 text-sm outline-none focus:border-accent"
+          />
+          <input
+            type="password"
+            required
+            minLength={6}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="รหัสผ่าน (อย่างน้อย 6 ตัว)"
+            autoComplete={mode === "signin" ? "current-password" : "new-password"}
+            className="w-full rounded-xl border border-border bg-surface px-3.5 py-3 text-sm outline-none focus:border-accent"
+          />
+
+          {error && (
+            <p className="rounded-xl bg-expense-soft px-3 py-2 text-[13px] text-expense">
+              {error}
+            </p>
+          )}
+          {info && (
+            <p className="rounded-xl bg-income-soft px-3 py-2 text-[13px] text-income">
+              {info}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={busy}
+            className={clsx(
+              "flex w-full items-center justify-center gap-2 rounded-xl bg-accent py-3 text-sm font-semibold text-white transition active:scale-[0.98] disabled:opacity-50",
+            )}
+          >
+            {mode === "signin" ? "เข้าสู่ระบบ" : "สมัครสมาชิก"}
+          </button>
+        </form>
 
       <button
         onClick={() => {
@@ -152,6 +153,16 @@ export default function LoginPage() {
           </>
         )}
       </button>
+
+      {/* Loading Backdrop */}
+      {busy && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/40 backdrop-blur-sm">
+          <Loader2 className="animate-spin text-white" size={40} />
+          <p className="mt-4 font-medium text-white shadow-black drop-shadow-md">
+            กำลังดำเนินการ…
+          </p>
+        </div>
+      )}
     </main>
   );
 }

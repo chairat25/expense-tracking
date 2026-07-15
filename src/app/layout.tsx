@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_Thai } from "next/font/google";
 import "./globals.css";
+import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 
 const notoThai = Noto_Sans_Thai({
   variable: "--font-thai",
@@ -28,12 +29,13 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="th" className={`${notoThai.variable} h-full antialiased`}>
+    <html lang="th" className={`${notoThai.variable} h-full antialiased`} suppressHydrationWarning>
       <body
-        className="min-h-full flex flex-col"
+        className="min-h-full flex flex-col relative"
         style={{ fontFamily: "var(--font-thai), system-ui, sans-serif" }}
       >
         {children}
+        <PwaInstallPrompt />
       </body>
     </html>
   );

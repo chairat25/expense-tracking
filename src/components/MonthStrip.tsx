@@ -17,10 +17,10 @@ type Props = {
   loading?: boolean;
 };
 
-/** เดือนที่ให้เลื่อนได้: ย้อนหลัง 12 เดือน ถึงเดือนปัจจุบัน (อนาคตกรอกไม่ได้) */
+/** เดือนที่ให้เลื่อนได้: ย้อนหลัง 12 เดือน ถึงเดือนปัจจุบัน และโชว์อนาคตอีก 12 เดือน (แต่กดไม่ได้) */
 function monthRange(): string[] {
   const now = thisMonthKey();
-  return Array.from({ length: 13 }, (_, i) => shiftMonth(now, i - 12));
+  return Array.from({ length: 25 }, (_, i) => shiftMonth(now, i - 12));
 }
 
 export default function MonthStrip({
@@ -33,6 +33,7 @@ export default function MonthStrip({
   closed,
   loading = false,
 }: Props) {
+  const now = thisMonthKey();
   const months = monthRange();
   const idx = months.indexOf(ym);
   const stripRef = useRef<HTMLDivElement>(null);
@@ -49,11 +50,16 @@ export default function MonthStrip({
 
   const remaining = opening + income - expense;
   const canPrev = idx > 0;
-  const canNext = idx < months.length - 1;
+  const canNext = ym < now; // กดไปข้างหน้าได้แค่ถึงเดือนปัจจุบัน
 
   return (
     <header className="sticky top-0 z-20 bg-bg/85 backdrop-blur-md border-b border-border">
       <div className="mx-auto max-w-2xl px-3 pt-3 pb-2">
+        <div className="mb-3 flex items-center justify-center gap-1.5 text-base font-bold">
+          <span>💰</span>
+          <span>บันทึกรายรับรายจ่าย</span>
+        </div>
+
         <div className="flex items-center gap-1">
           <button
             aria-label="เดือนก่อนหน้า"
@@ -70,15 +76,19 @@ export default function MonthStrip({
           >
             {months.map((m) => {
               const active = m === ym;
+              const isFuture = m > now;
               return (
                 <button
                   key={m}
                   ref={active ? activeRef : undefined}
-                  onClick={() => onChange(m)}
+                  onClick={() => !isFuture && onChange(m)}
+                  disabled={isFuture}
                   className={clsx(
                     "snap-item shrink-0 rounded-full px-4 py-1.5 text-sm whitespace-nowrap transition",
                     active
                       ? "bg-accent text-white font-semibold shadow"
+                      : isFuture
+                      ? "opacity-30 cursor-not-allowed text-muted"
                       : "text-muted hover:bg-surface-2",
                   )}
                 >
@@ -91,7 +101,11 @@ export default function MonthStrip({
           <button
             aria-label="เดือนถัดไป"
             disabled={!canNext}
-            onClick={() => canNext && onChange(months[idx + 1])}
+            onClick={() => {
+              // หา index ถัดไปของเดือนที่ถูกเลือก (ที่ยังไม่เกิน now)
+              const nextMonth = months[idx + 1];
+              if (canNext && nextMonth) onChange(nextMonth);
+            }}
             className="shrink-0 grid place-items-center size-9 rounded-full text-muted enabled:hover:bg-surface-2 enabled:active:scale-95 disabled:opacity-25 transition"
           >
             <ChevronRight size={20} />

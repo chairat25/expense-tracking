@@ -16,6 +16,7 @@ import {
   totals,
   type MonthData,
   type Tx,
+  type DailyBudget,
 } from "@/lib/shared";
 
 type View = "day" | "month";
@@ -96,6 +97,45 @@ export default function Home() {
   const monthTotals = useMemo(() => totals(month?.transactions ?? []), [month]);
 
   const locked = month?.closedAt != null;
+
+  // Calculate auto daily budget based on remaining money *before* this date
+  const { initialBalance, isAutoBudget } = useMemo(() => {
+    if (!month) return { initialBalance: 0, isAutoBudget: true };
+    const existing = month.dailyBudgets?.find((b) => b.date === date);
+    if (existing) {
+      return { initialBalance: existing.amount, isAutoBudget: false };
+    }
+    // Calculate remaining before this day
+    const txsBefore = month.transactions.filter((t) => t.date < date);
+    const { income: incBefore, expense: expBefore } = totals(txsBefore);
+    const remainingBefore = month.openingBalance + incBefore - expBefore;
+    
+    const viewedDay = parseInt(date.slice(8, 10), 10);
+    const daysLeft = Math.max(1, daysInMonth(month.ym) - viewedDay + 1);
+    const autoBudget = remainingBefore / daysLeft;
+    return { initialBalance: autoBudget, isAutoBudget: true };
+  }, [month, date]);
+
+  async function updateDailyBudget(amount: number) {
+    const res = await fetch(`/api/months/${ym}/daily-budgets`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date, amount }),
+    });
+    if (!res.ok) {
+      setError((await res.json()).error ?? "บันทึกไม่สำเร็จ");
+      return;
+    }
+    const updated = await res.json();
+    setMonth((m) => {
+      if (!m) return m;
+      const budgets = m.dailyBudgets || [];
+      const newBudgets = budgets.some(b => b.date === updated.date)
+        ? budgets.map(b => b.date === updated.date ? updated : b)
+        : [...budgets, updated];
+      return { ...m, dailyBudgets: newBudgets };
+    });
+  }
 
   async function addTx(input: NewTx) {
     const res = await fetch("/api/transactions", {
@@ -194,6 +234,8 @@ export default function Home() {
             onAdd={addTx}
             onDelete={deleteTx}
             locked={locked === true}
+            initialBalance={initialBalance}
+            onBudgetChange={updateDailyBudget}
           />
         ) : (
           <div className="space-y-3">

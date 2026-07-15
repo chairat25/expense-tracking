@@ -81,6 +81,21 @@ export const savingsTransactions = pgTable("savings_transactions", {
     .defaultNow(),
 });
 
+export const dailyBudgets = pgTable(
+  "daily_budgets",
+  {
+    id: serial("id").primaryKey(),
+    userId: uuid("user_id").notNull(),
+    date: date("date").notNull(),
+    amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [uniqueIndex("daily_budgets_user_date_uq").on(t.userId, t.date)],
+);
+
 export type Transaction = typeof transactions.$inferSelect;
 export type Month = typeof months.$inferSelect;
 export type SavingsTransaction = typeof savingsTransactions.$inferSelect;
+export type DailyBudget = typeof dailyBudgets.$inferSelect;

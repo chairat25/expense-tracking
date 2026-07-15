@@ -15,6 +15,13 @@
       "when": 1784103022041,
       "tag": "0001_add_savings",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784109310555,
+      "tag": "0002_dark_red_shift",
+      "breakpoints": true
     }
   ]
 }

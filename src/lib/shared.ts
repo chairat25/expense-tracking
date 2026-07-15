@@ -172,6 +172,14 @@ export type MonthData = {
   closedAt: string | null;
   savingsAmount: number | null;
   transactions: Tx[];
+  dailyBudgets: DailyBudget[];
+};
+
+export type DailyBudget = {
+  id: number;
+  userId: string;
+  date: string;
+  amount: number;
 };
 
 /** รวมยอดของชุดรายการที่ส่งเข้ามา (ใช้ได้ทั้งรายวันและรายเดือน) */

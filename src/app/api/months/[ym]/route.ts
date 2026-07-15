@@ -1,6 +1,6 @@
 import { and, asc, eq, gte, lte } from "drizzle-orm";
 import { db } from "@/db";
-import { months, transactions } from "@/db/schema";
+import { months, transactions, dailyBudgets } from "@/db/schema";
 import {
   badRequest,
   monthPatch,
@@ -24,7 +24,7 @@ export async function GET(_req: Request, { params }: Ctx) {
   const from = `${ym}-01`;
   const to = `${ym}-${String(daysInMonth(ym)).padStart(2, "0")}`;
 
-  const [monthRow, rows] = await Promise.all([
+  const [monthRow, rows, budgets] = await Promise.all([
     db.query.months.findFirst({
       where: and(eq(months.userId, userId), eq(months.ym, ym)),
     }),
@@ -39,6 +39,13 @@ export async function GET(_req: Request, { params }: Ctx) {
         ),
       )
       .orderBy(asc(transactions.date), asc(transactions.spentAt)),
+    db.query.dailyBudgets.findMany({
+      where: and(
+        eq(dailyBudgets.userId, userId),
+        gte(dailyBudgets.date, from),
+        lte(dailyBudgets.date, to)
+      )
+    })
   ]);
 
   const body: MonthData = {
@@ -55,6 +62,12 @@ export async function GET(_req: Request, { params }: Ctx) {
       amount: Number(r.amount),
       category: r.category as Category,
       note: r.note,
+    })),
+    dailyBudgets: budgets.map((b) => ({
+      id: b.id,
+      userId: b.userId,
+      date: b.date,
+      amount: Number(b.amount),
     })),
   };
 

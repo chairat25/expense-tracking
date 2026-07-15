@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import clsx from "clsx";
-import { ChevronLeft, ChevronRight, Trash2, Wallet } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
 import {
   CATEGORY_ICON,
   CATEGORY_LABEL,
@@ -15,6 +15,7 @@ import {
   type Tx,
 } from "@/lib/shared";
 import QuickAdd, { type NewTx } from "./QuickAdd";
+import CustomDatePicker from "./CustomDatePicker";
 
 type Props = {
   date: string;
@@ -25,6 +26,8 @@ type Props = {
   onAdd: (tx: NewTx) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
   locked: boolean;
+  initialBalance: number;
+  onBudgetChange: (amount: number) => Promise<void>;
 };
 
 export default function DayView({
@@ -36,10 +39,17 @@ export default function DayView({
   onAdd,
   onDelete,
   locked,
+  initialBalance,
+  onBudgetChange,
 }: Props) {
-  const { income, expense, net } = totals(txs);
+  const { income, expense } = totals(txs);
   const isToday = date === todayKey();
-  const hasIncome = income > 0;
+  
+  const [showPicker, setShowPicker] = useState(false);
+
+  const [editingBudget, setEditingBudget] = useState(false);
+  const [draftBudget, setDraftBudget] = useState(String(initialBalance));
+  const remaining = initialBalance + income - expense;
 
   // ลบต้องกด 2 ครั้ง กันนิ้วเผลอโดนบนมือถือ — ค้างไว้ 3 วิแล้วรีเซ็ตเอง
   const [confirmId, setConfirmId] = useState<number | null>(null);
@@ -57,17 +67,42 @@ export default function DayView({
           disabled={!canPrev}
           onClick={() => onDateChange(shiftDate(date, -1))}
         />
-        <div className="text-center">
-          <p className="font-semibold">{formatDayTH(date)}</p>
-          {isToday ? (
-            <p className="text-[11px] text-accent">วันนี้</p>
-          ) : (
-            <button
-              onClick={() => onDateChange(todayKey())}
-              className="text-[11px] text-muted underline underline-offset-2"
-            >
-              กลับไปวันนี้
-            </button>
+        <div className="relative text-center flex-1 mx-2">
+          <div 
+            className="cursor-pointer transition hover:bg-surface-2 rounded-xl py-1 select-none"
+            onClick={() => setShowPicker(!showPicker)}
+          >
+            <p className="font-semibold">{formatDayTH(date)}</p>
+            {isToday ? (
+              <p className="text-[11px] text-accent mt-0.5">วันนี้</p>
+            ) : (
+              <div className="mt-0.5">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    // ให้ปุ่มนี้ยังกดได้โดยไม่ไปโดน DatePicker ถ้ายิง Event มา
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onDateChange(todayKey());
+                    setShowPicker(false);
+                  }}
+                  className="text-[11px] text-muted underline underline-offset-2 pointer-events-auto relative z-20"
+                >
+                  กลับไปวันนี้
+                </button>
+              </div>
+            )}
+          </div>
+          
+          {showPicker && (
+            <CustomDatePicker
+              date={date}
+              onChange={(d) => {
+                onDateChange(d);
+                setShowPicker(false);
+              }}
+              onClose={() => setShowPicker(false)}
+            />
           )}
         </div>
         <NavBtn
@@ -77,18 +112,6 @@ export default function DayView({
         />
       </div>
 
-      {/* ยังไม่ได้ตั้งเงินตั้งต้นของวัน — เตือนไว้ก่อน แต่ไม่ล็อกไม่ให้กรอกรายจ่าย */}
-      {!hasIncome && !locked && (
-        <div className="card border-dashed p-3 flex items-start gap-2.5 pop-in">
-          <Wallet size={18} className="mt-0.5 shrink-0 text-income" />
-          <p className="text-[13px] leading-relaxed text-muted">
-            ยังไม่ได้ใส่<b className="text-text"> เงินตั้งต้นของวันนี้ </b>
-            เลย กดปุ่ม <b className="text-income">+ รายรับ</b> ด้านล่างใส่ก่อน
-            เดี๋ยวพอจบวันจะได้รู้ว่าเหลือเท่าไหร่
-          </p>
-        </div>
-      )}
-
       {!locked && <QuickAdd onAdd={onAdd} />}
 
       {locked && (
@@ -97,16 +120,66 @@ export default function DayView({
         </div>
       )}
 
-      {/* สรุปของวัน — เงินตั้งต้น − ที่ใช้ไป = เหลือ */}
+      {/* สรุปของวัน — เงินตั้งต้น + รายรับ − ที่ใช้ไป = เหลือ */}
       <div className="card p-3">
+        {editingBudget && !locked ? (
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const v = Number(draftBudget);
+              if (Number.isFinite(v) && v >= 0) await onBudgetChange(v);
+              setEditingBudget(false);
+            }}
+            className="mb-3 flex gap-2"
+          >
+            <input
+              autoFocus
+              value={draftBudget}
+              onChange={(e) => setDraftBudget(e.target.value.replace(/[^\d.]/g, ""))}
+              inputMode="decimal"
+              className="tnum min-w-0 flex-1 rounded-xl border border-accent bg-surface-2 px-3 py-2 text-sm font-bold outline-none"
+              placeholder="กรอกเงินตั้งต้น"
+            />
+            <button
+              type="submit"
+              className="rounded-xl bg-accent px-4 text-sm font-semibold text-white active:scale-95"
+            >
+              บันทึก
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditingBudget(false)}
+              className="rounded-xl px-2 text-sm text-muted"
+            >
+              ยกเลิก
+            </button>
+          </form>
+        ) : (
+          <div className="mb-2 flex items-center justify-between text-[10px] text-muted">
+            <div className="flex gap-4">
+              <span>ยอดตั้งต้นอัตโนมัติหรือกำหนดเอง</span>
+            </div>
+            {!locked && (
+              <button
+                onClick={() => {
+                  setDraftBudget(String(initialBalance.toFixed(2)));
+                  setEditingBudget(true);
+                }}
+                className="flex items-center gap-1 text-accent"
+              >
+                <Pencil size={12} /> แก้ไขเงินตั้งต้น
+              </button>
+            )}
+          </div>
+        )}
         <div className="grid grid-cols-3 divide-x divide-border text-center">
-          <Cell label="เงินตั้งต้น" value={income} tone="income" />
+          <Cell label="เงินตั้งต้น" value={initialBalance} tone="income" />
           <Cell label="ใช้ไป" value={expense} tone="expense" />
-          <Cell label="เหลือ" value={net} tone={net < 0 ? "expense" : "income"} strong />
+          <Cell label="เหลือ" value={remaining} tone={remaining < 0 ? "expense" : "income"} strong />
         </div>
-        {net < 0 && (
+        {remaining < 0 && (
           <p className="mt-2 rounded-lg bg-expense-soft px-2 py-1.5 text-center text-[11px] text-expense">
-            ใช้เกินเงินตั้งต้นของวันไป {formatBaht(Math.abs(net))} ฿
+            ใช้เกินเงินของวันไป {formatBaht(Math.abs(remaining))} ฿
           </p>
         )}
       </div>
