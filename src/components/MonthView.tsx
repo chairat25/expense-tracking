@@ -77,7 +77,7 @@ export default function MonthView({
       {/* ยอดยกมา */}
       <div className="card p-3">
         <div className="flex items-center justify-between gap-2">
-          <p className="text-[13px] text-muted">ยอดยกมาต้นเดือน</p>
+          <p className="text-[13px] text-muted">เงินใช้เดือนนี้ทั้งหมด</p>
           {!closed && !editing && (
             <button
               onClick={() => {
@@ -132,7 +132,7 @@ export default function MonthView({
       {/* สรุปยอดสิ้นเดือน */}
       <div className="card overflow-hidden">
         <div className="space-y-2 p-4">
-          <Line label="ยอดยกมา" value={openingBalance} />
+          <Line label="เงินใช้เดือนนี้ทั้งหมด" value={openingBalance} />
           <Line label="รายรับระหว่างเดือน" value={income} sign="+" tone="income" />
           <Line label="รายจ่ายทั้งเดือน" value={expense} sign="−" tone="expense" />
           <div className="!mt-3 flex items-baseline justify-between border-t border-border pt-3">

@@ -114,7 +114,7 @@ export default function MonthStrip({
         </div>
 
         <dl className="mt-2 grid grid-cols-3 gap-2 text-center">
-          <Stat label="ยอดยกมา" value={opening} />
+          <Stat label="เงินใช้เดือนนี้ทั้งหมด" value={opening} />
           <Stat label="ใช้ไป" value={expense} tone="expense" />
           <Stat label="คงเหลือ" value={remaining} strong />
         </dl>
