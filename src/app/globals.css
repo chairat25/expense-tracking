@@ -84,13 +84,13 @@ body {
     opacity: 1;
   }
   50% {
-    opacity: 0.5;
+    opacity: 0.35;
   }
 }
 .skeleton {
   background: var(--surface-2);
   border-radius: 8px;
-  animation: skeleton-pulse 1.2s ease-in-out infinite;
+  animation: skeleton-pulse 0.8s ease-in-out infinite;
 }
 
 @keyframes pop-in {
