@@ -7,6 +7,7 @@ import AccountBar from "@/components/AccountBar";
 import MonthStrip from "@/components/MonthStrip";
 import DayView from "@/components/DayView";
 import MonthView from "@/components/MonthView";
+import { Skeleton } from "@/components/Skeleton";
 import type { NewTx } from "@/components/QuickAdd";
 import {
   daysInMonth,
@@ -26,12 +27,15 @@ export default function Home() {
   const [month, setMonth] = useState<MonthData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [totalSavings, setTotalSavings] = useState(0);
+  const [loadingMonth, setLoadingMonth] = useState(false);
+  const [showSkeleton, setShowSkeleton] = useState(false);
 
   // กันเคสปัดเปลี่ยนเดือนรัวๆ แล้ว response ของเดือนเก่าที่มาช้ากว่าทับเดือนล่าสุด
   const ymRef = useRef(ym);
   ymRef.current = ym;
 
   const load = useCallback(async (m: string) => {
+    setLoadingMonth(true);
     try {
       const res = await fetch(`/api/months/${m}`, { cache: "no-store" });
       if (!res.ok) {
@@ -44,12 +48,24 @@ export default function Home() {
     } catch (e) {
       if (ymRef.current !== m) return;
       setError(e instanceof Error ? e.message : "โหลดข้อมูลไม่สำเร็จ");
+    } finally {
+      if (ymRef.current === m) setLoadingMonth(false);
     }
   }, []);
 
   useEffect(() => {
     void load(ym);
   }, [ym, load]);
+
+  // โชว์ skeleton ก็ต่อเมื่อโหลดนานเกิน 200ms เท่านั้น — กันไม่ให้กะพริบตอนโหลดไวจนไม่ทันสังเกต
+  useEffect(() => {
+    if (!loadingMonth) {
+      setShowSkeleton(false);
+      return;
+    }
+    const t = setTimeout(() => setShowSkeleton(true), 200);
+    return () => clearTimeout(t);
+  }, [loadingMonth]);
 
   const loadSavings = useCallback(async () => {
     const res = await fetch("/api/savings", { cache: "no-store" });
@@ -153,6 +169,7 @@ export default function Home() {
         expense={monthTotals.expense}
         savings={totalSavings}
         closed={locked === true}
+        loading={showSkeleton}
       />
 
       <main className="mx-auto w-full max-w-2xl flex-1 px-3 pb-28 pt-3">
@@ -165,8 +182,8 @@ export default function Home() {
           </p>
         )}
 
-        {!month ? (
-          <p className="py-16 text-center text-sm text-muted">กำลังโหลด…</p>
+        {!month || showSkeleton ? (
+          <ContentSkeleton />
         ) : view === "day" ? (
           <DayView
             date={date}
@@ -212,6 +229,23 @@ export default function Home() {
         </div>
       </nav>
     </>
+  );
+}
+
+/** เนื้อหาระหว่างรอโหลด ใช้เหมือนกันทั้งแท็บรายวันและสรุปเดือน — เอาไว้แค่บอกว่ากำลังโหลด ไม่ต้องเลียนแบบทุกพิกเซล */
+function ContentSkeleton() {
+  return (
+    <div className="space-y-3 pop-in">
+      <div className="card space-y-3 p-4">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-8 w-40" />
+      </div>
+      <div className="card space-y-2 p-4">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <Skeleton key={i} className="h-10 w-full" />
+        ))}
+      </div>
+    </div>
   );
 }
 

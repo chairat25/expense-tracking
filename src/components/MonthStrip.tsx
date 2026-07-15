@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight, Lock, LogOut } from "lucide-react";
 import clsx from "clsx";
+import { Skeleton } from "@/components/Skeleton";
 import { formatBaht, formatMonthTH, shiftMonth, thisMonthKey } from "@/lib/shared";
 
 type Props = {
@@ -13,6 +14,7 @@ type Props = {
   expense: number;
   savings: number;
   closed: boolean;
+  loading?: boolean;
 };
 
 /** เดือนที่ให้เลื่อนได้: ย้อนหลัง 12 เดือน ถึงเดือนปัจจุบัน (อนาคตกรอกไม่ได้) */
@@ -29,6 +31,7 @@ export default function MonthStrip({
   expense,
   savings,
   closed,
+  loading = false,
 }: Props) {
   const months = monthRange();
   const idx = months.indexOf(ym);
@@ -116,10 +119,10 @@ export default function MonthStrip({
         </div>
 
         <dl className="mt-2 grid grid-cols-4 gap-2 text-center">
-          <Stat label="เงินใช้เดือนนี้ทั้งหมด" value={opening} />
-          <Stat label="ใช้ไป" value={expense} tone="expense" />
-          <Stat label="คงเหลือ" value={remaining} strong />
-          <Stat label="เงินเก็บ" value={savings} />
+          <Stat label="เงินใช้เดือนนี้ทั้งหมด" value={opening} loading={loading} />
+          <Stat label="ใช้ไป" value={expense} tone="expense" loading={loading} />
+          <Stat label="คงเหลือ" value={remaining} strong loading={loading} />
+          <Stat label="เงินเก็บ" value={savings} loading={loading} />
         </dl>
         {income > 0 && (
           <p className="mt-1.5 text-center text-[11px] text-muted tnum">
@@ -136,24 +139,32 @@ function Stat({
   value,
   tone,
   strong,
+  loading,
 }: {
   label: string;
   value: number;
   tone?: "expense";
   strong?: boolean;
+  loading?: boolean;
 }) {
   return (
     <div className="rounded-xl bg-surface border border-border py-1.5">
       <dt className="text-[10px] text-muted">{label}</dt>
-      <dd
-        className={clsx(
-          "tnum text-[15px] font-semibold",
-          tone === "expense" && "text-expense",
-          strong && (value < 0 ? "text-expense" : "text-income"),
-        )}
-      >
-        {formatBaht(value)}
-      </dd>
+      {loading ? (
+        <dd className="flex justify-center py-[3px]">
+          <Skeleton className="h-[15px] w-12" />
+        </dd>
+      ) : (
+        <dd
+          className={clsx(
+            "tnum text-[15px] font-semibold",
+            tone === "expense" && "text-expense",
+            strong && (value < 0 ? "text-expense" : "text-income"),
+          )}
+        >
+          {formatBaht(value)}
+        </dd>
+      )}
     </div>
   );
 }
