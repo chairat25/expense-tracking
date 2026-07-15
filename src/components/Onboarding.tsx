@@ -1,11 +1,17 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { driver } from "driver.js";
 import "driver.js/dist/driver.css";
 
 export default function Onboarding() {
+  const pathname = usePathname();
+
   useEffect(() => {
+    // ให้แสดงเฉพาะในหน้าแรกสุด (Dashboard) เท่านั้น หน้า Login หรืออื่นๆ ไม่ต้องแสดง
+    if (pathname !== "/") return;
+
     const dismissedForever = localStorage.getItem("tour-dismissed-forever");
     if (dismissedForever === "true") return;
 
