@@ -18,6 +18,10 @@ export const monthPatch = z.object({
   closed: z.boolean().optional(),
 });
 
+export const carryOverPatch = z.object({
+  savingsAmount: z.coerce.number().min(0).max(99_999_999),
+});
+
 export const ymSchema = z
   .string()
   .regex(/^\d{4}-\d{2}$/, "เดือนต้องเป็น YYYY-MM");

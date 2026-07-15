@@ -170,6 +170,7 @@ export type MonthData = {
   ym: string;
   openingBalance: number;
   closedAt: string | null;
+  savingsAmount: number | null;
   transactions: Tx[];
 };
 
