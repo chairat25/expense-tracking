@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import clsx from "clsx";
-import { ArrowRight, Lock, LockOpen, Pencil } from "lucide-react";
+import { Lock, LockOpen, Pencil } from "lucide-react";
+import CarryOverCard from "@/components/CarryOverCard";
 import {
   CATEGORY_LABEL,
   daysInMonth,
@@ -20,7 +21,7 @@ type Props = {
   month: MonthData;
   onOpeningChange: (v: number) => Promise<void>;
   onToggleClose: (closed: boolean) => Promise<void>;
-  onCarryOver: (remaining: number) => Promise<void>;
+  onCarryOver: (savingsAmount: number) => Promise<void>;
   onPickDay: (date: string) => void;
 };
 
@@ -31,7 +32,7 @@ export default function MonthView({
   onCarryOver,
   onPickDay,
 }: Props) {
-  const { ym, openingBalance, closedAt, transactions } = month;
+  const { ym, openingBalance, closedAt, savingsAmount, transactions } = month;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(String(openingBalance));
 
@@ -169,14 +170,12 @@ export default function MonthView({
         </button>
 
         {closed && (
-          <button
-            onClick={() => void onCarryOver(remaining)}
-            className="flex w-full items-center justify-center gap-2 border-t border-border py-3 text-sm font-semibold text-income transition hover:bg-income-soft"
-          >
-            ยกยอด {formatBaht(remaining)} ฿ ไปเป็นยอดตั้งต้นของ{" "}
-            {formatMonthTH(shiftMonth(ym, 1), true)}
-            <ArrowRight size={15} />
-          </button>
+          <CarryOverCard
+            remaining={remaining}
+            nextYm={shiftMonth(ym, 1)}
+            savingsAmount={savingsAmount}
+            onConfirm={onCarryOver}
+          />
         )}
       </div>
 
