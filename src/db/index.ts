@@ -8,7 +8,7 @@ function create() {
   const url = process.env.DATABASE_URL;
   if (!url) {
     throw new Error(
-      "DATABASE_URL ยังไม่ได้ตั้ง — เอา connection string ของ Supabase (Transaction pooler) มาใส่ .env.local",
+      "DATABASE_URL ยังไม่ได้ตั้ง — เอา connection string ของ Supabase (Transaction pooler) มาใส่ .env.development",
     );
   }
   // prepare: false จำเป็นสำหรับ Supabase transaction pooler (pgbouncer ไม่รองรับ prepared statement)

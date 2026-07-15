@@ -1,8 +1,8 @@
 import { config } from "dotenv";
 import { defineConfig } from "drizzle-kit";
 
-// Next อ่าน .env.local อยู่แล้ว แต่ drizzle-kit รันนอก Next เลยต้องโหลดเอง
-config({ path: ".env.local" });
+// Next อ่าน .env.development อยู่แล้ว แต่ drizzle-kit รันนอก Next เลยต้องโหลดเอง
+config({ path: ".env.development" });
 
 export default defineConfig({
   schema: "./src/db/schema.ts",
