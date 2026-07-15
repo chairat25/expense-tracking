@@ -10,7 +10,6 @@ import MonthView from "@/components/MonthView";
 import type { NewTx } from "@/components/QuickAdd";
 import {
   daysInMonth,
-  shiftMonth,
   thisMonthKey,
   todayKey,
   totals,
@@ -26,6 +25,7 @@ export default function Home() {
   const [view, setView] = useState<View>("day");
   const [month, setMonth] = useState<MonthData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [totalSavings, setTotalSavings] = useState(0);
 
   // กันเคสปัดเปลี่ยนเดือนรัวๆ แล้ว response ของเดือนเก่าที่มาช้ากว่าทับเดือนล่าสุด
   const ymRef = useRef(ym);
@@ -50,6 +50,15 @@ export default function Home() {
   useEffect(() => {
     void load(ym);
   }, [ym, load]);
+
+  const loadSavings = useCallback(async () => {
+    const res = await fetch("/api/savings", { cache: "no-store" });
+    if (res.ok) setTotalSavings((await res.json()).total);
+  }, []);
+
+  useEffect(() => {
+    void loadSavings();
+  }, [loadSavings]);
 
   // เปลี่ยนเดือน = เด้งไปวันที่ 1 ของเดือนนั้น (ถ้าเป็นเดือนปัจจุบันให้ไปวันนี้)
   function pickMonth(next: string) {
@@ -114,18 +123,20 @@ export default function Home() {
     setMonth((m) => (m ? { ...m, ...updated } : m));
   }
 
-  /** ปิดยอดแล้วยกยอดคงเหลือไปตั้งเป็นเงินตั้งต้นของเดือนถัดไป */
-  async function carryOver(remaining: number) {
-    const nextYm = shiftMonth(ym, 1);
-    const res = await fetch(`/api/months/${nextYm}`, {
-      method: "PUT",
+  /** ปิดยอดแล้วแบ่งยอดคงเหลือ: ส่วนหนึ่งเข้าเงินเก็บ ที่เหลือยกไปเป็นยอดตั้งต้นเดือนถัดไป */
+  async function confirmCarryOver(savingsAmount: number) {
+    const res = await fetch(`/api/months/${ym}/carry-over`, {
+      method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ openingBalance: Math.max(0, remaining) }),
+      body: JSON.stringify({ savingsAmount }),
     });
     if (!res.ok) {
-      setError((await res.json()).error ?? "ยกยอดไม่สำเร็จ");
+      setError((await res.json()).error ?? "แบ่งเงินไม่สำเร็จ");
       return;
     }
+    const { nextYm }: { nextYm: string } = await res.json();
+    setMonth((m) => (m ? { ...m, savingsAmount } : m));
+    void loadSavings();
     // ถ้าเดือนถัดไปเปิดให้ดูได้แล้ว (ไม่ใช่เดือนอนาคต) พาไปดูเลย
     if (nextYm <= thisMonthKey()) pickMonth(nextYm);
   }
@@ -140,6 +151,7 @@ export default function Home() {
         opening={month?.openingBalance ?? 0}
         income={monthTotals.income}
         expense={monthTotals.expense}
+        savings={totalSavings}
         closed={locked === true}
       />
 
@@ -172,7 +184,7 @@ export default function Home() {
               month={month}
               onOpeningChange={(v) => patchMonth({ openingBalance: v })}
               onToggleClose={(closed) => patchMonth({ closed })}
-              onCarryOver={carryOver}
+              onCarryOver={confirmCarryOver}
               onPickDay={(d) => {
                 setDate(d);
                 setView("day");
