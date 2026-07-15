@@ -45,6 +45,8 @@ export async function GET(_req: Request, { params }: Ctx) {
     ym,
     openingBalance: Number(monthRow?.openingBalance ?? 0),
     closedAt: monthRow?.closedAt?.toISOString() ?? null,
+    savingsAmount:
+      monthRow?.savingsAmount != null ? Number(monthRow.savingsAmount) : null,
     transactions: rows.map((r) => ({
       id: r.id,
       date: r.date,
