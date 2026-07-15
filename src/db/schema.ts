@@ -9,6 +9,7 @@ import {
   index,
   uniqueIndex,
   pgEnum,
+  integer,
 } from "drizzle-orm/pg-core";
 
 export const txTypeEnum = pgEnum("tx_type", ["income", "expense"]);
@@ -31,6 +32,11 @@ export const months = pgTable(
       .default("0"),
     note: text("note").notNull().default(""),
     closedAt: timestamp("closed_at", { withTimezone: true }),
+    // เดือนนี้แบ่งเข้าเงินเก็บเท่าไหร่ตอนปิดยอด — null แปลว่ายังไม่ตัดสินใจแบ่ง
+    // (ต่างจาก 0 ที่แปลว่าตัดสินใจแล้วว่าไม่เก็บเลย)
+    savingsAmount: numeric("savings_amount", { precision: 12, scale: 2 }),
+    // อ้าง savings_transactions.id ที่ผูกกับการแบ่งของเดือนนี้ ใช้ตอนแก้ไขทีหลัง
+    savingsTxId: integer("savings_tx_id"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -64,5 +70,17 @@ export const transactions = pgTable(
   (t) => [index("tx_user_date_idx").on(t.userId, t.date)],
 );
 
+/** ทุกครั้งที่เอาเงินเข้าเงินเก็บ = 1 แถว (ledger) ยอดสะสมทั้งหมด = SUM(amount) */
+export const savingsTransactions = pgTable("savings_transactions", {
+  id: serial("id").primaryKey(),
+  userId: uuid("user_id").notNull(),
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+  note: text("note").notNull().default(""),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export type Transaction = typeof transactions.$inferSelect;
 export type Month = typeof months.$inferSelect;
+export type SavingsTransaction = typeof savingsTransactions.$inferSelect;
