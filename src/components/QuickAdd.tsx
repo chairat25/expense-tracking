@@ -59,6 +59,7 @@ export default function QuickAdd({
 
   return (
     <form
+      id="tour-quick-add"
       onSubmit={(e) => {
         e.preventDefault();
         void submit();

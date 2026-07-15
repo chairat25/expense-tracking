@@ -132,7 +132,7 @@ export default function MonthStrip({
           </form>
         </div>
 
-        <dl className="mt-2 grid grid-cols-4 gap-2 text-center">
+        <dl id="tour-month-summary" className="mt-2 grid grid-cols-4 gap-2 text-center">
           <Stat label="เงินใช้เดือนนี้ทั้งหมด" value={opening} loading={loading} />
           <Stat label="ใช้ไป" value={expense} tone="expense" loading={loading} />
           <Stat label="คงเหลือ" value={remaining} strong loading={loading} />

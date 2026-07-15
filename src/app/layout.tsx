@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Noto_Sans_Thai } from "next/font/google";
 import "./globals.css";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
+import Onboarding from "@/components/Onboarding";
 
 const notoThai = Noto_Sans_Thai({
   variable: "--font-thai",
@@ -22,7 +23,10 @@ export const viewport: Viewport = {
   ],
   width: "device-width",
   initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: "cover",
+  interactiveWidget: "resizes-visual",
 };
 
 export default function RootLayout({
@@ -36,6 +40,7 @@ export default function RootLayout({
       >
         {children}
         <PwaInstallPrompt />
+        <Onboarding />
       </body>
     </html>
   );

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import clsx from "clsx";
-import { ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Trash2, Info } from "lucide-react";
 import {
   CATEGORY_ICON,
   CATEGORY_LABEL,
@@ -67,7 +67,7 @@ export default function DayView({
           disabled={!canPrev}
           onClick={() => onDateChange(shiftDate(date, -1))}
         />
-        <div className="relative text-center flex-1 mx-2">
+        <div id="tour-date-picker" className="relative text-center flex-1 mx-2">
           <div 
             className="cursor-pointer transition hover:bg-surface-2 rounded-xl py-1 select-none"
             onClick={() => setShowPicker(!showPicker)}
@@ -121,7 +121,7 @@ export default function DayView({
       )}
 
       {/* สรุปของวัน — เงินตั้งต้น + รายรับ − ที่ใช้ไป = เหลือ */}
-      <div className="card p-3">
+      <div id="tour-daily-budget" className="card p-3">
         {editingBudget && !locked ? (
           <form
             onSubmit={async (e) => {
@@ -138,26 +138,27 @@ export default function DayView({
               onChange={(e) => setDraftBudget(e.target.value.replace(/[^\d.]/g, ""))}
               inputMode="decimal"
               className="tnum min-w-0 flex-1 rounded-xl border border-accent bg-surface-2 px-3 py-2 text-sm font-bold outline-none"
-              placeholder="กรอกเงินตั้งต้น"
+              placeholder="กรอกเงินเฉลี่ยต่อวัน"
             />
             <button
               type="submit"
-              className="rounded-xl bg-accent px-4 text-sm font-semibold text-white active:scale-95"
+              className="rounded-xl bg-accent px-4 text-sm font-semibold text-white active:scale-95 transition hover:bg-accent/90"
             >
               บันทึก
             </button>
             <button
               type="button"
               onClick={() => setEditingBudget(false)}
-              className="rounded-xl px-2 text-sm text-muted"
+              className="rounded-xl px-2 text-sm text-muted hover:bg-surface-2 transition"
             >
               ยกเลิก
             </button>
           </form>
         ) : (
           <div className="mb-2 flex items-center justify-between text-[10px] text-muted">
-            <div className="flex gap-4">
-              <span>ยอดตั้งต้นอัตโนมัติหรือกำหนดเอง</span>
+            <div className="flex items-center gap-1">
+              <span>เงินเฉลี่ยต่อวัน</span>
+              {/* Removed Info button since we have a tour now */}
             </div>
             {!locked && (
               <button
@@ -165,21 +166,21 @@ export default function DayView({
                   setDraftBudget(String(initialBalance.toFixed(2)));
                   setEditingBudget(true);
                 }}
-                className="flex items-center gap-1 text-accent"
+                className="flex items-center gap-1 text-accent hover:underline"
               >
-                <Pencil size={12} /> แก้ไขเงินตั้งต้น
+                <Pencil size={12} /> แก้ไขเงินเฉลี่ยต่อวัน
               </button>
             )}
           </div>
         )}
         <div className="grid grid-cols-3 divide-x divide-border text-center">
-          <Cell label="เงินตั้งต้น" value={initialBalance} tone="income" />
+          <Cell label="เงินเฉลี่ยต่อวัน" value={initialBalance} tone="income" />
           <Cell label="ใช้ไป" value={expense} tone="expense" />
           <Cell label="เหลือ" value={remaining} tone={remaining < 0 ? "expense" : "income"} strong />
         </div>
         {remaining < 0 && (
           <p className="mt-2 rounded-lg bg-expense-soft px-2 py-1.5 text-center text-[11px] text-expense">
-            ใช้เกินเงินของวันไป {formatBaht(Math.abs(remaining))} ฿
+            ใช้เกินโควตาของวันนี้ไป {formatBaht(Math.abs(remaining))} ฿
           </p>
         )}
       </div>
