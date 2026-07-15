@@ -11,6 +11,7 @@ type Props = {
   opening: number;
   income: number;
   expense: number;
+  savings: number;
   closed: boolean;
 };
 
@@ -26,6 +27,7 @@ export default function MonthStrip({
   opening,
   income,
   expense,
+  savings,
   closed,
 }: Props) {
   const months = monthRange();
@@ -113,10 +115,11 @@ export default function MonthStrip({
           </form>
         </div>
 
-        <dl className="mt-2 grid grid-cols-3 gap-2 text-center">
+        <dl className="mt-2 grid grid-cols-4 gap-2 text-center">
           <Stat label="เงินใช้เดือนนี้ทั้งหมด" value={opening} />
           <Stat label="ใช้ไป" value={expense} tone="expense" />
           <Stat label="คงเหลือ" value={remaining} strong />
+          <Stat label="เงินเก็บ" value={savings} />
         </dl>
         {income > 0 && (
           <p className="mt-1.5 text-center text-[11px] text-muted tnum">
