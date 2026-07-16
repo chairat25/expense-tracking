@@ -1,6 +1,6 @@
 import { and, asc, eq, gte, lte } from "drizzle-orm";
 import { db } from "@/db";
-import { months, transactions, dailyBudgets } from "@/db/schema";
+import { months, transactions, dailyBudgets, userSettings } from "@/db/schema";
 import {
   badRequest,
   monthPatch,
@@ -24,7 +24,7 @@ export async function GET(_req: Request, { params }: Ctx) {
   const from = `${ym}-01`;
   const to = `${ym}-${String(daysInMonth(ym)).padStart(2, "0")}`;
 
-  const [monthRow, rows, budgets] = await Promise.all([
+  const [monthRow, rows, budgets, settings] = await Promise.all([
     db.query.months.findFirst({
       where: and(eq(months.userId, userId), eq(months.ym, ym)),
     }),
@@ -45,7 +45,10 @@ export async function GET(_req: Request, { params }: Ctx) {
         gte(dailyBudgets.date, from),
         lte(dailyBudgets.date, to)
       )
-    })
+    }),
+    db.query.userSettings.findFirst({
+      where: eq(userSettings.userId, userId),
+    }),
   ]);
 
   const body: MonthData = {
@@ -54,6 +57,9 @@ export async function GET(_req: Request, { params }: Ctx) {
     closedAt: monthRow?.closedAt?.toISOString() ?? null,
     savingsAmount:
       monthRow?.savingsAmount != null ? Number(monthRow.savingsAmount) : null,
+    // ไม่ใช่ข้อมูลของเดือนจริงๆ แต่แถมมากับ response นี้เพื่อไม่ต้อง fetch เพิ่ม
+    // และกันไม่ให้โหมดกระพริบผิดตอนโหลด — skeleton คลุมช่วงนี้อยู่แล้ว
+    budgetMode: settings?.budgetMode ?? "month",
     transactions: rows.map((r) => ({
       id: r.id,
       date: r.date,

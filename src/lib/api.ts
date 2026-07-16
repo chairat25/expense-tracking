@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { getUser } from "./supabase/server";
-import { CATEGORIES } from "./shared";
+import { BUDGET_MODES, CATEGORIES } from "./shared";
 
 export const txInput = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "วันที่ต้องเป็น YYYY-MM-DD"),
@@ -20,6 +20,19 @@ export const monthPatch = z.object({
 
 export const carryOverPatch = z.object({
   savingsAmount: z.coerce.number().min(0).max(99_999_999),
+});
+
+export const settingsPatch = z.object({
+  budgetMode: z.enum(BUDGET_MODES),
+});
+
+export const dailyBudgetPatch = z.object({
+  // สูงสุด 7 เพราะโหมดสัปดาห์เขียนได้มากสุดคือทั้งสัปดาห์
+  dates: z
+    .array(z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "วันที่ต้องเป็น YYYY-MM-DD"))
+    .min(1)
+    .max(7),
+  amount: z.coerce.number().min(0).max(99_999_999),
 });
 
 export const ymSchema = z
