@@ -10,10 +10,14 @@ import MonthView from "@/components/MonthView";
 import { Skeleton } from "@/components/Skeleton";
 import type { NewTx } from "@/components/QuickAdd";
 import {
+  computeBudget,
+  datesFrom,
   daysInMonth,
   thisMonthKey,
   todayKey,
   totals,
+  weekSliceInMonth,
+  type BudgetMode,
   type MonthData,
   type Tx,
   type DailyBudget,
@@ -98,43 +102,53 @@ export default function Home() {
 
   const locked = month?.closedAt != null;
 
-  // Calculate auto daily budget based on remaining money *before* this date
-  const { initialBalance, isAutoBudget } = useMemo(() => {
-    if (!month) return { initialBalance: 0, isAutoBudget: true };
-    const existing = month.dailyBudgets?.find((b) => b.date === date);
-    if (existing) {
-      return { initialBalance: existing.amount, isAutoBudget: false };
-    }
-    // Calculate remaining before this day
-    const txsBefore = month.transactions.filter((t) => t.date < date);
-    const { income: incBefore, expense: expBefore } = totals(txsBefore);
-    const remainingBefore = month.openingBalance + incBefore - expBefore;
-    
-    const viewedDay = parseInt(date.slice(8, 10), 10);
-    const daysLeft = Math.max(1, daysInMonth(month.ym) - viewedDay + 1);
-    const autoBudget = remainingBefore / daysLeft;
-    return { initialBalance: autoBudget, isAutoBudget: true };
-  }, [month, date]);
+  // การคำนวณย้ายไป shared.ts แล้ว (ทดสอบด้วย vitest ที่ shared.test.ts)
+  const budget = useMemo(
+    () => (month ? computeBudget(month, date, month.budgetMode) : null),
+    [month, date],
+  );
 
+  /** โหมดเดือนเขียนวันเดียว โหมดสัปดาห์เขียนวันที่เหลือในสัปดาห์ (ไม่ทับวันที่ผ่านไปแล้ว) */
   async function updateDailyBudget(amount: number) {
+    if (!month) return;
+    const dates =
+      month.budgetMode === "week"
+        ? datesFrom(date, weekSliceInMonth(date, ym).to)
+        : [date];
+
     const res = await fetch(`/api/months/${ym}/daily-budgets`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ date, amount }),
+      body: JSON.stringify({ dates, amount }),
     });
     if (!res.ok) {
       setError((await res.json()).error ?? "บันทึกไม่สำเร็จ");
       return;
     }
-    const updated = await res.json();
+
+    const updated: DailyBudget[] = await res.json();
     setMonth((m) => {
       if (!m) return m;
-      const budgets = m.dailyBudgets || [];
-      const newBudgets = budgets.some(b => b.date === updated.date)
-        ? budgets.map(b => b.date === updated.date ? updated : b)
-        : [...budgets, updated];
-      return { ...m, dailyBudgets: newBudgets };
+      const byDate = new Map(m.dailyBudgets.map((b) => [b.date, b]));
+      for (const u of updated) byDate.set(u.date, u);
+      return { ...m, dailyBudgets: [...byDate.values()] };
     });
+  }
+
+  /** โหมดเป็น setting ระดับผู้ใช้ ใช้ร่วมกันทุกเดือน — เดือนอื่นจะได้ค่าใหม่ตอน fetch */
+  async function changeBudgetMode(mode: BudgetMode) {
+    const before = month;
+    setMonth((m) => (m ? { ...m, budgetMode: mode } : m));
+
+    const res = await fetch("/api/settings", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ budgetMode: mode }),
+    });
+    if (!res.ok) {
+      setMonth(before); // สลับไม่สำเร็จ ย้อนสถานะกลับ
+      setError((await res.json()).error ?? "เปลี่ยนโหมดไม่สำเร็จ");
+    }
   }
 
   async function addTx(input: NewTx) {
@@ -234,8 +248,11 @@ export default function Home() {
             onAdd={addTx}
             onDelete={deleteTx}
             locked={locked === true}
-            initialBalance={initialBalance}
+            dailyBudget={budget?.amount ?? 0}
             onBudgetChange={updateDailyBudget}
+            budgetMode={month.budgetMode}
+            onBudgetModeChange={changeBudgetMode}
+            week={budget?.week ?? null}
           />
         ) : (
           <div className="space-y-3">

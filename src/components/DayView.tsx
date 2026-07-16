@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import clsx from "clsx";
-import { ChevronLeft, ChevronRight, Pencil, Trash2, Info } from "lucide-react";
+import { ChevronLeft, ChevronRight, Pencil, Trash2 } from "lucide-react";
 import {
   CATEGORY_ICON,
   CATEGORY_LABEL,
@@ -12,6 +12,8 @@ import {
   shiftDate,
   todayKey,
   totals,
+  type BudgetInfo,
+  type BudgetMode,
   type Tx,
 } from "@/lib/shared";
 import QuickAdd, { type NewTx } from "./QuickAdd";
@@ -26,8 +28,11 @@ type Props = {
   onAdd: (tx: NewTx) => Promise<void>;
   onDelete: (id: number) => Promise<void>;
   locked: boolean;
-  initialBalance: number;
+  dailyBudget: number;
   onBudgetChange: (amount: number) => Promise<void>;
+  budgetMode: BudgetMode;
+  onBudgetModeChange: (mode: BudgetMode) => void;
+  week: BudgetInfo["week"];
 };
 
 export default function DayView({
@@ -39,17 +44,20 @@ export default function DayView({
   onAdd,
   onDelete,
   locked,
-  initialBalance,
+  dailyBudget,
   onBudgetChange,
+  budgetMode,
+  onBudgetModeChange,
+  week,
 }: Props) {
   const { income, expense } = totals(txs);
   const isToday = date === todayKey();
-  
+
   const [showPicker, setShowPicker] = useState(false);
 
   const [editingBudget, setEditingBudget] = useState(false);
-  const [draftBudget, setDraftBudget] = useState(String(initialBalance));
-  const remaining = initialBalance + income - expense;
+  const [draftBudget, setDraftBudget] = useState(String(dailyBudget));
+  const remaining = dailyBudget + income - expense;
 
   // ลบต้องกด 2 ครั้ง กันนิ้วเผลอโดนบนมือถือ — ค้างไว้ 3 วิแล้วรีเซ็ตเอง
   const [confirmId, setConfirmId] = useState<number | null>(null);
@@ -138,7 +146,11 @@ export default function DayView({
               onChange={(e) => setDraftBudget(e.target.value.replace(/[^\d.]/g, ""))}
               inputMode="decimal"
               className="tnum min-w-0 flex-1 rounded-xl border border-accent bg-surface-2 px-3 py-2 text-sm font-bold outline-none"
-              placeholder="กรอกเงินเฉลี่ยต่อวัน"
+              placeholder={
+                budgetMode === "week"
+                  ? "เงินต่อวัน (ใช้กับทุกวันที่เหลือในสัปดาห์)"
+                  : "กรอกเงินเฉลี่ยต่อวัน"
+              }
             />
             <button
               type="submit"
@@ -155,29 +167,42 @@ export default function DayView({
             </button>
           </form>
         ) : (
-          <div className="mb-2 flex items-center justify-between text-[10px] text-muted">
-            <div className="flex items-center gap-1">
-              <span>เงินเฉลี่ยต่อวัน</span>
-              {/* Removed Info button since we have a tour now */}
+          <div className="mb-2 space-y-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[10px] text-muted">เงินเฉลี่ยต่อวัน</span>
+              {!locked && (
+                <ModeToggle mode={budgetMode} onChange={onBudgetModeChange} />
+              )}
             </div>
             {!locked && (
-              <button
-                onClick={() => {
-                  setDraftBudget(String(initialBalance.toFixed(2)));
-                  setEditingBudget(true);
-                }}
-                className="flex items-center gap-1 text-accent hover:underline"
-              >
-                <Pencil size={12} /> แก้ไขเงินเฉลี่ยต่อวัน
-              </button>
+              <div className="flex justify-end">
+                <button
+                  onClick={() => {
+                    setDraftBudget(dailyBudget.toFixed(2));
+                    setEditingBudget(true);
+                  }}
+                  className="flex items-center gap-1 text-[10px] text-accent hover:underline"
+                >
+                  <Pencil size={12} />
+                  {budgetMode === "week"
+                    ? "แก้ไขงบสัปดาห์นี้"
+                    : "แก้ไขเงินเฉลี่ยต่อวัน"}
+                </button>
+              </div>
             )}
           </div>
         )}
         <div className="grid grid-cols-3 divide-x divide-border text-center">
-          <Cell label="เงินเฉลี่ยต่อวัน" value={initialBalance} tone="income" />
+          <Cell label="เฉลี่ย/วัน" value={dailyBudget} tone="income" />
           <Cell label="ใช้ไป" value={expense} tone="expense" />
           <Cell label="เหลือ" value={remaining} tone={remaining < 0 ? "expense" : "income"} strong />
         </div>
+        {week && (
+          <p className="tnum mt-2 text-center text-[11px] text-muted">
+            งบสัปดาห์นี้ {formatBaht(week.envelope)} ฿ · เหลืออีก {week.daysLeft}{" "}
+            วัน
+          </p>
+        )}
         {remaining < 0 && (
           <p className="mt-2 rounded-lg bg-expense-soft px-2 py-1.5 text-center text-[11px] text-expense">
             ใช้เกินโควตาของวันนี้ไป {formatBaht(Math.abs(remaining))} ฿
@@ -268,6 +293,44 @@ function NavBtn({
     >
       <Icon size={20} />
     </button>
+  );
+}
+
+const MODE_LABEL: Record<BudgetMode, string> = {
+  month: "เดือน",
+  week: "สัปดาห์",
+};
+
+/** สลับว่าจะหารเงินเฉลี่ยต่อวันจากก้อนรายเดือนหรือรายสัปดาห์ */
+function ModeToggle({
+  mode,
+  onChange,
+}: {
+  mode: BudgetMode;
+  onChange: (mode: BudgetMode) => void;
+}) {
+  return (
+    <div
+      role="group"
+      aria-label="โหมดคำนวณงบ"
+      className="inline-flex rounded-lg border border-border bg-surface-2 p-0.5"
+    >
+      {(Object.keys(MODE_LABEL) as BudgetMode[]).map((m) => (
+        <button
+          key={m}
+          onClick={() => onChange(m)}
+          aria-pressed={mode === m}
+          className={clsx(
+            "rounded-md px-2.5 py-1 text-[10px] transition",
+            mode === m
+              ? "bg-accent font-semibold text-white"
+              : "text-muted hover:bg-surface active:scale-95",
+          )}
+        >
+          {MODE_LABEL[m]}
+        </button>
+      ))}
+    </div>
   );
 }
 
