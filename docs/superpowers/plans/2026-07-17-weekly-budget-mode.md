@@ -1,5 +1,29 @@
 # Weekly Budget Mode Implementation Plan
 
+> ## ⚠️ สถานะ ณ 2026-07-17: เขียนโค้ดครบแล้ว แต่ยังไม่ได้ verify
+>
+> Bash classifier ล่มระหว่างทำ ทำให้รัน `npm` / `node` / `psql` ไม่ได้เลย (git ผ่านเพราะอยู่ใน allowlist)
+> โค้ดของ Task 1-7 เขียนครบและ commit แล้ว (`2a7ccbd`..`8eb86de`) แต่ **ยังไม่เคยถูก compile หรือรันเทสต์**
+>
+> **ต้องรันตามลำดับนี้ก่อนใช้งานได้:**
+>
+> ```bash
+> npm i -D vitest                                   # ยังไม่ได้ติดตั้ง — package.json มี script แล้วแต่ไม่มีตัว lib
+> npm test                                          # ยืนยันคณิตสัปดาห์ + สูตรงบ
+> npm run db:generate -- --name add_user_settings   # ยังไม่มีไฟล์ migration
+> set -a && . ./.env.development && set +a && psql "$DATABASE_URL" -f drizzle/0002_add_user_settings.sql
+> set -a && . ./.env.development && set +a && psql "$DATABASE_URL" -f drizzle/rls_settings.sql
+> npm run build
+> npm run dev                                       # แล้วไล่เช็คตาม Task 8
+> ```
+>
+> **จนกว่าจะรัน migration แอปจะพัง** — `GET /api/months/[ym]` query หาตาราง `user_settings` ที่ยังไม่มีใน DB
+>
+> จุดที่เสี่ยงผิดเพราะไม่ได้ verify:
+> - วันในสัปดาห์ในเทสต์คำนวณด้วยมือ (ดู Global Constraints) — ถ้าผิด `weekStart`/`weekSliceInMonth` จะ fail
+> - `z.enum(BUDGET_MODES)` กับ readonly tuple ของ zod 4
+> - vitest หา `src/lib/shared.test.ts` เจอโดยไม่ต้องมี config มั้ย
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** เพิ่มโหมดคำนวณเงินเฉลี่ยต่อวันจากงบก้อนรายสัปดาห์ สลับกับโหมดรายเดือนเดิมได้ เพื่อไม่ให้ตัวเลขพองเมื่อประหยัด
