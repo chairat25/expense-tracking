@@ -1,90 +1,82 @@
-import { NextResponse } from "next/server";
-import { eq, and, sql } from "drizzle-orm";
-import { createClient } from "@/lib/supabase/server";
+import { and, eq, gte, lte } from "drizzle-orm";
 import { db } from "@/db";
 import { dailyBudgets } from "@/db/schema";
-import { z } from "zod";
+import {
+  badRequest,
+  dailyBudgetPatch,
+  requireUserId,
+  unauthorized,
+  ymSchema,
+} from "@/lib/api";
+import { daysInMonth, type DailyBudget } from "@/lib/shared";
 
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ ym: string }> }
-) {
-  const { ym } = await params;
-  if (!/^\d{4}-\d{2}$/.test(ym)) {
-    return NextResponse.json({ error: "Invalid ym format" }, { status: 400 });
-  }
+type Ctx = { params: Promise<{ ym: string }> };
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+function toDailyBudget(r: {
+  id: number;
+  userId: string;
+  date: string;
+  amount: string;
+}): DailyBudget {
+  // numeric ของ drizzle มาเป็น string เสมอ ต้องแปลงก่อนส่งออก
+  // (ของเดิมส่ง string ดิบๆ ทำให้ page.tsx เก็บ string ไว้ใน state แล้ว .toFixed() พังตอนกดแก้ซ้ำ)
+  return { id: r.id, userId: r.userId, date: r.date, amount: Number(r.amount) };
+}
 
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+export async function GET(_req: Request, { params }: Ctx) {
+  const userId = await requireUserId();
+  if (!userId) return unauthorized();
 
-  // ดึง daily budgets ของเดือนนี้ทั้งหมด โดยเช็คว่า date ขึ้นต้นด้วย YYYY-MM
-  const budgets = await db
+  const parsed = ymSchema.safeParse((await params).ym);
+  if (!parsed.success) return badRequest(parsed.error.issues[0].message);
+  const ym = parsed.data;
+
+  const rows = await db
     .select()
     .from(dailyBudgets)
     .where(
       and(
-        eq(dailyBudgets.userId, user.id),
-        sql`to_char(${dailyBudgets.date}, 'YYYY-MM') = ${ym}`
-      )
+        eq(dailyBudgets.userId, userId),
+        gte(dailyBudgets.date, `${ym}-01`),
+        lte(
+          dailyBudgets.date,
+          `${ym}-${String(daysInMonth(ym)).padStart(2, "0")}`,
+        ),
+      ),
     );
 
-  return NextResponse.json(budgets);
+  return Response.json(rows.map(toDailyBudget));
 }
 
-const updateSchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  amount: z.number().min(0),
-});
+/**
+ * ตั้งงบให้หลายวันพร้อมกันด้วยค่าเดียวกัน
+ * โหมดเดือนส่ง dates ยาว 1 โหมดสัปดาห์ส่งวันที่เหลือในสัปดาห์ (สูงสุด 7) — ยิงครั้งเดียวจบทั้งคู่
+ */
+export async function PUT(req: Request, { params }: Ctx) {
+  const userId = await requireUserId();
+  if (!userId) return unauthorized();
 
-export async function PUT(
-  req: Request,
-  { params }: { params: Promise<{ ym: string }> }
-) {
-  const { ym } = await params;
-  if (!/^\d{4}-\d{2}$/.test(ym)) {
-    return NextResponse.json({ error: "Invalid ym format" }, { status: 400 });
+  const ymParsed = ymSchema.safeParse((await params).ym);
+  if (!ymParsed.success) return badRequest(ymParsed.error.issues[0].message);
+  const ym = ymParsed.data;
+
+  const parsed = dailyBudgetPatch.safeParse(await req.json());
+  if (!parsed.success) return badRequest(parsed.error.issues[0].message);
+  const { dates, amount } = parsed.data;
+
+  // กันเขียนข้ามเดือน — client คำนวณ dates เอง จึงต้องตรวจซ้ำที่นี่
+  if (dates.some((d) => !d.startsWith(ym))) {
+    return badRequest("มีวันที่ไม่ตรงกับเดือนที่ระบุ");
   }
 
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const json = await req.json();
-  const parsed = updateSchema.safeParse(json);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
-  }
-
-  const { date, amount } = parsed.data;
-
-  // Ensure the date matches the month
-  if (!date.startsWith(ym)) {
-    return NextResponse.json({ error: "Date does not match month" }, { status: 400 });
-  }
-
-  const [upserted] = await db
+  const rows = await db
     .insert(dailyBudgets)
-    .values({
-      userId: user.id,
-      date,
-      amount: String(amount),
-    })
+    .values(dates.map((date) => ({ userId, date, amount: amount.toFixed(2) })))
     .onConflictDoUpdate({
       target: [dailyBudgets.userId, dailyBudgets.date],
-      set: { amount: String(amount) },
+      set: { amount: amount.toFixed(2) },
     })
     .returning();
 
-  return NextResponse.json(upserted);
+  return Response.json(rows.map(toDailyBudget));
 }
