@@ -29,10 +29,7 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  // ต้องเรียก getUser() ตรงนี้ ห้ามตัดออก — มันคือตัวที่ต่ออายุ token ให้ session ไม่หลุด
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
