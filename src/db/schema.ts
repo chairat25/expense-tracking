@@ -14,6 +14,8 @@ import {
 
 export const txTypeEnum = pgEnum("tx_type", ["income", "expense"]);
 
+export const budgetModeEnum = pgEnum("budget_mode", ["month", "week"]);
+
 /**
  * user_id = auth.users.id ของ Supabase
  * ไม่ได้ประกาศ FK ไว้ในนี้เพราะ auth.users อยู่คนละ schema ที่ drizzle-kit ไม่ควรไปแตะ
@@ -81,6 +83,20 @@ export const savingsTransactions = pgTable("savings_transactions", {
     .defaultNow(),
 });
 
+/**
+ * setting ระดับผู้ใช้ ใช้ร่วมกันทุกเดือน
+ * เผื่อขยายเป็น feature flag ในอนาคตด้วยการเพิ่มคอลัมน์ (ยังไม่ทำในตอนนี้)
+ * ค่า enum เขียนซ้ำกับ BUDGET_MODES ใน shared.ts โดยตั้งใจ — drizzle-kit ต้องอ่าน
+ * literal ตรงๆ ตอน generate ถ้า import มาจะวิเคราะห์ไม่ออก
+ */
+export const userSettings = pgTable("user_settings", {
+  userId: uuid("user_id").primaryKey(),
+  budgetMode: budgetModeEnum("budget_mode").notNull().default("month"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export const dailyBudgets = pgTable(
   "daily_budgets",
   {
@@ -98,4 +114,5 @@ export const dailyBudgets = pgTable(
 export type Transaction = typeof transactions.$inferSelect;
 export type Month = typeof months.$inferSelect;
 export type SavingsTransaction = typeof savingsTransactions.$inferSelect;
+export type UserSettings = typeof userSettings.$inferSelect;
 export type DailyBudget = typeof dailyBudgets.$inferSelect;
