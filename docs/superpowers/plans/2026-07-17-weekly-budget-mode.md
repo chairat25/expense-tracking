@@ -1,28 +1,14 @@
 # Weekly Budget Mode Implementation Plan
 
-> ## ⚠️ สถานะ ณ 2026-07-17: เขียนโค้ดครบแล้ว แต่ยังไม่ได้ verify
+> ## ✅ สถานะ ณ 2026-07-17: verify ครบแล้ว เหลือแค่ Task 8 (เช็คด้วยมือ)
 >
-> Bash classifier ล่มระหว่างทำ ทำให้รัน `npm` / `node` / `psql` ไม่ได้เลย (git ผ่านเพราะอยู่ใน allowlist)
-> โค้ดของ Task 1-7 เขียนครบและ commit แล้ว (`2a7ccbd`..`8eb86de`) แต่ **ยังไม่เคยถูก compile หรือรันเทสต์**
+> - `npm test` — 28/28 ผ่าน (รวมเคส "ไม่ทบข้ามสัปดาห์" และ "ตัวเลขพองเมื่อประหยัด" ที่เป็นหัวใจของ feature)
+> - migration `drizzle/0003_add_user_settings.sql` + `drizzle/rls_settings.sql` apply แล้ว, RLS เปิดยืนยันแล้ว (`relrowsecurity = t`)
+> - `npm run build` ผ่าน 0 TS error, `ƒ /api/settings` ขึ้นในตารางเส้นทาง
+> - `npm run lint` ไม่มี error ใหม่ในไฟล์ที่แก้ (error ที่เจอทั้งหมดเป็นของเดิมในไฟล์อื่น: `MonthView.tsx`, `Onboarding.tsx`, `PwaInstallPrompt.tsx`, `page.tsx:40`)
+> - dev server ขึ้นได้ปกติ ไม่มี query error
 >
-> **ต้องรันตามลำดับนี้ก่อนใช้งานได้:**
->
-> ```bash
-> npm i -D vitest                                   # ยังไม่ได้ติดตั้ง — package.json มี script แล้วแต่ไม่มีตัว lib
-> npm test                                          # ยืนยันคณิตสัปดาห์ + สูตรงบ
-> npm run db:generate -- --name add_user_settings   # ยังไม่มีไฟล์ migration
-> set -a && . ./.env.development && set +a && psql "$DATABASE_URL" -f drizzle/0002_add_user_settings.sql
-> set -a && . ./.env.development && set +a && psql "$DATABASE_URL" -f drizzle/rls_settings.sql
-> npm run build
-> npm run dev                                       # แล้วไล่เช็คตาม Task 8
-> ```
->
-> **จนกว่าจะรัน migration แอปจะพัง** — `GET /api/months/[ym]` query หาตาราง `user_settings` ที่ยังไม่มีใน DB
->
-> จุดที่เสี่ยงผิดเพราะไม่ได้ verify:
-> - วันในสัปดาห์ในเทสต์คำนวณด้วยมือ (ดู Global Constraints) — ถ้าผิด `weekStart`/`weekSliceInMonth` จะ fail
-> - `z.enum(BUDGET_MODES)` กับ readonly tuple ของ zod 4
-> - vitest หา `src/lib/shared.test.ts` เจอโดยไม่ต้องมี config มั้ย
+> เหลือ **Task 8: ไล่เช็คด้วยมือใน browser** ตามรายการ checklist ท้ายไฟล์นี้
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
