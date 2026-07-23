@@ -35,6 +35,12 @@ export async function proxy(request: NextRequest) {
   const isPublic = PUBLIC_PATHS.some((p) => pathname.startsWith(p));
 
   if (!user && !isPublic) {
+    if (pathname.startsWith("/api/") && process.env.NODE_ENV !== "development") {
+      return NextResponse.json({ error: "กรุณาเข้าสู่ระบบ" }, { status: 401 });
+    }
+    if (pathname.startsWith("/api/") && process.env.NODE_ENV === "development") {
+      return response;
+    }
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

@@ -15,6 +15,7 @@ type Props = {
   savings: number;
   closed: boolean;
   loading?: boolean;
+  currentView?: "home" | "day" | "month" | "salary" | "memo";
 };
 
 /** เดือนที่ให้เลื่อนได้: ย้อนหลัง 12 เดือน ถึงเดือนปัจจุบัน และโชว์อนาคตอีก 12 เดือน (แต่กดไม่ได้) */
@@ -22,6 +23,14 @@ function monthRange(): string[] {
   const now = thisMonthKey();
   return Array.from({ length: 25 }, (_, i) => shiftMonth(now, i - 12));
 }
+
+const VIEW_HEADERS: Record<string, { icon: string; title: string }> = {
+  home: { icon: "🏠", title: "หน้าหลัก" },
+  day: { icon: "💰", title: "บันทึกรายรับรายจ่าย" },
+  salary: { icon: "💵", title: "บันทึกเงินเดือน" },
+  month: { icon: "📊", title: "สรุปรายเดือน" },
+  memo: { icon: "🧠", title: "บันทึกความจำ & เตือนความจำ" },
+};
 
 export default function MonthStrip({
   ym,
@@ -32,6 +41,7 @@ export default function MonthStrip({
   savings,
   closed,
   loading = false,
+  currentView = "day",
 }: Props) {
   const now = thisMonthKey();
   const months = monthRange();
@@ -51,13 +61,14 @@ export default function MonthStrip({
   const remaining = opening + income - expense;
   const canPrev = idx > 0;
   const canNext = ym < now; // กดไปข้างหน้าได้แค่ถึงเดือนปัจจุบัน
+  const headerInfo = VIEW_HEADERS[currentView] || VIEW_HEADERS.day;
 
   return (
     <header className="sticky top-0 z-20 bg-bg/85 backdrop-blur-md border-b border-border">
       <div className="mx-auto max-w-2xl px-3 pt-3 pb-2">
         <div className="mb-3 flex items-center justify-center gap-1.5 text-base font-bold">
-          <span>💰</span>
-          <span>บันทึกรายรับรายจ่าย</span>
+          <span>{headerInfo.icon}</span>
+          <span>{headerInfo.title}</span>
         </div>
 
         <div className="flex items-center gap-1">
@@ -84,12 +95,12 @@ export default function MonthStrip({
                   onClick={() => !isFuture && onChange(m)}
                   disabled={isFuture}
                   className={clsx(
-                    "snap-item shrink-0 rounded-full px-4 py-1.5 text-sm whitespace-nowrap transition",
+                    "snap-item shrink-0 rounded-full px-4 py-1.5 text-sm whitespace-nowrap transition-all duration-200",
                     active
-                      ? "bg-accent text-white font-semibold shadow"
+                      ? "bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white font-bold shadow-md shadow-indigo-500/30 scale-105"
                       : isFuture
                       ? "opacity-30 cursor-not-allowed text-muted"
-                      : "text-muted hover:bg-surface-2",
+                      : "text-muted hover:bg-surface-2 hover:text-foreground",
                   )}
                 >
                   {formatMonthTH(m, true)}
@@ -112,12 +123,12 @@ export default function MonthStrip({
           </button>
         </div>
 
-        <div className="relative mt-2 flex items-center justify-center gap-2">
-          <h1 className="text-center text-[15px] font-semibold">
+        <div className="relative mt-2.5 flex items-center justify-center gap-2">
+          <h1 className="text-center text-[15px] font-bold tracking-wide">
             {formatMonthTH(ym)}
           </h1>
           {closed && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 border border-border px-2 py-0.5 text-[11px] text-muted">
+            <span className="inline-flex items-center gap-1 rounded-full bg-expense-soft border border-expense/30 px-2.5 py-0.5 text-[11px] font-medium text-expense shadow-sm">
               <Lock size={11} /> ปิดยอดแล้ว
             </span>
           )}
@@ -125,23 +136,28 @@ export default function MonthStrip({
             <button
               type="submit"
               aria-label="ออกจากระบบ"
-              className="grid size-7 place-items-center rounded-full text-muted transition hover:bg-expense-soft hover:text-expense active:scale-95"
+              className="grid size-8 place-items-center rounded-xl text-muted transition hover:bg-expense-soft hover:text-expense active:scale-95"
             >
-              <LogOut size={14} />
+              <LogOut size={15} />
             </button>
           </form>
         </div>
 
-        <dl id="tour-month-summary" className="mt-2 grid grid-cols-4 gap-2 text-center">
-          <Stat label="เงินใช้เดือนนี้ทั้งหมด" value={opening} loading={loading} />
-          <Stat label="ใช้ไป" value={expense} tone="expense" loading={loading} />
-          <Stat label="คงเหลือ" value={remaining} strong loading={loading} />
-          <Stat label="เงินเก็บ" value={savings} loading={loading} />
-        </dl>
-        {income > 0 && (
-          <p className="mt-1.5 text-center text-[11px] text-muted tnum">
-            + รายรับระหว่างเดือน {formatBaht(income)} ฿
-          </p>
+        {/* ซ่อนสถิติการเงินเมื่ออยู่ในหน้าความจำ หรือหน้าหลัก */}
+        {currentView !== "memo" && currentView !== "home" && (
+          <>
+            <dl id="tour-month-summary" className="mt-2.5 grid grid-cols-4 gap-2 text-center">
+              <Stat type="opening" label="งบสัปดาห์นี้" value={opening} loading={loading} />
+              <Stat type="expense" label="ใช้ไป" value={expense} loading={loading} />
+              <Stat type="remaining" label="คงเหลือ" value={remaining} loading={loading} />
+              <Stat type="savings" label="เงินเก็บ" value={savings} loading={loading} />
+            </dl>
+            {income > 0 && (
+              <p className="mt-2 text-center text-[11px] text-emerald-400 font-medium tnum flex items-center justify-center gap-1">
+                <span>✨ + รายรับระหว่างเดือน {formatBaht(income)} ฿</span>
+              </p>
+            )}
+          </>
         )}
       </div>
     </header>
@@ -149,33 +165,32 @@ export default function MonthStrip({
 }
 
 function Stat({
+  type,
   label,
   value,
-  tone,
-  strong,
   loading,
 }: {
+  type: "opening" | "expense" | "remaining" | "savings";
   label: string;
   value: number;
-  tone?: "expense";
-  strong?: boolean;
   loading?: boolean;
 }) {
+  const styles = {
+    opening: "bg-blue-500/10 border-blue-500/25 text-blue-400",
+    expense: "bg-rose-500/10 border-rose-500/25 text-rose-400",
+    remaining: value < 0 ? "bg-rose-500/15 border-rose-500/30 text-rose-400" : "bg-emerald-500/10 border-emerald-500/25 text-emerald-400",
+    savings: "bg-indigo-500/10 border-indigo-500/25 text-indigo-400",
+  }[type];
+
   return (
-    <div className="rounded-xl bg-surface border border-border py-1.5">
-      <dt className="text-[10px] text-muted">{label}</dt>
+    <div className={clsx("rounded-2xl border py-2 px-1 backdrop-blur-md transition-all duration-200 hover:scale-[1.02]", styles)}>
+      <dt className="text-[10px] font-medium opacity-80">{label}</dt>
       {loading ? (
         <dd className="flex justify-center py-[3px]">
-          <Skeleton className="h-[15px] w-12" />
+          <Skeleton className="h-[16px] w-12" />
         </dd>
       ) : (
-        <dd
-          className={clsx(
-            "tnum text-[15px] font-semibold",
-            tone === "expense" && "text-expense",
-            strong && (value < 0 ? "text-expense" : "text-income"),
-          )}
-        >
+        <dd className="tnum text-[15px] font-bold tracking-tight">
           {formatBaht(value)}
         </dd>
       )}

@@ -205,6 +205,47 @@ export function datesFrom(from: string, to: string): string[] {
   return out;
 }
 
+export type MonthWeekInfo = {
+  weekIndex: number;
+  startDate: string;
+  endDate: string;
+  label: string;
+  days: number;
+};
+
+/** สร้างรายการช่วงสัปดาห์ในเดือน YYYY-MM (1..4/5) */
+export function getMonthWeeks(ym: string): MonthWeekInfo[] {
+  const [y, m] = ym.split("-").map(Number);
+  const totalDays = daysInMonth(ym);
+  const weeks: MonthWeekInfo[] = [];
+
+  let curDay = 1;
+  let weekIndex = 1;
+
+  while (curDay <= totalDays) {
+    const startDate = `${ym}-${String(curDay).padStart(2, "0")}`;
+    const dt = new Date(y, m - 1, curDay);
+    const dow = dt.getDay(); // 0=Sun
+    const daysUntilSunday = dow === 0 ? 0 : 7 - dow;
+    const endDayNum = Math.min(curDay + daysUntilSunday, totalDays);
+    const endDate = `${ym}-${String(endDayNum).padStart(2, "0")}`;
+
+    const numDays = endDayNum - curDay + 1;
+    weeks.push({
+      weekIndex,
+      startDate,
+      endDate,
+      label: `สัปดาห์ที่ ${weekIndex} (${curDay} - ${endDayNum} ${TH_MONTHS_SHORT[m - 1]})`,
+      days: numDays,
+    });
+
+    curDay = endDayNum + 1;
+    weekIndex++;
+  }
+
+  return weeks;
+}
+
 export type TxType = "income" | "expense";
 
 export type Tx = {
@@ -233,6 +274,19 @@ export type DailyBudget = {
   date: string;
   amount: number;
 };
+
+export type SalaryRecord = {
+  id: number;
+  userId: string;
+  ym: string;
+  amount: number;
+  receivedAt: string;
+  applyMode: "opening_balance" | "income_tx";
+  incomeTxId: number | null;
+  note: string;
+  createdAt: string;
+};
+
 
 /** รวมยอดของชุดรายการที่ส่งเข้ามา (ใช้ได้ทั้งรายวันและรายเดือน) */
 export function totals(txs: Tx[]) {

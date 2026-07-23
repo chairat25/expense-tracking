@@ -7,23 +7,39 @@ import {
   unauthorized,
 } from "@/lib/api";
 
-/** บันทึก setting ระดับผู้ใช้ — ตอนนี้มีแค่โหมดคำนวณงบ */
+/** บันทึก setting ระดับผู้ใช้ — โหมดคำนวณงบ และ เงินเดือนประจำ */
 export async function PUT(req: Request) {
   const userId = await requireUserId();
   if (!userId) return unauthorized();
 
   const parsed = settingsPatch.safeParse(await req.json());
   if (!parsed.success) return badRequest(parsed.error.issues[0].message);
-  const { budgetMode } = parsed.data;
+  const { budgetMode, defaultSalary } = parsed.data;
+
+  const updateSet: Record<string, unknown> = {};
+  if (budgetMode !== undefined) updateSet.budgetMode = budgetMode;
+  if (defaultSalary !== undefined) updateSet.defaultSalary = String(defaultSalary);
+
+  if (Object.keys(updateSet).length === 0) {
+    return badRequest("ไม่มีข้อมูลที่ต้องการอัปเดต");
+  }
 
   const [row] = await db
     .insert(userSettings)
-    .values({ userId, budgetMode })
+    .values({
+      userId,
+      ...(budgetMode ? { budgetMode } : {}),
+      ...(defaultSalary !== undefined ? { defaultSalary: String(defaultSalary) } : {}),
+    })
     .onConflictDoUpdate({
       target: userSettings.userId,
-      set: { budgetMode },
+      set: updateSet,
     })
     .returning();
 
-  return Response.json({ budgetMode: row.budgetMode });
+  return Response.json({
+    budgetMode: row.budgetMode,
+    defaultSalary: Number(row.defaultSalary ?? 0),
+  });
 }
+

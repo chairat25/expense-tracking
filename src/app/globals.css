@@ -2,35 +2,37 @@
 
 :root {
   color-scheme: light;
-  --bg: #f3f4f6;
+  --bg: #f1f5f9;
   --surface: #ffffff;
-  --surface-2: #f7f8fa;
-  --border: #d1d5db;
-  --text: #15171c;
-  --muted: #6b7280;
-  --accent: #2563eb;
-  --income: #0f9d63;
-  --income-soft: #e6f6ef;
-  --expense: #dc4b3e;
-  --expense-soft: #fdeceb;
-  --shadow: 0 1px 3px rgb(16 24 40 / 0.08), 0 8px 24px rgb(16 24 40 / 0.08);
+  --surface-2: #f8fafc;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --muted: #64748b;
+  --accent: #4f46e5;
+  --accent-light: #818cf8;
+  --income: #059669;
+  --income-soft: #d1fae5;
+  --expense: #e11d48;
+  --expense-soft: #ffe4e6;
+  --shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --bg: #0c0e12;
-    --surface: #161920;
-    --surface-2: #1c2029;
-    --border: #2a2f3a;
-    --text: #e8eaee;
-    --muted: #969ca8;
-    --accent: #6091ff;
-    --income: #35c98d;
-    --income-soft: #122e24;
-    --expense: #ff7d70;
-    --expense-soft: #34211f;
-    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 6px 20px rgb(0 0 0 / 0.28);
+    --bg: #090d16;
+    --surface: #121827;
+    --surface-2: #1e293b;
+    --border: #26334d;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --accent: #6366f1;
+    --accent-light: #a5b4fc;
+    --income: #10b981;
+    --income-soft: #064e3b;
+    --expense: #f43f5e;
+    --expense-soft: #4c0519;
+    --shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.6), 0 4px 12px -2px rgba(0, 0, 0, 0.4);
   }
 }
 
@@ -50,6 +52,10 @@
 
 body {
   background: var(--bg);
+  background-image: 
+    radial-gradient(at 10% 10%, rgba(99, 102, 241, 0.12) 0px, transparent 50%),
+    radial-gradient(at 90% 90%, rgba(16, 185, 129, 0.08) 0px, transparent 50%);
+  background-attachment: fixed;
   color: var(--text);
   -webkit-tap-highlight-color: transparent;
 }
@@ -62,8 +68,31 @@ body {
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 20px;
   box-shadow: var(--shadow);
+}
+
+@media (prefers-color-scheme: dark) {
+  .card {
+    background: rgba(18, 24, 39, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+}
+
+.gradient-accent {
+  background: linear-gradient(135deg, #3b82f6 0%, #6366f1 50%, #8b5cf6 100%);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.glow-accent {
+  box-shadow: 0 0 20px -3px rgba(99, 102, 241, 0.4);
 }
 
 /* month carousel — ปัดแล้วหยุดตรงเดือนพอดี */
@@ -89,7 +118,7 @@ body {
   position: relative;
   overflow: hidden;
   background: var(--surface-2);
-  border-radius: 8px;
+  border-radius: 10px;
 }
 .skeleton::after {
   content: "";
@@ -99,7 +128,7 @@ body {
   background: linear-gradient(
     90deg,
     transparent,
-    rgb(255 255 255 / 0.35),
+    rgba(255, 255, 255, 0.15),
     transparent
   );
   animation: skeleton-wave 1.2s ease-in-out infinite;
@@ -108,7 +137,7 @@ body {
 @keyframes pop-in {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    transform: translateY(8px) scale(0.98);
   }
   to {
     opacity: 1;
@@ -116,5 +145,5 @@ body {
   }
 }
 .pop-in {
-  animation: pop-in 0.18s ease-out;
+  animation: pop-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }

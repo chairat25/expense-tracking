@@ -37,6 +37,7 @@ export default function RootLayout({
       <body
         className="min-h-full flex flex-col relative"
         style={{ fontFamily: "var(--font-thai), system-ui, sans-serif" }}
+        suppressHydrationWarning
       >
         {children}
         <PwaInstallPrompt />

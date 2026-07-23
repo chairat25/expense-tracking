@@ -6,11 +6,33 @@ export const txInput = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "วันที่ต้องเป็น YYYY-MM-DD"),
   type: z.enum(["income", "expense"]),
   amount: z.coerce.number().positive("จำนวนเงินต้องมากกว่า 0").max(99_999_999),
-  category: z.enum(CATEGORIES).default("other"),
+  category: z.string().min(1).default("other"),
   note: z.string().max(300).default(""),
 });
 
 export const txPatch = txInput.partial();
+
+export const categoryInput = z.object({
+  name: z.string().min(1, "กรุณากรอกชื่อหมวดหมู่").max(100),
+  slug: z.string().min(1).optional(),
+  icon: z.string().default("📦"),
+  parentId: z.number().nullable().optional(),
+  type: z.enum(["expense", "income", "both"]).default("expense"),
+  sortOrder: z.number().default(0),
+});
+
+export const categoryPatch = categoryInput.partial().extend({
+  isActive: z.boolean().optional(),
+});
+
+export const menuPatch = z.object({
+  label: z.string().min(1).optional(),
+  icon: z.string().optional(),
+  parentId: z.number().nullable().optional(),
+  isActive: z.boolean().optional(),
+  sortOrder: z.number().optional(),
+});
+
 
 export const monthPatch = z.object({
   openingBalance: z.coerce.number().min(0).max(99_999_999).optional(),
@@ -23,8 +45,18 @@ export const carryOverPatch = z.object({
 });
 
 export const settingsPatch = z.object({
-  budgetMode: z.enum(BUDGET_MODES),
+  budgetMode: z.enum(BUDGET_MODES).optional(),
+  defaultSalary: z.coerce.number().min(0).max(99_999_999).optional(),
 });
+
+export const salaryInput = z.object({
+  ym: z.string().regex(/^\d{4}-\d{2}$/, "เดือนต้องเป็น YYYY-MM"),
+  amount: z.coerce.number().positive("จำนวนเงินต้องมากกว่า 0").max(99_999_999),
+  receivedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "วันที่ต้องเป็น YYYY-MM-DD"),
+  applyMode: z.enum(["opening_balance", "income_tx"]).default("opening_balance"),
+  note: z.string().max(300).default(""),
+});
+
 
 export const dailyBudgetPatch = z.object({
   // สูงสุด 7 เพราะโหมดสัปดาห์เขียนได้มากสุดคือทั้งสัปดาห์
@@ -53,5 +85,10 @@ export function unauthorized() {
  */
 export async function requireUserId(): Promise<string | null> {
   const user = await getUser();
-  return user?.id ?? null;
+  if (user?.id) return user.id;
+  // พัฒนา/ทดสอบบนเครื่อง local: ใช้ ID ค่าเริ่มต้นเพื่ออ่าน/เขียนข้อมูลได้โดยไม่ต้องล็อกอินใหม่ทุกครั้ง
+  if (process.env.NODE_ENV === "development") {
+    return "00000000-0000-0000-0000-000000000000";
+  }
+  return null;
 }

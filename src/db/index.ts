@@ -4,6 +4,11 @@ import * as schema from "./schema";
 
 type DB = ReturnType<typeof create>;
 
+const globalForDb = globalThis as unknown as {
+  conn: ReturnType<typeof postgres> | undefined;
+  db: DB | undefined;
+};
+
 function create() {
   const url = process.env.DATABASE_URL;
   if (!url) {
@@ -12,20 +17,17 @@ function create() {
     );
   }
   // prepare: false จำเป็นสำหรับ Supabase transaction pooler (pgbouncer ไม่รองรับ prepared statement)
-  const client = postgres(url, { prepare: false });
+  // max: 2 เพื่อไม่ให้เกินโควต้า pool_size: 15 ของ Supabase session pooler เมื่อรัน dev server หลายแอป
+  const client =
+    globalForDb.conn ?? postgres(url, { prepare: false, max: 2, idle_timeout: 20 });
+  if (process.env.NODE_ENV !== "production") globalForDb.conn = client;
   return drizzle(client, { schema });
 }
 
-let cached: DB | undefined;
-
-/**
- * ต่อ DB ตอนเรียกใช้จริง ไม่ใช่ตอน import
- * (ถ้าต่อตอน import ตัว `next build` จะพังทันทีเมื่อยังไม่มี DATABASE_URL)
- */
 export const db = new Proxy({} as DB, {
   get(_target, prop) {
-    cached ??= create();
-    return Reflect.get(cached, prop, cached);
+    globalForDb.db ??= create();
+    return Reflect.get(globalForDb.db, prop, globalForDb.db);
   },
 });
 

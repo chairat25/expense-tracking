@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { Plus } from "lucide-react";
 import {
@@ -12,6 +12,15 @@ import {
 } from "@/lib/shared";
 
 import LoadingBackdrop from "./LoadingBackdrop";
+
+export type DynamicCategory = {
+  id?: number;
+  slug: string;
+  name: string;
+  icon: string;
+  type?: string;
+  isActive?: boolean;
+};
 
 export type NewTx = {
   type: TxType;
@@ -33,10 +42,38 @@ export default function QuickAdd({
 }) {
   const [type, setType] = useState<TxType>("expense");
   const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState<Category>("food");
+  const [category, setCategory] = useState<string>("food");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [dynamicCategories, setDynamicCategories] = useState<DynamicCategory[]>([]);
   const amountRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    async function loadCategories() {
+      try {
+        const res = await fetch("/api/categories", { cache: "no-store" });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.categories && data.categories.length > 0) {
+            setDynamicCategories(data.categories);
+            setCategory(data.categories[0].slug);
+          }
+        }
+      } catch (e) {
+        // fallback to default categories
+      }
+    }
+    void loadCategories();
+  }, []);
+
+  const catList: DynamicCategory[] =
+    dynamicCategories.length > 0
+      ? dynamicCategories
+      : CATEGORIES.map((c) => ({
+          slug: c,
+          name: CATEGORY_LABEL[c],
+          icon: CATEGORY_ICON[c],
+        }));
 
   const value = Number(amount);
   const valid = amount.trim() !== "" && Number.isFinite(value) && value > 0;
@@ -48,7 +85,7 @@ export default function QuickAdd({
       await onAdd({
         type,
         amount: value,
-        category: type === "income" ? "other" : category,
+        category: (type === "income" ? "other" : category) as Category,
         note: note.trim(),
       });
       setAmount("");
@@ -106,24 +143,25 @@ export default function QuickAdd({
 
         {type === "expense" && (
           <div className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-0.5 snap-strip">
-            {CATEGORIES.map((c) => (
+            {catList.map((c) => (
               <button
-                key={c}
+                key={c.slug}
                 type="button"
-                onClick={() => setCategory(c)}
+                onClick={() => setCategory(c.slug)}
                 className={clsx(
                   "shrink-0 rounded-full border px-3 py-1.5 text-xs transition active:scale-95",
-                  category === c
+                  category === c.slug
                     ? "border-accent bg-accent/10 text-accent font-semibold"
                     : "border-border text-muted hover:bg-surface-2",
                 )}
               >
-                <span className="mr-1">{CATEGORY_ICON[c]}</span>
-                {CATEGORY_LABEL[c]}
+                <span className="mr-1">{c.icon}</span>
+                {c.name}
               </button>
             ))}
           </div>
         )}
+
 
         <div className="flex gap-2">
           <input

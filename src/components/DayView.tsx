@@ -217,8 +217,15 @@ export default function DayView({
       ) : (
         <ul className="card divide-y divide-border overflow-hidden">
           {txs.map((t) => (
-            <li key={t.id} className="flex items-center gap-3 p-3 pop-in">
-              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-surface-2 text-base">
+            <li key={t.id} className="flex items-center gap-3 p-3.5 pop-in hover:bg-surface-2/60 transition-colors">
+              <span
+                className={clsx(
+                  "grid size-10 shrink-0 place-items-center rounded-2xl text-lg font-bold shadow-sm transition-transform group-hover:scale-105",
+                  t.type === "income"
+                    ? "bg-emerald-500/15 border border-emerald-500/30 text-emerald-400"
+                    : "bg-indigo-500/15 border border-indigo-500/30 text-indigo-400",
+                )}
+              >
                 {t.type === "income" ? "💰" : CATEGORY_ICON[t.category]}
               </span>
 
