@@ -78,8 +78,12 @@ export async function sendWebPushNotification(
 
         await webpush.sendNotification(pushSubscription, pushPayload);
       } catch (err: any) {
-        // Remove expired subscriptions (410 Gone or 404 Not Found)
-        if (err.statusCode === 410 || err.statusCode === 404) {
+        // Remove dead subscriptions: expired (410/404), or subscribed under a
+        // VAPID key that no longer matches this server's key (400 VapidPkHashMismatch)
+        const isVapidMismatch =
+          err.statusCode === 400 && String(err.body || "").includes("VapidPkHashMismatch");
+
+        if (err.statusCode === 410 || err.statusCode === 404 || isVapidMismatch) {
           try {
             await db
               .delete(pushSubscriptions)
