@@ -321,6 +321,7 @@ export default function Home() {
   }, [navMenus]);
 
   const isViewAllowed = useMemo(() => {
+    if (view === "chat" || view === "profile") return true;
     return activeTabs.some((t) => t.view === view);
   }, [view, activeTabs]);
 
