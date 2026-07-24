@@ -7,6 +7,19 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+// Pass-through fetch event listener to prevent PWA navigation load errors
+self.addEventListener("fetch", (event) => {
+  // Only handle GET requests, pass through everything cleanly
+  if (event.request.method !== "GET") return;
+
+  event.respondWith(
+    fetch(event.request).catch((error) => {
+      console.warn("Fetch failed, returning network request", error);
+      return caches.match(event.request);
+    }),
+  );
+});
+
 self.addEventListener("push", function (event) {
   let data = { title: "ExpenseTracker", body: "มีการแจ้งเตือนใหม่ในระบบ" };
 
