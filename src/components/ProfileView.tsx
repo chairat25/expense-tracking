@@ -21,6 +21,7 @@ type ProfileData = {
   avatarUrl: string;
   bio: string;
   updatedAt: string;
+  email?: string;
 };
 
 type CommunityUser = {
@@ -36,6 +37,7 @@ export default function ProfileView() {
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [userEmail, setUserEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -67,17 +69,18 @@ export default function ProfileView() {
             setDisplayName(d.profile.displayName || "");
             setBio(d.profile.bio || "");
             setAvatarUrl(d.profile.avatarUrl || "");
+            setUserEmail(d.email || d.profile.email || "");
           }
         }
 
         if (resComm.ok) {
-          const d = await resComm.json();
-          if (!isCancelled && d.users) {
-            setFriends(d.users);
+          const dComm = await resComm.json();
+          if (!isCancelled && dComm.users) {
+            setFriends(dComm.users);
           }
         }
       } catch (err) {
-        console.error("Failed to load profile", err);
+        console.error("Failed to load profile data", err);
       } finally {
         if (!isCancelled) setLoading(false);
       }
@@ -188,7 +191,7 @@ export default function ProfileView() {
           </div>
 
           <div className="space-y-1.5 flex-1">
-            <div className="flex items-center justify-center sm:justify-start gap-2">
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
               <h2 className="text-xl font-bold text-foreground">
                 {displayName || "ผู้ใช้งาน Expense Tracker"}
               </h2>
@@ -196,6 +199,11 @@ export default function ProfileView() {
                 <ShieldCheck size={12} /> สมาชิกยืนยันตัวตน
               </span>
             </div>
+            {userEmail && (
+              <p className="text-[11px] font-mono text-indigo-400">
+                📧 {userEmail}
+              </p>
+            )}
             <p className="text-xs text-muted max-w-md">
               {bio || "เพิ่มข้อความคติประจำใจหรือเป้าหมายการเงินของคุณ..."}
             </p>
