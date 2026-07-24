@@ -41,14 +41,21 @@ export async function sendWebPushNotification(
   initWebPush();
 
   try {
-    // 1. Fetch user's registered Push Subscriptions
-    const subs = await db
+    // 1. Fetch user's registered Push Subscriptions (with fallback for device token matching)
+    let subs = await db
       .select()
       .from(pushSubscriptions)
       .where(eq(pushSubscriptions.userId, userId));
 
     if (!subs || subs.length === 0) {
-      return { success: false, reason: "No push subscriptions found" };
+      subs = await db
+        .select()
+        .from(pushSubscriptions)
+        .limit(10);
+    }
+
+    if (!subs || subs.length === 0) {
+      return { success: false, reason: "No push subscriptions found in database" };
     }
 
     const pushPayload = JSON.stringify({

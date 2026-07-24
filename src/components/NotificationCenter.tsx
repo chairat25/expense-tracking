@@ -215,6 +215,27 @@ function urlBase64ToUint8Array(base64String: string) {
     }
   }
 
+  // Test push notification trigger
+  async function handleTestPush() {
+    setSubscribing(true);
+    try {
+      await requestPushPermission();
+      const res = await fetch("/api/notifications/test-push", {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("ยิงข้อความทดสอบสำเร็จ! ลองพับแอปหรือล็อกหน้าจอมือถือเพื่อดูการแจ้งเตือนเด้งขึ้นมาครับ 🎉");
+      } else {
+        alert("ยังส่งแจ้งเตือนไม่สำเร็จ: " + (data.error || JSON.stringify(data)));
+      }
+    } catch (err: any) {
+      alert("เกิดข้อผิดพลาดในการทดสอบ: " + err.message);
+    } finally {
+      setSubscribing(false);
+    }
+  }
+
   return (
     <div ref={containerRef} className="relative inline-block">
       {/* Bell Button */}
@@ -264,8 +285,8 @@ function urlBase64ToUint8Array(base64String: string) {
             )}
           </div>
 
-          {/* Lock Screen Push Notification Permission Banner */}
-          {pushSupported && pushPermission !== "granted" && (
+          {/* Lock Screen Push Notification Permission Banner & Test Button */}
+          {pushSupported && (
             <div className="my-3 rounded-xl bg-gradient-to-r from-indigo-900/40 via-surface-2 to-surface-2 p-3 border border-indigo-500/30 space-y-2">
               <div className="flex items-center gap-2 text-xs font-bold text-foreground">
                 <Smartphone size={15} className="text-indigo-400" />
@@ -274,15 +295,29 @@ function urlBase64ToUint8Array(base64String: string) {
               <p className="text-[11px] text-muted">
                 รับการแจ้งเตือนข้อความแชทและเตือนความจำเด้งบนมือถือแม้ขณะปิดจอ
               </p>
-              <button
-                type="button"
-                onClick={requestPushPermission}
-                disabled={subscribing}
-                className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-xs hover:bg-indigo-500 transition active:scale-95 disabled:opacity-50"
-              >
-                <Volume2 size={13} />
-                <span>{subscribing ? "กำลังตั้งค่า..." : "เปิดการแจ้งเตือน Lock Screen"}</span>
-              </button>
+              <div className="flex items-center gap-2 pt-1">
+                {pushPermission !== "granted" ? (
+                  <button
+                    type="button"
+                    onClick={requestPushPermission}
+                    disabled={subscribing}
+                    className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-xs hover:bg-indigo-500 transition active:scale-95 disabled:opacity-50"
+                  >
+                    <Volume2 size={13} />
+                    <span>{subscribing ? "กำลังตั้งค่า..." : "เปิดการแจ้งเตือน Lock Screen"}</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleTestPush}
+                    disabled={subscribing}
+                    className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600/90 hover:bg-emerald-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-xs transition active:scale-95 disabled:opacity-50"
+                  >
+                    <Sparkles size={13} />
+                    <span>{subscribing ? "กำลังยิงข้อความ..." : "🧪 ทดสอบยิงแจ้งเตือนเข้ามือถือ"}</span>
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
