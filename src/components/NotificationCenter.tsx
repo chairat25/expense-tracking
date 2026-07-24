@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import clsx from "clsx";
 import { Bell, CheckCheck, Sparkles, MessageCircle, Calendar, ShieldCheck, X, Volume2, Smartphone } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -15,7 +16,11 @@ type NotificationItem = {
   createdAt: string;
 };
 
-export default function NotificationCenter() {
+type Props = {
+  align?: "left" | "right";
+};
+
+export default function NotificationCenter({ align = "right" }: Props) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
@@ -197,7 +202,12 @@ export default function NotificationCenter() {
 
       {/* Notifications Dropdown Panel */}
       {open && (
-        <div className="absolute right-0 mt-2.5 w-80 sm:w-96 rounded-2xl border border-border bg-surface p-4 shadow-2xl z-50 pop-in">
+        <div
+          className={clsx(
+            "absolute mt-2.5 w-80 sm:w-96 rounded-2xl border border-border bg-surface p-4 shadow-2xl z-50 pop-in",
+            align === "left" ? "left-0" : "right-0",
+          )}
+        >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-border/80 pb-3">
             <div className="flex items-center gap-2">

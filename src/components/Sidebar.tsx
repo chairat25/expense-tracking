@@ -250,7 +250,7 @@ export default function Sidebar({
                     </p>
                   </div>
                 </div>
-                <NotificationCenter />
+                <NotificationCenter align="left" />
               </>
             ) : (
               <div className="flex size-10 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-md shadow-indigo-600/30">
