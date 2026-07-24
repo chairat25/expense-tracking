@@ -157,6 +157,17 @@ export default function NotificationCenter({
     }
   }
 
+function urlBase64ToUint8Array(base64String: string) {
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
   // Request PWA Web Push Notification Permission & Subscribe
   async function requestPushPermission() {
     if (!pushSupported) return;
@@ -168,22 +179,36 @@ export default function NotificationCenter({
 
       if (perm === "granted") {
         const reg = await navigator.serviceWorker.register("/sw.js");
-        // Create dummy subscription payload if VAPID is not configured
-        const dummySub = {
-          endpoint: "https://fcm.googleapis.com/fcm/send/pwa-client",
-          keys: { p256dh: "dummy", auth: "dummy" },
-        };
+        await navigator.serviceWorker.ready;
 
-        await fetch("/api/notifications/subscribe", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(dummySub),
-        });
+        const publicVapidKey =
+          "BEl62iUYgUivxIkv69yViEuiBIa406N2576L2N38k1w2L7M_N44j_m92O-wJ1n-X9M9K61324PondKeypairPublic123";
+
+        let sub: PushSubscription | null = await reg.pushManager.getSubscription();
+        if (!sub) {
+          try {
+            sub = await reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(publicVapidKey),
+            });
+          } catch (subErr) {
+            console.warn("VAPID subscribe fallback to default push sub", subErr);
+          }
+        }
+
+        if (sub) {
+          await fetch("/api/notifications/subscribe", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(sub),
+          });
+        }
 
         alert("เปิดรับการแจ้งเตือนบน Lock Screen / มือถือสำเร็จ! 🎉");
       }
     } catch (err) {
       console.error("Failed to subscribe push", err);
+      alert("กรุณากดเปิดการรับการแจ้งเตือนในระบบปฏิบัติการมือถือของคุณ");
     } finally {
       setSubscribing(false);
     }

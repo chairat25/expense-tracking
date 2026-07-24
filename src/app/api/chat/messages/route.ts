@@ -2,6 +2,7 @@ import { sql, or, and, eq, asc } from "drizzle-orm";
 import { db } from "@/db";
 import { chatMessages, userNotifications, userProfiles } from "@/db/schema";
 import { requireUserId, unauthorized } from "@/lib/api";
+import { sendWebPushNotification } from "@/lib/push";
 
 export async function GET(req: Request) {
   const userId = await requireUserId();
@@ -67,17 +68,28 @@ export async function POST(req: Request) {
 
     const senderName = senderProfile?.displayName || "เพื่อนในคอมมูนิตี้";
 
-    // Insert Chat Notification for Receiver
+    // Insert Chat Notification for Receiver & Send Native Mobile Web Push
     try {
+      const notiTitle = `💬 ข้อความใหม่จาก ${senderName}`;
+      const notiBody = content.trim().length > 40 ? content.trim().slice(0, 40) + "..." : content.trim();
+
       await db.insert(userNotifications).values({
         userId: receiverId,
-        title: `💬 ข้อความใหม่จาก ${senderName}`,
-        message: content.trim().length > 40 ? content.trim().slice(0, 40) + "..." : content.trim(),
+        title: notiTitle,
+        message: notiBody,
         type: "chat",
         link: "/home",
       });
+
+      // Send Native Web Push Notification to Receiver's device/lock screen
+      void sendWebPushNotification(receiverId, {
+        title: notiTitle,
+        body: notiBody,
+        icon: senderProfile?.avatarUrl || "/icon-192.png",
+        url: "/",
+      });
     } catch (e) {
-      console.error("Failed to insert chat notification", e);
+      console.error("Failed to insert/send chat notification", e);
     }
 
     return Response.json({ success: true, message: newMessage });
