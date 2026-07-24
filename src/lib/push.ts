@@ -3,14 +3,9 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { pushSubscriptions } from "@/db/schema";
 
-// Standard VAPID keys for Web Push (Public/Private Keypair)
-const VAPID_PUBLIC_KEY =
-  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
-  "BEl62iUYgUivxIkv69yViEuiBIa406N2576L2N38k1w2L7M_N44j_m92O-wJ1n-X9M9K61324PondKeypairPublic123";
-
-const VAPID_PRIVATE_KEY =
-  process.env.VAPID_PRIVATE_KEY ||
-  "92M_PondPrivateKeyForWebPushVapidProtocolSecret123";
+// VAPID keys for Web Push read strictly from environment variables
+const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "";
 
 const VAPID_SUBJECT = "mailto:support@expensetracking.app";
 
