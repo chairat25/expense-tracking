@@ -3,6 +3,7 @@ import { Noto_Sans_Thai } from "next/font/google";
 import "./globals.css";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import Onboarding from "@/components/Onboarding";
+import PullToRefresh from "@/components/PullToRefresh";
 
 const notoThai = Noto_Sans_Thai({
   variable: "--font-thai",
@@ -13,7 +14,7 @@ const notoThai = Noto_Sans_Thai({
 export const metadata: Metadata = {
   title: "บันทึกรายรับรายจ่าย",
   description: "จดรายรับรายจ่ายรายวัน สรุปยอดสิ้นเดือน",
-  manifest: "/manifest.webmanifest",
+  manifest: "/manifest.json",
 };
 
 export const viewport: Viewport = {
@@ -39,22 +40,10 @@ export default function RootLayout({
         style={{ fontFamily: "var(--font-thai), system-ui, sans-serif" }}
         suppressHydrationWarning
       >
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                  for (let registration of registrations) {
-                    registration.unregister();
-                  }
-                });
-              }
-            `,
-          }}
-        />
         {children}
         <PwaInstallPrompt />
         <Onboarding />
+        <PullToRefresh />
       </body>
     </html>
   );
