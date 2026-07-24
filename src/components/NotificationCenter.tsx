@@ -210,7 +210,7 @@ export default function NotificationCenter({
       {open && (
         <div
           className={clsx(
-            "fixed sm:absolute top-14 sm:top-full mt-1.5 w-[calc(100vw-1rem)] sm:w-96 max-w-sm rounded-2xl border border-border bg-surface/98 backdrop-blur-2xl p-4 shadow-2xl z-50 pop-in",
+            "fixed sm:absolute top-14 sm:top-full mt-1.5 w-[calc(100vw-1rem)] sm:w-96 max-w-sm rounded-2xl border border-border bg-surface/98 backdrop-blur-2xl p-4 shadow-2xl z-[100] pop-in",
             align === "left" ? "left-2 sm:left-0" : "right-2 sm:right-0",
           )}
         >

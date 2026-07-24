@@ -26,7 +26,7 @@ export default function AppHeader({
   onSelectView,
 }: Props) {
   return (
-    <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border/80 bg-surface/90 backdrop-blur-xl px-4 py-3 lg:hidden">
+    <header className="sticky top-0 z-50 flex items-center justify-between border-b border-border/80 bg-surface/95 backdrop-blur-xl px-4 py-3 lg:hidden">
       <div className="flex items-center gap-3">
         <button
           type="button"
