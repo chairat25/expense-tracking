@@ -278,7 +278,7 @@ export default function DirectChatModal({ friend, onClose }: Props) {
         {/* Input Bar */}
         <form
           onSubmit={handleSend}
-          className="border-t border-border/80 bg-surface-2/60 p-3 flex items-center gap-2"
+          className="border-t border-border/80 bg-surface-2/60 px-3 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] flex items-center gap-2"
         >
           <input
             type="text"

@@ -168,6 +168,13 @@ function urlBase64ToUint8Array(base64String: string) {
   return outputArray;
 }
 
+function sameKey(a: ArrayBuffer | null, b: Uint8Array) {
+  if (!a) return false;
+  const bytesA = new Uint8Array(a);
+  if (bytesA.length !== b.length) return false;
+  return bytesA.every((byte, i) => byte === b[i]);
+}
+
   // Request PWA Web Push Notification Permission & Subscribe
   async function requestPushPermission() {
     if (!pushSupported) return;
@@ -184,24 +191,32 @@ function urlBase64ToUint8Array(base64String: string) {
         const publicVapidKey =
           process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
           "BLq8KJ36KWbhTMIgZ0s1jvLe_jpzR3GVm1POCu0tbmCve02bjQTj0c5LnivST5zkcvy98y87jMMwahl2pcNEhvg";
+        const applicationServerKey = urlBase64ToUint8Array(publicVapidKey);
 
-        // Always unsubscribe stale tokens bound to previous VAPID key hashes
+        // Reuse the existing subscription as-is; only replace it when it was
+        // created under a different (stale/rotated) VAPID key
         let sub: PushSubscription | null = await reg.pushManager.getSubscription();
-        if (sub) {
+        let isNewSubscription = false;
+
+        if (sub && !sameKey(sub.options.applicationServerKey, applicationServerKey)) {
           try {
             await sub.unsubscribe();
           } catch {
             // ignore
           }
+          sub = null;
         }
 
-        try {
-          sub = await reg.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(publicVapidKey),
-          });
-        } catch (subErr) {
-          console.warn("VAPID subscribe error", subErr);
+        if (!sub) {
+          try {
+            sub = await reg.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey,
+            });
+            isNewSubscription = true;
+          } catch (subErr) {
+            console.warn("VAPID subscribe error", subErr);
+          }
         }
 
         if (sub) {
@@ -212,7 +227,9 @@ function urlBase64ToUint8Array(base64String: string) {
           });
         }
 
-        alert("เปิดรับการแจ้งเตือนบน Lock Screen / มือถือสำเร็จ! 🎉");
+        if (isNewSubscription) {
+          alert("เปิดรับการแจ้งเตือนบน Lock Screen / มือถือสำเร็จ! 🎉");
+        }
       }
     } catch (err) {
       console.error("Failed to subscribe push", err);
