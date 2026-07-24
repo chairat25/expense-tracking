@@ -11,6 +11,7 @@ import SalaryView from "@/components/SalaryView";
 import MemoView from "@/components/MemoView";
 import HomeView from "@/components/HomeView";
 import ProfileView from "@/components/ProfileView";
+import ChatView from "@/components/ChatView";
 import Sidebar from "@/components/Sidebar";
 import AppHeader from "@/components/AppHeader";
 import { Skeleton } from "@/components/Skeleton";
@@ -32,7 +33,7 @@ import {
 import RestrictedNotice from "@/components/RestrictedNotice";
 import { createClient } from "@/lib/supabase/client";
 
-type View = "home" | "day" | "month" | "salary" | "memo" | "profile";
+type View = "home" | "day" | "month" | "salary" | "memo" | "profile" | "chat";
 
 type DynamicMenu = {
   id: number;
@@ -421,6 +422,8 @@ export default function Home() {
             <MemoView />
           ) : view === "profile" ? (
             <ProfileView />
+          ) : view === "chat" ? (
+            <ChatView />
           ) : (
             <div className="space-y-3">
               <MonthView

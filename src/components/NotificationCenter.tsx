@@ -18,9 +18,15 @@ type NotificationItem = {
 
 type Props = {
   align?: "left" | "right";
+  onOpenChat?: (friendId?: string) => void;
+  onSelectView?: (view: any) => void;
 };
 
-export default function NotificationCenter({ align = "right" }: Props) {
+export default function NotificationCenter({
+  align = "right",
+  onOpenChat,
+  onSelectView,
+}: Props) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
@@ -204,8 +210,8 @@ export default function NotificationCenter({ align = "right" }: Props) {
       {open && (
         <div
           className={clsx(
-            "absolute mt-2.5 w-80 sm:w-96 rounded-2xl border border-border bg-surface p-4 shadow-2xl z-50 pop-in",
-            align === "left" ? "left-0" : "right-0",
+            "fixed sm:absolute top-14 sm:top-full mt-1.5 w-[calc(100vw-1rem)] sm:w-96 max-w-sm rounded-2xl border border-border bg-surface/98 backdrop-blur-2xl p-4 shadow-2xl z-50 pop-in",
+            align === "left" ? "left-2 sm:left-0" : "right-2 sm:right-0",
           )}
         >
           {/* Header */}
@@ -260,11 +266,19 @@ export default function NotificationCenter({ align = "right" }: Props) {
               notifications.map((n) => (
                 <div
                   key={n.id}
-                  onClick={() => markRead(n.id)}
+                  onClick={() => {
+                    void markRead(n.id);
+                    setOpen(false);
+                    if (n.type === "chat") {
+                      onSelectView?.("chat");
+                    } else if (n.type === "memo") {
+                      onSelectView?.("memo");
+                    }
+                  }}
                   className={`flex gap-3 rounded-xl p-3 border text-xs cursor-pointer transition ${
                     n.isRead
                       ? "border-border/50 bg-surface-2/40 opacity-75"
-                      : "border-indigo-500/30 bg-indigo-500/10 font-medium"
+                      : "border-indigo-500/30 bg-indigo-500/10 font-medium hover:border-indigo-500/60"
                   }`}
                 >
                   <div className="shrink-0 pt-0.5">

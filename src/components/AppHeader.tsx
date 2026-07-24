@@ -17,6 +17,7 @@ const VIEW_TITLES: Record<View, string> = {
   month: "สรุปรายเดือน",
   memo: "ความจำ & เตือนความจำ",
   profile: "โปรไฟล์ส่วนตัว",
+  chat: "แชท & ข้อความ (Messenger)",
 };
 
 export default function AppHeader({
@@ -38,26 +39,26 @@ export default function AppHeader({
 
         <div className="flex items-center gap-2">
           <div className="flex size-7 items-center justify-center rounded-xl bg-indigo-600 text-white shadow-xs">
-            <Wallet size={14} />
+            <Wallet size={15} />
           </div>
           <div>
-            <h2 className="text-xs font-bold text-foreground">
+            <h1 className="text-xs font-bold text-foreground tracking-tight line-clamp-1">
               {VIEW_TITLES[currentView] || "ExpenseTracker"}
-            </h2>
-            <p className="text-[9px] text-muted font-medium">ExpenseTracker App</p>
+            </h1>
           </div>
         </div>
       </div>
 
+      {/* Right Controls */}
       <div className="flex items-center gap-2">
-        <NotificationCenter />
+        <NotificationCenter onSelectView={onSelectView} />
         <button
           type="button"
           onClick={() => onSelectView("profile")}
-          className="flex size-9 items-center justify-center rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/25 transition active:scale-95"
+          className="flex size-9 items-center justify-center rounded-xl bg-surface-2 border border-border text-indigo-400 hover:bg-surface transition active:scale-95 shadow-xs"
           title="โปรไฟล์"
         >
-          <User size={16} />
+          <User size={17} />
         </button>
       </div>
     </header>

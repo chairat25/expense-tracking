@@ -15,7 +15,7 @@ type Props = {
   savings: number;
   closed: boolean;
   loading?: boolean;
-  currentView?: "home" | "day" | "month" | "salary" | "memo" | "profile";
+  currentView?: "home" | "day" | "month" | "salary" | "memo" | "profile" | "chat";
 };
 
 /** เดือนที่ให้เลื่อนได้: ย้อนหลัง 12 เดือน ถึงเดือนปัจจุบัน และโชว์อนาคตอีก 12 เดือน (แต่กดไม่ได้) */
@@ -31,6 +31,7 @@ const VIEW_HEADERS: Record<string, { icon: string; title: string }> = {
   month: { icon: "📊", title: "สรุปรายเดือน" },
   memo: { icon: "🧠", title: "บันทึกความจำ & เตือนความจำ" },
   profile: { icon: "👤", title: "โปรไฟล์ส่วนตัว & สังคมคอมมูนิตี้" },
+  chat: { icon: "💬", title: "แชท & ข้อความ (Messenger)" },
 };
 
 export default function MonthStrip({

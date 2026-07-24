@@ -9,6 +9,7 @@ import {
   CalendarDays,
   BookmarkCheck,
   User,
+  MessageCircle,
   ChevronLeft,
   ChevronRight,
   X,
@@ -20,7 +21,7 @@ import {
 import { formatBaht, type MonthData } from "@/lib/shared";
 import NotificationCenter from "./NotificationCenter";
 
-export type View = "home" | "day" | "month" | "salary" | "memo" | "profile";
+export type View = "home" | "day" | "month" | "salary" | "memo" | "profile" | "chat";
 
 type SidebarTab = {
   key: string;
@@ -137,6 +138,14 @@ export default function Sidebar({
       title: "บัญชี & สังคม",
       items: [
         {
+          key: "chat",
+          label: "แชท & ข้อความ",
+          icon: <MessageCircle size={18} />,
+          view: "chat",
+          category: "account",
+          badge: "Messenger",
+        },
+        {
           key: "profile",
           label: "โปรไฟล์ส่วนตัว",
           icon: <User size={18} />,
@@ -250,7 +259,7 @@ export default function Sidebar({
                     </p>
                   </div>
                 </div>
-                <NotificationCenter align="left" />
+                <NotificationCenter align="left" onSelectView={onSelectView} />
               </>
             ) : (
               <div className="flex size-10 items-center justify-center rounded-2xl bg-indigo-600 text-white shadow-md shadow-indigo-600/30">
