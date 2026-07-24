@@ -39,6 +39,19 @@ export default function RootLayout({
         style={{ fontFamily: "var(--font-thai), system-ui, sans-serif" }}
         suppressHydrationWarning
       >
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                  for (let registration of registrations) {
+                    registration.unregister();
+                  }
+                });
+              }
+            `,
+          }}
+        />
         {children}
         <PwaInstallPrompt />
         <Onboarding />
