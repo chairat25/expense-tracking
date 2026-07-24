@@ -3,9 +3,14 @@ import { eq } from "drizzle-orm";
 import { db } from "@/db";
 import { pushSubscriptions } from "@/db/schema";
 
-// VAPID keys for Web Push read strictly from environment variables
-const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
-const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "";
+// Standard VAPID keys for Web Push Protocol (RFC 8292)
+const VAPID_PUBLIC_KEY =
+  process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
+  "BLq8KJ36KWbhTMIgZ0s1jvLe_jpzR3GVm1POCu0tbmCve02bjQTj0c5LnivST5zkcvy98y87jMMwahl2pcNEhvg";
+
+const VAPID_PRIVATE_KEY =
+  process.env.VAPID_PRIVATE_KEY ||
+  "Qedr22LhfT67eM9fSP_FMm4C7Fl95goSMZE73xfdewg";
 
 const VAPID_SUBJECT = "mailto:support@expensetracking.app";
 

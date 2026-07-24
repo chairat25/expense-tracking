@@ -181,7 +181,9 @@ function urlBase64ToUint8Array(base64String: string) {
         const reg = await navigator.serviceWorker.register("/sw.js");
         await navigator.serviceWorker.ready;
 
-        const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || "";
+        const publicVapidKey =
+          process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
+          "BLq8KJ36KWbhTMIgZ0s1jvLe_jpzR3GVm1POCu0tbmCve02bjQTj0c5LnivST5zkcvy98y87jMMwahl2pcNEhvg";
 
         let sub: PushSubscription | null = await reg.pushManager.getSubscription();
         if (!sub) {
