@@ -64,30 +64,43 @@ export default function DirectChatModal({ friend, onClose }: Props) {
   useEffect(() => {
     if (!friendId) return;
 
+    let channel: ReturnType<ReturnType<typeof createClient>["channel"]> | null = null;
     const supabase = createClient();
-    const channel = supabase
-      .channel(`chat_${friendId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "chat_messages",
-        },
-        (payload) => {
-          const newMsg = payload.new as ChatMessageItem;
-          if (
-            (newMsg.senderId === friendId && newMsg.receiverId) ||
-            (newMsg.receiverId === friendId && newMsg.senderId)
-          ) {
-            setMessages((prev) => [...prev, newMsg]);
-          }
-        },
-      )
-      .subscribe();
+
+    try {
+      const channelId = `chat-${friendId}-${Math.random().toString(36).substring(2, 9)}`;
+      channel = supabase
+        .channel(channelId)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "chat_messages",
+          },
+          (payload) => {
+            const newMsg = payload.new as ChatMessageItem;
+            if (
+              (newMsg.senderId === friendId && newMsg.receiverId) ||
+              (newMsg.receiverId === friendId && newMsg.senderId)
+            ) {
+              setMessages((prev) => [...prev, newMsg]);
+            }
+          },
+        )
+        .subscribe();
+    } catch (err) {
+      console.error("Realtime subscription error in DirectChatModal", err);
+    }
 
     return () => {
-      void supabase.removeChannel(channel);
+      if (channel) {
+        try {
+          void supabase.removeChannel(channel);
+        } catch {
+          // ignore
+        }
+      }
     };
   }, [friendId]);
 

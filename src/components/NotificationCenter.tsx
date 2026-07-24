@@ -56,38 +56,50 @@ export default function NotificationCenter() {
 
   // 2. Supabase Realtime Subscription for Instant Notifications
   useEffect(() => {
+    let channel: ReturnType<ReturnType<typeof createClient>["channel"]> | null = null;
     const supabase = createClient();
-    const channel = supabase
-      .channel("user-notifications-realtime")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "user_notifications",
-        },
-        (payload) => {
-          const newNoti = payload.new as NotificationItem;
-          setNotifications((prev) => [newNoti, ...prev]);
-          setUnreadCount((c) => c + 1);
 
-          // Trigger In-App Audio or Native Notification if permitted
-          if (Notification.permission === "granted") {
-            try {
-              new Notification(newNoti.title, {
-                body: newNoti.message,
-                icon: "/icon-192.png",
-              });
-            } catch {
-              // ignore
+    try {
+      const channelId = `noti-realtime-${Math.random().toString(36).substring(2, 9)}`;
+      channel = supabase
+        .channel(channelId)
+        .on(
+          "postgres_changes",
+          {
+            event: "INSERT",
+            schema: "public",
+            table: "user_notifications",
+          },
+          (payload) => {
+            const newNoti = payload.new as NotificationItem;
+            setNotifications((prev) => [newNoti, ...prev]);
+            setUnreadCount((c) => c + 1);
+
+            if (typeof window !== "undefined" && Notification.permission === "granted") {
+              try {
+                new Notification(newNoti.title, {
+                  body: newNoti.message,
+                  icon: "/icon-192.png",
+                });
+              } catch {
+                // ignore
+              }
             }
-          }
-        },
-      )
-      .subscribe();
+          },
+        )
+        .subscribe();
+    } catch (err) {
+      console.error("Realtime subscription error in NotificationCenter", err);
+    }
 
     return () => {
-      void supabase.removeChannel(channel);
+      if (channel) {
+        try {
+          void supabase.removeChannel(channel);
+        } catch {
+          // ignore
+        }
+      }
     };
   }, []);
 
