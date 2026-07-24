@@ -324,14 +324,176 @@ async function main() {
     `);
   } catch(e) { console.log(e); }
 
-  // Seed default 'home' & 'memo' menus
+  // Seed default 'home', 'memo', & 'profile' menus
   await db.execute(sql`
     INSERT INTO "app_menus" ("key", "label", "icon", "target_view", "sort_order")
     VALUES 
       ('home', 'หน้าหลัก', 'Home', 'home', 0),
-      ('memo', 'ความจำ', 'BookmarkCheck', 'memo', 4)
+      ('memo', 'ความจำ', 'BookmarkCheck', 'memo', 4),
+      ('profile', 'โปรไฟล์', 'User', 'profile', 5)
     ON CONFLICT ("key") DO NOTHING;
   `);
+
+  // 0008 Migration for user_profiles, user_friends, and chat_messages
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS public.user_profiles (
+      user_id UUID PRIMARY KEY,
+      display_name TEXT NOT NULL DEFAULT '',
+      avatar_url TEXT NOT NULL DEFAULT '',
+      bio TEXT NOT NULL DEFAULT '',
+      updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  await db.execute(sql`
+    ALTER TABLE public.user_profiles ENABLE ROW LEVEL SECURITY;
+  `);
+
+  try {
+    await db.execute(sql`
+      CREATE POLICY "public read user_profiles"
+      ON public.user_profiles FOR SELECT
+      TO authenticated
+      USING (true);
+    `);
+  } catch(e) { console.log(e); }
+
+  try {
+    await db.execute(sql`
+      CREATE POLICY "own user_profiles update"
+      ON public.user_profiles FOR ALL
+      TO authenticated
+      USING (auth.uid() = user_id)
+      WITH CHECK (auth.uid() = user_id);
+    `);
+  } catch(e) { console.log(e); }
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS public.user_friends (
+      id SERIAL PRIMARY KEY,
+      user_id UUID NOT NULL,
+      friend_id UUID NOT NULL,
+      status TEXT NOT NULL DEFAULT 'accepted',
+      created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  await db.execute(sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS user_friends_user_friend_uq
+    ON public.user_friends (user_id, friend_id);
+  `);
+
+  await db.execute(sql`
+    ALTER TABLE public.user_friends ENABLE ROW LEVEL SECURITY;
+  `);
+
+  try {
+    await db.execute(sql`
+      CREATE POLICY "own user_friends"
+      ON public.user_friends FOR ALL
+      TO authenticated
+      USING (auth.uid() = user_id OR auth.uid() = friend_id)
+      WITH CHECK (auth.uid() = user_id);
+    `);
+  } catch(e) { console.log(e); }
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS public.chat_messages (
+      id SERIAL PRIMARY KEY,
+      sender_id UUID NOT NULL,
+      receiver_id UUID NOT NULL,
+      content TEXT NOT NULL,
+      created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS chat_messages_sender_receiver_idx
+    ON public.chat_messages (sender_id, receiver_id, created_at);
+  `);
+
+  await db.execute(sql`
+    ALTER TABLE public.chat_messages ENABLE ROW LEVEL SECURITY;
+  `);
+
+  try {
+    await db.execute(sql`
+      CREATE POLICY "own chat_messages"
+      ON public.chat_messages FOR ALL
+      TO authenticated
+      USING (auth.uid() = sender_id OR auth.uid() = receiver_id)
+      WITH CHECK (auth.uid() = sender_id);
+    `);
+  } catch(e) { console.log(e); }
+
+  try {
+    await db.execute(sql`
+      ALTER PUBLICATION supabase_realtime ADD TABLE chat_messages;
+    `);
+  } catch(e) { console.log(e); }
+
+  // 0009 Migration for user_notifications and push_subscriptions
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS public.user_notifications (
+      id SERIAL PRIMARY KEY,
+      user_id UUID NOT NULL,
+      title TEXT NOT NULL,
+      message TEXT NOT NULL,
+      type TEXT NOT NULL DEFAULT 'memo',
+      link TEXT NOT NULL DEFAULT '',
+      is_read BOOLEAN NOT NULL DEFAULT FALSE,
+      created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS user_notifications_user_idx
+    ON public.user_notifications (user_id, created_at DESC);
+  `);
+
+  await db.execute(sql`
+    ALTER TABLE public.user_notifications ENABLE ROW LEVEL SECURITY;
+  `);
+
+  try {
+    await db.execute(sql`
+      CREATE POLICY "own user_notifications"
+      ON public.user_notifications FOR ALL
+      TO authenticated
+      USING (auth.uid() = user_id)
+      WITH CHECK (auth.uid() = user_id);
+    `);
+  } catch(e) { console.log(e); }
+
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS public.push_subscriptions (
+      id SERIAL PRIMARY KEY,
+      user_id UUID NOT NULL,
+      endpoint TEXT NOT NULL,
+      keys JSONB NOT NULL,
+      created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    );
+  `);
+
+  await db.execute(sql`
+    ALTER TABLE public.push_subscriptions ENABLE ROW LEVEL SECURITY;
+  `);
+
+  try {
+    await db.execute(sql`
+      CREATE POLICY "own push_subscriptions"
+      ON public.push_subscriptions FOR ALL
+      TO authenticated
+      USING (auth.uid() = user_id)
+      WITH CHECK (auth.uid() = user_id);
+    `);
+  } catch(e) { console.log(e); }
+
+  try {
+    await db.execute(sql`
+      ALTER PUBLICATION supabase_realtime ADD TABLE user_notifications;
+    `);
+  } catch(e) { console.log(e); }
 
   console.log("Migration completed.");
 }

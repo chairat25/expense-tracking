@@ -255,6 +255,75 @@ export const weeklyEnvelopes = pgTable(
   ],
 );
 
+export const userProfiles = pgTable("user_profiles", {
+  userId: uuid("user_id").primaryKey(),
+  displayName: text("display_name").notNull().default(""),
+  avatarUrl: text("avatar_url").notNull().default(""),
+  bio: text("bio").notNull().default(""),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const userFriends = pgTable(
+  "user_friends",
+  {
+    id: serial("id").primaryKey(),
+    userId: uuid("user_id").notNull(),
+    friendId: uuid("friend_id").notNull(),
+    status: text("status").notNull().default("accepted"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("user_friends_user_friend_uq").on(t.userId, t.friendId),
+  ],
+);
+
+export const chatMessages = pgTable(
+  "chat_messages",
+  {
+    id: serial("id").primaryKey(),
+    senderId: uuid("sender_id").notNull(),
+    receiverId: uuid("receiver_id").notNull(),
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("chat_messages_sender_receiver_idx").on(
+      t.senderId,
+      t.receiverId,
+      t.createdAt,
+    ),
+  ],
+);
+
+export const userNotifications = pgTable("user_notifications", {
+  id: serial("id").primaryKey(),
+  userId: uuid("user_id").notNull(),
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  type: text("type").notNull().default("memo"), // 'memo' | 'chat' | 'system'
+  link: text("link").notNull().default(""),
+  isRead: boolean("is_read").notNull().default(false),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: uuid("user_id").notNull(),
+  endpoint: text("endpoint").notNull(),
+  keys: jsonb("keys").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export type Transaction = typeof transactions.$inferSelect;
 export type Month = typeof months.$inferSelect;
 export type SavingsTransaction = typeof savingsTransactions.$inferSelect;
@@ -268,6 +337,11 @@ export type MemoTopic = typeof memoTopics.$inferSelect;
 export type MemoEntry = typeof memoEntries.$inferSelect;
 export type SalaryPocket = typeof salaryPockets.$inferSelect;
 export type WeeklyEnvelope = typeof weeklyEnvelopes.$inferSelect;
+export type UserProfile = typeof userProfiles.$inferSelect;
+export type UserFriend = typeof userFriends.$inferSelect;
+export type ChatMessage = typeof chatMessages.$inferSelect;
+export type UserNotification = typeof userNotifications.$inferSelect;
+export type PushSubscriptionItem = typeof pushSubscriptions.$inferSelect;
 
 
 

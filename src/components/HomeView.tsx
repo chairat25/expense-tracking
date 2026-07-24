@@ -15,6 +15,8 @@ import {
   Loader2,
   Calendar,
   Info,
+  Users,
+  MessageCircle,
 } from "lucide-react";
 import {
   CATEGORY_ICON,
@@ -27,6 +29,7 @@ import {
   type Category,
   type MonthData,
 } from "@/lib/shared";
+import DirectChatModal from "./DirectChatModal";
 
 type Props = {
   month: MonthData | null;
@@ -45,11 +48,43 @@ type CategoryAnalytics = {
   amount: number;
 };
 
+type CommunityUser = {
+  userId: string;
+  displayName: string;
+  avatarUrl: string;
+  bio: string;
+  isOnline: boolean;
+};
+
 export default function HomeView({ month }: Props) {
   const [range, setRange] = useState<Range>("1M");
   const [loading, setLoading] = useState(false);
   const [historicalData, setHistoricalData] = useState<MonthlyAnalytics[]>([]);
   const [historicalCategories, setHistoricalCategories] = useState<CategoryAnalytics[]>([]);
+
+  // Community & Direct Chat States
+  const [communityUsers, setCommunityUsers] = useState<CommunityUser[]>([]);
+  const [activeChatFriend, setActiveChatFriend] = useState<CommunityUser | null>(null);
+
+  // Load Community Users List
+  useEffect(() => {
+    let isCancelled = false;
+    async function loadCommunity() {
+      try {
+        const res = await fetch("/api/community/users");
+        const data = await res.json();
+        if (!isCancelled && data.users) {
+          setCommunityUsers(data.users);
+        }
+      } catch (err) {
+        console.error("Failed to load community users", err);
+      }
+    }
+    void loadCommunity();
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
 
   // Hover Tooltip State
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -546,6 +581,74 @@ export default function HomeView({ month }: Props) {
           </p>
         )}
       </div>
+
+      {/* 4. Community Section (Horizontal Scrollable User List) */}
+      <div className="card space-y-3.5 p-5">
+        <div className="flex items-center justify-between border-b border-border/80 pb-2.5">
+          <div className="flex items-center gap-2">
+            <Users className="text-indigo-400" size={18} />
+            <h3 className="text-sm font-bold text-foreground">
+              Community (สังคมผู้ใช้งาน)
+            </h3>
+          </div>
+          <span className="text-[11px] text-muted font-medium">
+            {communityUsers.length} สมาชิกในระบบ
+          </span>
+        </div>
+
+        {/* Horizontal Scroll List */}
+        <div className="flex items-center gap-3 overflow-x-auto pb-2 pt-1 scrollbar-none snap-x">
+          {communityUsers.map((user) => (
+            <div
+              key={user.userId}
+              className="flex w-44 shrink-0 snap-start flex-col items-center justify-between rounded-2xl border border-border/80 bg-surface-2/60 p-3.5 text-center shadow-xs transition hover:border-indigo-500/50 hover:bg-surface-2"
+            >
+              <div className="relative">
+                {user.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.displayName}
+                    className="size-12 rounded-2xl object-cover border border-indigo-500/30 shadow-sm"
+                  />
+                ) : (
+                  <div className="flex size-12 items-center justify-center rounded-2xl bg-indigo-500/20 text-indigo-400 font-bold border border-indigo-500/30 text-sm">
+                    {user.displayName.slice(0, 2).toUpperCase()}
+                  </div>
+                )}
+                {user.isOnline && (
+                  <span className="absolute -bottom-0.5 -right-0.5 size-3 rounded-full bg-emerald-500 border-2 border-surface" />
+                )}
+              </div>
+
+              <div className="my-2 space-y-0.5 w-full">
+                <h4 className="text-xs font-bold text-foreground truncate">
+                  {user.displayName}
+                </h4>
+                <p className="text-[10px] text-muted line-clamp-2 min-h-[28px]">
+                  {user.bio || "สมาชิกสังคมการเงิน"}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setActiveChatFriend(user)}
+                className="flex w-full items-center justify-center gap-1 rounded-xl bg-indigo-600 px-3 py-1.5 text-[11px] font-semibold text-white shadow-xs hover:bg-indigo-500 transition active:scale-95"
+              >
+                <MessageCircle size={13} />
+                <span>ทักแชท</span>
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Direct Chat Modal */}
+      {activeChatFriend && (
+        <DirectChatModal
+          friend={activeChatFriend}
+          onClose={() => setActiveChatFriend(null)}
+        />
+      )}
     </div>
   );
 }

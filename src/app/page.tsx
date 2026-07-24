@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
-import { Banknote, CalendarDays, ListTodo, Loader2, Settings, BookmarkCheck, Home as HomeIcon } from "lucide-react";
+import { Banknote, CalendarDays, ListTodo, Loader2, Settings, BookmarkCheck, Home as HomeIcon, User } from "lucide-react";
 import AccountBar from "@/components/AccountBar";
 import MonthStrip from "@/components/MonthStrip";
 import DayView from "@/components/DayView";
@@ -10,6 +10,9 @@ import MonthView from "@/components/MonthView";
 import SalaryView from "@/components/SalaryView";
 import MemoView from "@/components/MemoView";
 import HomeView from "@/components/HomeView";
+import ProfileView from "@/components/ProfileView";
+import Sidebar from "@/components/Sidebar";
+import AppHeader from "@/components/AppHeader";
 import { Skeleton } from "@/components/Skeleton";
 import type { NewTx } from "@/components/QuickAdd";
 import {
@@ -29,7 +32,7 @@ import {
 import RestrictedNotice from "@/components/RestrictedNotice";
 import { createClient } from "@/lib/supabase/client";
 
-type View = "home" | "day" | "month" | "salary" | "memo";
+type View = "home" | "day" | "month" | "salary" | "memo" | "profile";
 
 type DynamicMenu = {
   id: number;
@@ -46,6 +49,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   Banknote: <Banknote size={18} />,
   CalendarDays: <CalendarDays size={18} />,
   BookmarkCheck: <BookmarkCheck size={18} />,
+  User: <User size={18} />,
   Settings: <Settings size={18} />,
 };
 
@@ -69,6 +73,9 @@ export default function Home() {
   const [showSkeleton, setShowSkeleton] = useState(false);
   const [navMenus, setNavMenus] = useState<DynamicMenu[] | null>(null);
   const [isRefreshingMenus, setIsRefreshingMenus] = useState(false);
+
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // กันเคสปัดเปลี่ยนเดือนรัวๆ แล้ว response ของเดือนเก่าที่มาช้ากว่าทับเดือนล่าสุด
   const ymRef = useRef(ym);
@@ -317,103 +324,121 @@ export default function Home() {
   }, [view, activeTabs]);
 
   return (
-    <>
-      {isRefreshingMenus && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-full border border-border bg-surface/95 backdrop-blur-md px-3.5 py-1.5 text-xs font-medium text-foreground shadow-xl transition-all animate-in fade-in slide-in-from-top-2">
-          <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
-          <span>กำลังอัปเดตสิทธิ์เมนู...</span>
-        </div>
-      )}
+    <div className="flex min-h-screen bg-bg">
+      {/* 1. Sidebar Component (Collapsible Desktop Sidebar & Mobile Drawer) */}
+      <Sidebar
+        currentView={view}
+        onSelectView={(v) => setView(v)}
+        collapsed={sidebarCollapsed}
+        onToggleCollapse={() => setSidebarCollapsed((prev) => !prev)}
+        mobileOpen={mobileSidebarOpen}
+        onCloseMobile={() => setMobileSidebarOpen(false)}
+        month={month}
+      />
 
-      {isViewAllowed && (
-        <MonthStrip
-          ym={ym}
-          onChange={pickMonth}
-          opening={month?.openingBalance ?? 0}
-          income={monthTotals.income}
-          expense={monthTotals.expense}
-          savings={totalSavings}
-          closed={locked === true}
-          loading={showSkeleton}
+      {/* 2. Main Right Workspace Area */}
+      <div className="flex flex-1 flex-col min-w-0">
+        {/* Mobile Top Header */}
+        <AppHeader
           currentView={view}
+          onOpenMobileSidebar={() => setMobileSidebarOpen(true)}
+          onSelectView={(v) => setView(v)}
         />
-      )}
 
-      <main className="mx-auto w-full max-w-2xl flex-1 px-3 pb-28 pt-3">
-        {error && (
-          <p
-            onClick={() => setError(null)}
-            className="mb-3 cursor-pointer rounded-xl bg-expense-soft px-3 py-2 text-center text-[13px] text-expense"
-          >
-            {error} (แตะเพื่อปิด)
-          </p>
-        )}
-
-        {!month || showSkeleton ? (
-          <ContentSkeleton />
-        ) : !isViewAllowed ? (
-          <RestrictedNotice
-            menuTitle={
-              view === "home"
-                ? "หน้าหลัก"
-                : view === "day"
-                ? "เมนูรายวัน"
-                : view === "salary"
-                  ? "เมนูเงินเดือน"
-                  : view === "month"
-                    ? "เมนูสรุปเดือน"
-                    : "เมนูความจำ"
-            }
-            onGoHome={() => {
-              const firstAllowed = activeTabs[0]?.view ?? "home";
-              setView(firstAllowed);
-            }}
-          />
-        ) : view === "home" ? (
-          <HomeView month={month} />
-        ) : view === "day" ? (
-          <DayView
-            date={date}
-            onDateChange={pickDate}
-            canPrev={date > `${ym}-01`}
-            canNext={date < lastDay && date < todayKey()}
-            txs={dayTxs}
-            onAdd={addTx}
-            onDelete={deleteTx}
-            locked={locked === true}
-            dailyBudget={budget?.amount ?? 0}
-            onBudgetChange={updateDailyBudget}
-            budgetMode={month.budgetMode}
-            onBudgetModeChange={changeBudgetMode}
-            week={budget?.week ?? null}
-          />
-        ) : view === "salary" ? (
-          <SalaryView ym={ym} onSalarySaved={() => void load(ym)} />
-        ) : view === "memo" ? (
-          <MemoView />
-        ) : (
-          <div className="space-y-3">
-            <MonthView
-              month={month}
-              onOpeningChange={(v) => patchMonth({ openingBalance: v })}
-              onToggleClose={(closed) => patchMonth({ closed })}
-              onCarryOver={confirmCarryOver}
-              onPickDay={(d) => {
-                setDate(d);
-                setView("day");
-              }}
-            />
-            <AccountBar />
+        {isRefreshingMenus && (
+          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-full border border-border bg-surface/95 backdrop-blur-md px-3.5 py-1.5 text-xs font-medium text-foreground shadow-xl transition-all animate-in fade-in slide-in-from-top-2">
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />
+            <span>กำลังอัปเดตสิทธิ์เมนู...</span>
           </div>
         )}
-      </main>
 
-      <CurvedFloatingDock
-        tabs={activeTabs}
-        activeView={view}
-        onSelectTab={(v) => setView(v)}
-      />
-    </>
+        {isViewAllowed && (
+          <MonthStrip
+            ym={ym}
+            onChange={pickMonth}
+            opening={month?.openingBalance ?? 0}
+            income={monthTotals.income}
+            expense={monthTotals.expense}
+            savings={totalSavings}
+            closed={locked === true}
+            loading={showSkeleton}
+            currentView={view}
+          />
+        )}
+
+        {/* Main Workspace (max-w-6xl w-full) */}
+        <main className="mx-auto w-full max-w-6xl flex-1 px-4 pb-8 pt-4">
+          {error && (
+            <p
+              onClick={() => setError(null)}
+              className="mb-3 cursor-pointer rounded-xl bg-expense-soft px-3 py-2 text-center text-[13px] text-expense"
+            >
+              {error} (แตะเพื่อปิด)
+            </p>
+          )}
+
+          {!month || showSkeleton ? (
+            <ContentSkeleton />
+          ) : !isViewAllowed ? (
+            <RestrictedNotice
+              menuTitle={
+                view === "home"
+                  ? "หน้าหลัก"
+                  : view === "day"
+                  ? "เมนูรายวัน"
+                  : view === "salary"
+                    ? "เมนูเงินเดือน"
+                    : view === "month"
+                      ? "เมนูสรุปเดือน"
+                      : "เมนูความจำ"
+              }
+              onGoHome={() => {
+                const firstAllowed = activeTabs[0]?.view ?? "home";
+                setView(firstAllowed);
+              }}
+            />
+          ) : view === "home" ? (
+            <HomeView month={month} />
+          ) : view === "day" ? (
+            <DayView
+              date={date}
+              onDateChange={pickDate}
+              canPrev={date > `${ym}-01`}
+              canNext={date < lastDay && date < todayKey()}
+              txs={dayTxs}
+              onAdd={addTx}
+              onDelete={deleteTx}
+              locked={locked === true}
+              dailyBudget={budget?.amount ?? 0}
+              onBudgetChange={updateDailyBudget}
+              budgetMode={month.budgetMode}
+              onBudgetModeChange={changeBudgetMode}
+              week={budget?.week ?? null}
+            />
+          ) : view === "salary" ? (
+            <SalaryView ym={ym} onSalarySaved={() => void load(ym)} />
+          ) : view === "memo" ? (
+            <MemoView />
+          ) : view === "profile" ? (
+            <ProfileView />
+          ) : (
+            <div className="space-y-3">
+              <MonthView
+                month={month}
+                onOpeningChange={(v) => patchMonth({ openingBalance: v })}
+                onToggleClose={(closed) => patchMonth({ closed })}
+                onCarryOver={confirmCarryOver}
+                onPickDay={(d) => {
+                  setDate(d);
+                  setView("day");
+                }}
+              />
+              <AccountBar />
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
   );
 }
 

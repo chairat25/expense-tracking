@@ -109,6 +109,20 @@ body {
   scroll-snap-stop: always;
 }
 
+/* Hide scrollbar for clean horizontal scroll lists */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Sidebar Smooth Transitions */
+.sidebar-transition {
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 @keyframes skeleton-wave {
   100% {
     transform: translateX(100%);
