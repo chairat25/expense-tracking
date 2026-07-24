@@ -354,7 +354,7 @@ export default function Home() {
           </div>
         )}
 
-        {isViewAllowed && (
+        {isViewAllowed && view !== "chat" && view !== "profile" && (
           <MonthStrip
             ym={ym}
             onChange={pickMonth}
