@@ -1,4 +1,12 @@
 // Service Worker for ExpenseTracker Web Push Notifications & Lock Screen Alerts
+self.addEventListener("install", (event) => {
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(self.clients.claim());
+});
+
 self.addEventListener("push", function (event) {
   let data = { title: "ExpenseTracker", body: "มีการแจ้งเตือนใหม่ในระบบ" };
 
