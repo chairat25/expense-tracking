@@ -286,40 +286,29 @@ function urlBase64ToUint8Array(base64String: string) {
           </div>
 
           {/* Lock Screen Push Notification Permission Banner & Test Button */}
-          {pushSupported && (
-            <div className="my-3 rounded-xl bg-gradient-to-r from-indigo-900/40 via-surface-2 to-surface-2 p-3 border border-indigo-500/30 space-y-2">
+          <div className="my-3 rounded-xl bg-gradient-to-r from-indigo-900/40 via-surface-2 to-surface-2 p-3 border border-indigo-500/30 space-y-2">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs font-bold text-foreground">
                 <Smartphone size={15} className="text-indigo-400" />
-                <span>เปิดแจ้งเตือนเด้งบน Lock Screen</span>
+                <span>การแจ้งเตือนบนมือถือ / Lock Screen</span>
               </div>
-              <p className="text-[11px] text-muted">
-                รับการแจ้งเตือนข้อความแชทและเตือนความจำเด้งบนมือถือแม้ขณะปิดจอ
-              </p>
-              <div className="flex items-center gap-2 pt-1">
-                {pushPermission !== "granted" ? (
-                  <button
-                    type="button"
-                    onClick={requestPushPermission}
-                    disabled={subscribing}
-                    className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-indigo-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-xs hover:bg-indigo-500 transition active:scale-95 disabled:opacity-50"
-                  >
-                    <Volume2 size={13} />
-                    <span>{subscribing ? "กำลังตั้งค่า..." : "เปิดการแจ้งเตือน Lock Screen"}</span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={handleTestPush}
-                    disabled={subscribing}
-                    className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600/90 hover:bg-emerald-600 px-3 py-1.5 text-[11px] font-bold text-white shadow-xs transition active:scale-95 disabled:opacity-50"
-                  >
-                    <Sparkles size={13} />
-                    <span>{subscribing ? "กำลังยิงข้อความ..." : "🧪 ทดสอบยิงแจ้งเตือนเข้ามือถือ"}</span>
-                  </button>
-                )}
-              </div>
+              <span className="text-[10px] font-semibold text-emerald-400">PWA Ready</span>
             </div>
-          )}
+            <p className="text-[11px] text-muted leading-relaxed">
+              รับการแจ้งเตือนข้อความแชทและเตือนความจำเด้งบนมือถือแม้ขณะปิดจอ
+            </p>
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={handleTestPush}
+                disabled={subscribing}
+                className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 px-3 py-2 text-xs font-bold text-white shadow-md shadow-emerald-600/30 transition active:scale-95 disabled:opacity-50"
+              >
+                <Sparkles size={14} />
+                <span>{subscribing ? "กำลังทดสอบส่ง..." : "🧪 ทดสอบยิงแจ้งเตือนเข้ามือถือทันที"}</span>
+              </button>
+            </div>
+          </div>
 
           {/* Notifications List */}
           <div className="max-h-80 overflow-y-auto space-y-2 py-2 scrollbar-none">
