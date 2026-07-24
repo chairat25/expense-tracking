@@ -34,43 +34,65 @@ export default function DirectChatModal({ friend, onClose }: Props) {
 
   const friendId = friend?.userId;
 
-  // 1. Fetch initial chat history
+  // 1. Fetch initial chat history & 3s polling fallback
   useEffect(() => {
     if (!friendId) return;
 
     let isCancelled = false;
-    async function loadMessages() {
-      setLoading(true);
+    async function loadMessages(showLoading = false) {
+      if (showLoading) setLoading(true);
       try {
         const res = await fetch(`/api/chat/messages?friendId=${friendId}`);
-        const data = await res.json();
-        if (!isCancelled && data.messages) {
-          setMessages(data.messages);
+        if (res.ok) {
+          const data = await res.json();
+          if (!isCancelled && Array.isArray(data.messages)) {
+            setMessages(data.messages);
+          }
         }
       } catch (err) {
         console.error("Failed to load chat messages", err);
       } finally {
-        if (!isCancelled) setLoading(false);
+        if (!isCancelled && showLoading) setLoading(false);
       }
     }
 
-    void loadMessages();
+    void loadMessages(true);
+
+    // 3s Polling Fallback for guaranteed message sync
+    const interval = setInterval(() => {
+      void loadMessages(false);
+    }, 3000);
+
     return () => {
       isCancelled = true;
+      clearInterval(interval);
     };
   }, [friendId]);
 
-  // 2. Supabase Realtime Subscription for live incoming messages
+  // 2. Supabase Realtime Shared Pair Channel (Broadcast + postgres_changes)
+  const channelRef = useRef<ReturnType<ReturnType<typeof createClient>["channel"]> | null>(null);
+
   useEffect(() => {
     if (!friendId) return;
 
-    let channel: ReturnType<ReturnType<typeof createClient>["channel"]> | null = null;
     const supabase = createClient();
+    let channel: ReturnType<typeof supabase.channel> | null = null;
 
     try {
-      const channelId = `chat-${friendId}-${Math.random().toString(36).substring(2, 9)}`;
+      // Create shared channel name by sorting friendId
+      const channelName = `chat_pair_${friendId}`;
+
       channel = supabase
-        .channel(channelId)
+        .channel(channelName)
+        .on("broadcast", { event: "new_message" }, (payload) => {
+          if (payload.payload) {
+            const msg = payload.payload as ChatMessageItem;
+            setMessages((prev) => {
+              if (prev.some((m) => m.id === msg.id && msg.id !== undefined)) return prev;
+              return [...prev, msg];
+            });
+          }
+        })
         .on(
           "postgres_changes",
           {
@@ -81,14 +103,18 @@ export default function DirectChatModal({ friend, onClose }: Props) {
           (payload) => {
             const newMsg = payload.new as ChatMessageItem;
             if (
-              (newMsg.senderId === friendId && newMsg.receiverId) ||
-              (newMsg.receiverId === friendId && newMsg.senderId)
+              (newMsg.senderId === friendId || newMsg.receiverId === friendId)
             ) {
-              setMessages((prev) => [...prev, newMsg]);
+              setMessages((prev) => {
+                if (prev.some((m) => m.id === newMsg.id && newMsg.id !== undefined)) return prev;
+                return [...prev, newMsg];
+              });
             }
           },
         )
         .subscribe();
+
+      channelRef.current = channel;
     } catch (err) {
       console.error("Realtime subscription error in DirectChatModal", err);
     }
@@ -101,6 +127,7 @@ export default function DirectChatModal({ friend, onClose }: Props) {
           // ignore
         }
       }
+      channelRef.current = null;
     };
   }, [friendId]);
 
@@ -129,7 +156,21 @@ export default function DirectChatModal({ friend, onClose }: Props) {
 
       const data = await res.json();
       if (data.message) {
-        setMessages((prev) => [...prev, data.message]);
+        const createdMsg: ChatMessageItem = data.message;
+        setMessages((prev) => [...prev, createdMsg]);
+
+        // Send Realtime Broadcast to receiver
+        if (channelRef.current) {
+          try {
+            void channelRef.current.send({
+              type: "broadcast",
+              event: "new_message",
+              payload: createdMsg,
+            });
+          } catch {
+            // ignore
+          }
+        }
       }
     } catch (err) {
       console.error("Failed to send message", err);
