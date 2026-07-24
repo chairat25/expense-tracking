@@ -185,16 +185,23 @@ function urlBase64ToUint8Array(base64String: string) {
           process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ||
           "BLq8KJ36KWbhTMIgZ0s1jvLe_jpzR3GVm1POCu0tbmCve02bjQTj0c5LnivST5zkcvy98y87jMMwahl2pcNEhvg";
 
+        // Always unsubscribe stale tokens bound to previous VAPID key hashes
         let sub: PushSubscription | null = await reg.pushManager.getSubscription();
-        if (!sub) {
+        if (sub) {
           try {
-            sub = await reg.pushManager.subscribe({
-              userVisibleOnly: true,
-              applicationServerKey: urlBase64ToUint8Array(publicVapidKey),
-            });
-          } catch (subErr) {
-            console.warn("VAPID subscribe fallback to default push sub", subErr);
+            await sub.unsubscribe();
+          } catch {
+            // ignore
           }
+        }
+
+        try {
+          sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(publicVapidKey),
+          });
+        } catch (subErr) {
+          console.warn("VAPID subscribe error", subErr);
         }
 
         if (sub) {
