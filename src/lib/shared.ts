@@ -186,7 +186,13 @@ export function dayCount(from: string, to: string): number {
 export function weekSliceInMonth(
   dateKey: string,
   ym: string,
+  weeklyResetDate?: string | null,
 ): { from: string; to: string; days: number } {
+  if (weeklyResetDate && dateKey >= weeklyResetDate) {
+    const from = weeklyResetDate;
+    const to = shiftDate(weeklyResetDate, 6); // รอบสัปดาห์ยืดหยุ่น 7 วันเต็ม
+    return { from, to, days: dayCount(from, to) };
+  }
   const monthFrom = `${ym}-01`;
   const monthTo = `${ym}-${String(daysInMonth(ym)).padStart(2, "0")}`;
   const start = weekStart(dateKey);
@@ -258,14 +264,31 @@ export type Tx = {
   note: string;
 };
 
+export type MonthPocket = {
+  id: number;
+  name: string;
+  allocatedAmount: number;
+  isWeeklyPool: boolean;
+};
+
+export type MonthWeeklyEnvelope = {
+  weekIndex: number;
+  startDate: string;
+  endDate: string;
+  budgetAmount: number;
+};
+
 export type MonthData = {
   ym: string;
   openingBalance: number;
   closedAt: string | null;
   savingsAmount: number | null;
   budgetMode: BudgetMode;
+  weeklyResetDate?: string | null;
   transactions: Tx[];
   dailyBudgets: DailyBudget[];
+  pockets?: MonthPocket[];
+  weeklyEnvelopes?: MonthWeeklyEnvelope[];
 };
 
 export type DailyBudget = {
@@ -308,7 +331,13 @@ export type BudgetInfo = {
   /** true = มาจาก daily_budgets ที่ผู้ใช้กรอกเอง ไม่ได้คำนวณให้ */
   isManual: boolean;
   /** null ในโหมด month — ใช้โชว์บรรทัดบริบทสัปดาห์ */
-  week: { from: string; to: string; envelope: number; daysLeft: number } | null;
+  week: {
+    from: string;
+    to: string;
+    envelope: number;
+    daysLeft: number;
+    remaining: number;
+  } | null;
 };
 
 /** โหมดเดิม: เงินคงเหลือทั้งเดือน ณ ก่อนวันนี้ หารด้วยวันที่เหลือทั้งเดือน */
@@ -327,22 +356,52 @@ function monthPerDay(month: MonthData, date: string): number {
  * สูตรขนานกับ monthPerDay ต่างแค่ใช้ส่วนแบ่งของสัปดาห์ และหน้าต่างเวลาเป็น slice
  */
 function weekInfo(month: MonthData, date: string) {
-  const { from, to, days } = weekSliceInMonth(date, month.ym);
-  const share = month.openingBalance * (days / daysInMonth(month.ym));
+  const { from, to, days } = weekSliceInMonth(
+    date,
+    month.ym,
+    month.weeklyResetDate,
+  );
+
+  // 1. เช็กว่ามีการจัดสรรในซองงบสัปดาห์ (Weekly Envelope) สำหรับช่วงสัปดาห์นี้หรือไม่
+  const matchingEnvelope = month.weeklyEnvelopes?.find(
+    (e) => e.startDate <= date && date <= e.endDate,
+  );
+
+  // 2. เช็กว่ามีการสร้างกระปุกเงินที่มี Tag 🎯 งบสัปดาห์ (isWeeklyPool === true) หรือไม่
+  const weeklyPocketsSum = (month.pockets ?? [])
+    .filter((p) => p.isWeeklyPool)
+    .reduce((sum, p) => sum + p.allocatedAmount, 0);
+
+  let share = 0;
+  if (matchingEnvelope && matchingEnvelope.budgetAmount > 0) {
+    share = matchingEnvelope.budgetAmount;
+  } else if (weeklyPocketsSum > 0) {
+    share = weeklyPocketsSum;
+  } else {
+    // ไม่เฉลี่ยเงินเดือนทั้งก้อนลงสัปดาห์อัตโนมัติ (ไม่เอา 4,883.06 ฿) — แสดง 0.00 ฿ จนกว่าผู้ใช้จะจัดสรรเงินสัปดาห์เอง
+    share = 0;
+  }
+
+  const resetDate = month.weeklyResetDate;
+  const filteredTxs = month.transactions.filter(
+    (t) => !resetDate || t.date >= resetDate,
+  );
 
   const { income, expense } = totals(
-    month.transactions.filter((t) => t.date >= from && t.date < date),
+    filteredTxs.filter((t) => t.date >= from && t.date < date),
   );
   const daysLeft = Math.max(1, dayCount(date, to));
   const perDay = (share + income - expense) / daysLeft;
 
-  // envelope โชว์เงินของสัปดาห์นี้ทั้งก้อน จึงนับรายรับทั้ง slice
-  // ต่างจากตัวตั้งของ perDay ที่นับแค่ก่อนวันนี้ตามธรรมเนียมของแอป — จงใจ ไม่ใช่บั๊ก
-  const weekIncome = totals(
-    month.transactions.filter((t) => t.date >= from && t.date <= to),
-  ).income;
+  const weekSliceTxs = filteredTxs.filter(
+    (t) => t.date >= from && t.date <= to,
+  );
+  const weekIncome = totals(weekSliceTxs).income;
+  const weekExpense = totals(weekSliceTxs).expense;
+  const envelope = share + weekIncome;
+  const remaining = Math.max(0, envelope - weekExpense);
 
-  return { from, to, envelope: share + weekIncome, daysLeft, perDay };
+  return { from, to, envelope, daysLeft, perDay, remaining };
 }
 
 /** เงินเฉลี่ยต่อวันของวันที่ดูอยู่ + บริบทสัปดาห์ (ถ้าอยู่โหมด week) */
@@ -364,6 +423,7 @@ export function computeBudget(
       to: week.to,
       envelope: week.envelope,
       daysLeft: week.daysLeft,
+      remaining: week.remaining,
     },
   };
 }

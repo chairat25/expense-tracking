@@ -25,18 +25,21 @@ export async function POST(req: Request, { params }: Ctx) {
   if (!ymParsed.success) return badRequest(ymParsed.error.issues[0].message);
   const ym = ymParsed.data;
 
-  const bodyParsed = carryOverPatch.safeParse(await req.json());
-  if (!bodyParsed.success) {
-    return badRequest(bodyParsed.error.issues[0].message);
-  }
-  const { savingsAmount } = bodyParsed.data;
+    const reqJson = await req.json();
+    const bodyParsed = carryOverPatch.safeParse(reqJson);
+    if (!bodyParsed.success) {
+      return badRequest(bodyParsed.error.issues[0].message);
+    }
+    const { savingsAmount } = bodyParsed.data;
+    const customTargetYm = typeof reqJson.targetYm === "string" && /^\d{4}-\d{2}$/.test(reqJson.targetYm) ? reqJson.targetYm : null;
+    const nextYm = customTargetYm ?? shiftMonth(ym, 1);
 
-  const month = await db.query.months.findFirst({
-    where: and(eq(months.userId, userId), eq(months.ym, ym)),
-  });
-  if (!month || !month.closedAt) {
-    return badRequest("ต้องปิดยอดเดือนนี้ก่อนถึงจะแบ่งเงินได้");
-  }
+    const month = await db.query.months.findFirst({
+      where: and(eq(months.userId, userId), eq(months.ym, ym)),
+    });
+    if (!month || !month.closedAt) {
+      return badRequest("ต้องปิดยอดเดือนนี้ก่อนถึงจะแบ่งเงินได้");
+    }
 
   const from = `${ym}-01`;
   const to = `${ym}-${String(daysInMonth(ym)).padStart(2, "0")}`;
@@ -100,7 +103,6 @@ export async function POST(req: Request, { params }: Ctx) {
       .where(eq(months.id, month.id));
   }
 
-  const nextYm = shiftMonth(ym, 1);
   await db
     .insert(months)
     .values({

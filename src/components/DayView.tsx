@@ -33,6 +33,7 @@ type Props = {
   budgetMode: BudgetMode;
   onBudgetModeChange: (mode: BudgetMode) => void;
   week: BudgetInfo["week"];
+  onSettleWeek?: (amount: number, weekFrom: string, weekTo: string) => Promise<void>;
 };
 
 export default function DayView({
@@ -49,6 +50,7 @@ export default function DayView({
   budgetMode,
   onBudgetModeChange,
   week,
+  onSettleWeek,
 }: Props) {
   const { income, expense } = totals(txs);
   const isToday = date === todayKey();
@@ -58,6 +60,9 @@ export default function DayView({
   const [editingBudget, setEditingBudget] = useState(false);
   const [draftBudget, setDraftBudget] = useState(String(dailyBudget));
   const remaining = dailyBudget + income - expense;
+
+  const [showSettleModal, setShowSettleModal] = useState(false);
+  const [settling, setSettling] = useState(false);
 
   // ลบต้องกด 2 ครั้ง กันนิ้วเผลอโดนบนมือถือ — ค้างไว้ 3 วิแล้วรีเซ็ตเอง
   const [confirmId, setConfirmId] = useState<number | null>(null);
@@ -197,11 +202,21 @@ export default function DayView({
           <Cell label="ใช้ไป" value={expense} tone="expense" />
           <Cell label="เหลือ" value={remaining} tone={remaining < 0 ? "expense" : "income"} strong />
         </div>
-        {week && (
-          <p className="tnum mt-2 text-center text-[11px] text-muted">
-            งบสัปดาห์นี้ {formatBaht(week.envelope)} ฿ · เหลืออีก {week.daysLeft}{" "}
-            วัน
-          </p>
+        {week && budgetMode === "week" && (
+          <div className="mt-2.5 pt-2 border-t border-border/40 flex flex-wrap items-center justify-between gap-2">
+            <p className="tnum text-[11px] text-muted">
+              งบสัปดาห์นี้ {formatBaht(week.envelope)} ฿ · เหลืออีก {week.daysLeft} วัน
+            </p>
+            {!locked && onSettleWeek && (
+              <button
+                type="button"
+                onClick={() => setShowSettleModal(true)}
+                className="flex items-center gap-1 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 px-2.5 py-1 text-[11px] font-bold text-indigo-400 transition active:scale-95 shrink-0"
+              >
+                <span>✂️ ตัดยอดสัปดาห์นี้</span>
+              </button>
+            )}
+          </div>
         )}
         {remaining < 0 && (
           <p className="mt-2 rounded-lg bg-expense-soft px-2 py-1.5 text-center text-[11px] text-expense">
@@ -209,6 +224,61 @@ export default function DayView({
           </p>
         )}
       </div>
+
+      {/* Confirmation Modal for Weekly Cutoff */}
+      {showSettleModal && week && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 pop-in">
+          <div className="card w-full max-w-sm p-5 space-y-4 shadow-2xl border-indigo-500/40 bg-surface">
+            <div className="flex items-center gap-2 text-indigo-400 font-bold text-base border-b border-border/60 pb-2.5">
+              <span>✂️ ตัดยอดงบสัปดาห์นี้</span>
+            </div>
+
+            <p className="text-xs text-muted leading-relaxed">
+              ต้องการตัดยอดงบสัปดาห์นี้ช่วง{" "}
+              <span className="font-semibold text-foreground">{week.from} ถึง {week.to}</span>{" "}
+              เพื่อเริ่มนับยอดใช้ไปใหม่จาก <span className="font-bold text-indigo-400">0.00 ฿</span> ตั้งแต่วันนี้ใช่หรือไม่?
+            </p>
+
+            <div className="rounded-xl bg-surface-2 p-3.5 border border-border space-y-1 text-center">
+              <p className="text-[11px] text-muted">
+                ยอดใช้ไปของสัปดาห์นี้จะถูกรีเซ็ตเป็น <span className="text-amber-400 font-bold">0.00 ฿</span>
+              </p>
+              {week.remaining > 0 && (
+                <p className="tnum text-xs font-bold text-emerald-400 pt-0.5">
+                  โอนส่วนต่างคงเหลือ +{formatBaht(week.remaining)} ฿ เข้าเงินเก็บ 🐷
+                </p>
+              )}
+            </div>
+
+            <div className="flex gap-2 pt-2">
+              <button
+                type="button"
+                disabled={settling}
+                onClick={async () => {
+                  setSettling(true);
+                  try {
+                    await onSettleWeek?.(Math.max(0, week.remaining), week.from, week.to);
+                    setShowSettleModal(false);
+                  } finally {
+                    setSettling(false);
+                  }
+                }}
+                className="flex-1 rounded-xl bg-gradient-to-r from-indigo-600 via-indigo-500 to-purple-600 hover:from-indigo-500 hover:to-purple-500 py-2.5 text-xs font-bold text-white shadow-lg shadow-indigo-600/30 transition active:scale-95 disabled:opacity-50"
+              >
+                {settling ? "กำลังตัดยอด..." : "✨ ตัดยอดเริ่มนับใหม่ 0 ฿ วันนี้"}
+              </button>
+              <button
+                type="button"
+                disabled={settling}
+                onClick={() => setShowSettleModal(false)}
+                className="rounded-xl border border-border px-4 py-2.5 text-xs font-semibold text-muted hover:bg-surface-2 transition"
+              >
+                ยกเลิก
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {txs.length === 0 ? (
         <p className="py-8 text-center text-sm text-muted">

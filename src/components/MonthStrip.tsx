@@ -16,6 +16,12 @@ type Props = {
   closed: boolean;
   loading?: boolean;
   currentView?: "home" | "day" | "month" | "salary" | "memo" | "profile" | "chat";
+  budgetMode?: "month" | "week";
+  weekBudget?: {
+    opening: number;
+    expense: number;
+    remaining: number;
+  };
 };
 
 /** เดือนที่ให้เลื่อนได้: ย้อนหลัง 12 เดือน ถึงเดือนปัจจุบัน และโชว์อนาคตอีก 12 เดือน (แต่กดไม่ได้) */
@@ -44,6 +50,8 @@ export default function MonthStrip({
   closed,
   loading = false,
   currentView = "day",
+  budgetMode = "month",
+  weekBudget,
 }: Props) {
   const now = thisMonthKey();
   const months = monthRange();
@@ -64,6 +72,12 @@ export default function MonthStrip({
   const canPrev = idx > 0;
   const canNext = ym < now; // กดไปข้างหน้าได้แค่ถึงเดือนปัจจุบัน
   const headerInfo = VIEW_HEADERS[currentView] || VIEW_HEADERS.day;
+
+  const isWeekMode = budgetMode === "week" && weekBudget != null;
+  const displayOpening = isWeekMode ? weekBudget.opening : opening;
+  const displayExpense = isWeekMode ? weekBudget.expense : expense;
+  const displayRemaining = isWeekMode ? weekBudget.remaining : remaining;
+  const openingLabel = isWeekMode ? "งบสัปดาห์นี้" : "งบเดือนนี้";
 
   return (
     <header className="sticky top-0 z-20 bg-bg/85 backdrop-blur-md border-b border-border">
@@ -149,9 +163,9 @@ export default function MonthStrip({
         {currentView !== "memo" && currentView !== "home" && (
           <>
             <dl id="tour-month-summary" className="mt-2.5 grid grid-cols-4 gap-2 text-center">
-              <Stat type="opening" label="งบสัปดาห์นี้" value={opening} loading={loading} />
-              <Stat type="expense" label="ใช้ไป" value={expense} loading={loading} />
-              <Stat type="remaining" label="คงเหลือ" value={remaining} loading={loading} />
+              <Stat type="opening" label={openingLabel} value={displayOpening} loading={loading} />
+              <Stat type="expense" label="ใช้ไป" value={displayExpense} loading={loading} />
+              <Stat type="remaining" label="คงเหลือ" value={displayRemaining} loading={loading} />
               <Stat type="savings" label="เงินเก็บ" value={savings} loading={loading} />
             </dl>
             {income > 0 && (

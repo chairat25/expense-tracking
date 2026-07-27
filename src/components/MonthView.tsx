@@ -21,7 +21,7 @@ type Props = {
   month: MonthData;
   onOpeningChange: (v: number) => Promise<void>;
   onToggleClose: (closed: boolean) => Promise<void>;
-  onCarryOver: (savingsAmount: number) => Promise<void>;
+  onCarryOver: (savingsAmount: number, targetYm?: string) => Promise<void>;
   onPickDay: (date: string) => void;
 };
 
@@ -33,8 +33,10 @@ export default function MonthView({
   onPickDay,
 }: Props) {
   const { ym, openingBalance, closedAt, savingsAmount, transactions } = month;
+  const closed = closedAt != null;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(String(openingBalance));
+  const [showCloseInfo, setShowCloseInfo] = useState(false);
 
   const { income, expense } = totals(transactions);
   const remaining = openingBalance + income - expense;
@@ -70,7 +72,6 @@ export default function MonthView({
     return [...m.entries()].sort((a, b) => b[1] - a[1]);
   }, [transactions]);
 
-  const closed = closedAt !== null;
   const today = todayKey();
   
   // Allow closing if:
@@ -158,28 +159,54 @@ export default function MonthView({
           </div>
         </div>
 
-        <button
-          disabled={!canClose}
-          onClick={() => void onToggleClose(!closed)}
-          className={clsx(
-            "flex w-full items-center justify-center gap-2 border-t border-border py-3 text-sm font-semibold transition",
-            closed
-              ? "text-muted hover:bg-surface-2"
-              : !canClose
-                ? "bg-accent/50 text-white/50 cursor-not-allowed"
-                : "bg-accent text-white hover:brightness-110",
-          )}
-        >
-          {closed ? (
-            <>
-              <LockOpen size={15} /> เปิดยอดใหม่เพื่อแก้ไข
-            </>
-          ) : (
-            <>
-              <Lock size={15} /> ปิดยอดสิ้นเดือน {formatMonthTH(ym)}
-            </>
-          )}
-        </button>
+        <div className="flex items-center border-t border-border">
+          <button
+            disabled={!canClose}
+            onClick={() => void onToggleClose(!closed)}
+            className={clsx(
+              "flex flex-1 items-center justify-center gap-2 py-3 text-sm font-semibold transition",
+              closed
+                ? "text-muted hover:bg-surface-2"
+                : !canClose
+                  ? "bg-accent/50 text-white/50 cursor-not-allowed"
+                  : "bg-accent text-white hover:brightness-110",
+            )}
+          >
+            {closed ? (
+              <>
+                <LockOpen size={15} /> เปิดยอดใหม่เพื่อแก้ไข
+              </>
+            ) : (
+              <>
+                <Lock size={15} /> ปิดยอดสิ้นเดือน {formatMonthTH(ym)}
+              </>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowCloseInfo(!showCloseInfo)}
+            className="flex items-center justify-center px-3.5 py-3 text-muted hover:text-accent hover:bg-surface-2 transition border-l border-border/50 shrink-0"
+            title="คำอธิบายการปิดยอดสิ้นเดือน"
+          >
+            <div className="flex size-5 items-center justify-center rounded-full border border-current text-[11px] font-bold">
+              !
+            </div>
+          </button>
+        </div>
+
+        {showCloseInfo && (
+          <div className="p-4 bg-indigo-500/10 border-t border-indigo-500/30 text-xs leading-relaxed space-y-2 pop-in">
+            <div className="flex items-center justify-between font-bold text-indigo-400">
+              <span>💡 การทำงานของการปิดยอดสิ้นเดือน / รอบงบประมาณ</span>
+              <button onClick={() => setShowCloseInfo(false)} className="text-muted hover:text-foreground">✕</button>
+            </div>
+            <ul className="list-disc list-inside space-y-1 text-muted">
+              <li><strong className="text-foreground">ปิดสรุปรอบเก่า</strong>: สรุปยอดรายรับ-รายจ่ายของรอบเดือนที่ผ่านมาทั้งหมด เพื่อตัดยอดบัญชี</li>
+              <li><strong className="text-foreground">แบ่งเงินเข้าเงินเก็บ</strong>: เลือกนำเงินคงเหลือที่เหลืออยู่ย้ายเข้ากระปุกเงินเก็บสะสม หรือยกไปเริ่มในเดือนถัดไป</li>
+              <li><strong className="text-foreground">เริ่มต้นรอบใหม่</strong>: เมื่อบันทึกเงินเดือนระลอกใหม่ ระบบจะเริ่มนับงบสัปดาห์และงบเดือนรอบใหม่ตั้งแต่วันที่คุณปิดยอดจนถึงรอบถัดไปทันทีครับ!</li>
+            </ul>
+          </div>
+        )}
 
         {closed && (
           <CarryOverCard
@@ -187,6 +214,7 @@ export default function MonthView({
             nextYm={shiftMonth(ym, 1)}
             savingsAmount={savingsAmount}
             onConfirm={onCarryOver}
+            onCancel={() => void onToggleClose(false)}
           />
         )}
       </div>

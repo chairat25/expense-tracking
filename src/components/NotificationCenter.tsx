@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
-import { Bell, CheckCheck, Sparkles, MessageCircle, Calendar, ShieldCheck, X, Volume2, Smartphone } from "lucide-react";
+import { Bell, CheckCheck, Sparkles, MessageCircle, Calendar, ShieldCheck, X, Volume2, Smartphone, Trash2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 type NotificationItem = {
@@ -29,6 +29,7 @@ export default function NotificationCenter({
 }: Props) {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
   const [open, setOpen] = useState(false);
   const [pushSupported, setPushSupported] = useState(false);
   const [pushPermission, setPushPermission] = useState<NotificationPermission>("default");
@@ -36,20 +37,29 @@ export default function NotificationCenter({
 
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  // 1. Initial Load & Scan Memos
+  // 1. Initial Load & Scan Memos & Unread Chat
   useEffect(() => {
     async function loadNotifications() {
       try {
         // Trigger memo check first
         await fetch("/api/notifications/check-memos", { method: "POST" });
 
-        const res = await fetch("/api/notifications");
-        if (res.ok) {
-          const data = await res.json();
+        const [resNotif, resChat] = await Promise.all([
+          fetch("/api/notifications"),
+          fetch("/api/community/unread"),
+        ]);
+
+        if (resNotif.ok) {
+          const data = await resNotif.json();
           if (data.notifications) {
             setNotifications(data.notifications);
             setUnreadCount(data.unreadCount || 0);
           }
+        }
+
+        if (resChat.ok) {
+          const dataChat = await resChat.json();
+          setUnreadChatCount(dataChat.unreadCount || 0);
         }
       } catch (err) {
         console.error("Failed to load notifications", err);
@@ -151,6 +161,19 @@ export default function NotificationCenter({
         body: JSON.stringify({ markAllRead: true }),
       });
       setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
+      setUnreadCount(0);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  // Clear all notifications
+  async function clearAll() {
+    try {
+      await fetch("/api/notifications", {
+        method: "DELETE",
+      });
+      setNotifications([]);
       setUnreadCount(0);
     } catch (e) {
       console.error(e);
@@ -270,9 +293,9 @@ function sameKey(a: ArrayBuffer | null, b: Uint8Array) {
         title="ศูนย์การแจ้งเตือน"
       >
         <Bell size={18} />
-        {unreadCount > 0 && (
+        {unreadCount + unreadChatCount > 0 && (
           <span className="absolute -top-1 -right-1 flex size-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-bold text-white shadow-xs animate-pulse">
-            {unreadCount > 9 ? "9+" : unreadCount}
+            {unreadCount + unreadChatCount > 9 ? "9+" : unreadCount + unreadChatCount}
           </span>
         )}
       </button>
@@ -297,16 +320,29 @@ function sameKey(a: ArrayBuffer | null, b: Uint8Array) {
               )}
             </div>
 
-            {unreadCount > 0 && (
-              <button
-                type="button"
-                onClick={markAllRead}
-                className="flex items-center gap-1 text-[11px] font-semibold text-indigo-400 hover:underline"
-              >
-                <CheckCheck size={13} />
-                <span>อ่านทั้งหมด</span>
-              </button>
-            )}
+            <div className="flex items-center gap-2.5">
+              {unreadCount > 0 && (
+                <button
+                  type="button"
+                  onClick={markAllRead}
+                  className="flex items-center gap-1 text-[11px] font-semibold text-indigo-400 hover:underline"
+                >
+                  <CheckCheck size={13} />
+                  <span>อ่านทั้งหมด</span>
+                </button>
+              )}
+              {notifications.length > 0 && (
+                <button
+                  type="button"
+                  onClick={clearAll}
+                  className="flex items-center gap-1 text-[11px] font-semibold text-rose-400 hover:underline hover:text-rose-300"
+                  title="ล้างการแจ้งเตือนทั้งหมด"
+                >
+                  <Trash2 size={13} />
+                  <span>ล้างทั้งหมด</span>
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Lock Screen Push Notification Permission Banner & Test Button */}

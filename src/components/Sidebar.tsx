@@ -18,10 +18,11 @@ import {
   Wallet,
   Settings,
 } from "lucide-react";
+import { Users } from "lucide-react";
 import { formatBaht, type MonthData } from "@/lib/shared";
 import NotificationCenter from "./NotificationCenter";
 
-export type View = "home" | "day" | "month" | "salary" | "memo" | "profile" | "chat";
+export type View = "day" | "month" | "home" | "commu" | "salary" | "memo" | "profile" | "chat";
 
 type SidebarTab = {
   key: string;
@@ -30,6 +31,7 @@ type SidebarTab = {
   view: View;
   category: "main" | "finance" | "tools" | "account";
   badge?: string;
+  badgeCount?: number;
 };
 
 type Props = {
@@ -53,24 +55,36 @@ export default function Sidebar({
 }: Props) {
   const [profileName, setProfileName] = useState("คุณผู้ใช้งาน");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [showCommunity, setShowCommunity] = useState(true);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
 
-  // Load User Profile for Sidebar Header
+  // Load User Profile & Unread Chat for Sidebar Header
   useEffect(() => {
-    async function loadProfile() {
+    async function loadData() {
       try {
-        const res = await fetch("/api/profile");
-        if (res.ok) {
-          const data = await res.json();
+        const [resProf, resChat] = await Promise.all([
+          fetch("/api/profile"),
+          fetch("/api/community/unread"),
+        ]);
+
+        if (resProf.ok) {
+          const data = await resProf.json();
           if (data.profile) {
             setProfileName(data.profile.displayName || "คุณผู้ใช้งาน");
             setAvatarUrl(data.profile.avatarUrl || "");
+            setShowCommunity(data.showCommunity ?? true);
           }
+        }
+
+        if (resChat.ok) {
+          const dataChat = await resChat.json();
+          setUnreadChatCount(dataChat.unreadCount || 0);
         }
       } catch {
         // ignore
       }
     }
-    void loadProfile();
+    void loadData();
   }, [currentView]);
 
   const menuGroups: {
@@ -83,33 +97,32 @@ export default function Sidebar({
       title: "หลัก",
       items: [
         {
+          key: "day",
+          label: "บันทึกรายวัน",
+          icon: <ListTodo size={18} />,
+          view: "day",
+          category: "main",
+        },
+        {
           key: "home",
-          label: "หน้าหลัก",
+          label: "แดชบอร์ดสรุป",
           icon: <Home size={18} />,
           view: "home",
           category: "main",
           badge: "Analytics",
         },
       ],
-        },
+    },
     {
       category: "finance",
       title: "การเงิน",
       items: [
-        {
-          key: "day",
-          label: "บันทึกรายวัน",
-          icon: <ListTodo size={18} />,
-          view: "day",
-          category: "finance",
-        },
         {
           key: "salary",
           label: "จัดสรรเงินเดือน",
           icon: <Banknote size={18} />,
           view: "salary",
           category: "finance",
-          badge: "New UX",
         },
         {
           key: "month",
@@ -137,13 +150,25 @@ export default function Sidebar({
       category: "account",
       title: "บัญชี & สังคม",
       items: [
+        ...(showCommunity
+          ? [
+              {
+                key: "commu",
+                label: "Community & เพื่อน",
+                icon: <Users size={18} />,
+                view: "commu" as View,
+                category: "account" as const,
+                badgeCount: unreadChatCount,
+              },
+            ]
+          : []),
         {
           key: "chat",
           label: "แชท & ข้อความ",
           icon: <MessageCircle size={18} />,
           view: "chat",
           category: "account",
-          badge: "Messenger",
+          badgeCount: unreadChatCount,
         },
         {
           key: "profile",
@@ -188,12 +213,21 @@ export default function Sidebar({
                     )}
                     title={item.label}
                   >
-                    <span className="shrink-0">{item.icon}</span>
+                    <div className="relative shrink-0 flex items-center justify-center">
+                      {item.icon}
+                      {collapsed && !isMobile && item.badgeCount !== undefined && item.badgeCount > 0 && (
+                        <span className="absolute -top-1 -right-1 size-2 rounded-full bg-rose-500 animate-pulse" />
+                      )}
+                    </div>
 
                     {(!collapsed || isMobile) && (
                       <div className="flex flex-1 items-center justify-between truncate text-left">
                         <span className="truncate">{item.label}</span>
-                        {item.badge && (
+                        {item.badgeCount !== undefined && item.badgeCount > 0 ? (
+                          <span className="rounded-full bg-rose-500 px-2 py-0.5 text-[9px] font-bold text-white shadow-xs animate-pulse">
+                            {item.badgeCount > 9 ? "9+" : item.badgeCount}
+                          </span>
+                        ) : item.badge ? (
                           <span
                             className={clsx(
                               "rounded-full px-2 py-0.5 text-[9px] font-bold",
@@ -204,7 +238,7 @@ export default function Sidebar({
                           >
                             {item.badge}
                           </span>
-                        )}
+                        ) : null}
                       </div>
                     )}
                   </button>

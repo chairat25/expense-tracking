@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm";
 import { db } from "@/db";
-import { userProfiles } from "@/db/schema";
+import { userProfiles, userSettings } from "@/db/schema";
 import { requireUserId, unauthorized } from "@/lib/api";
 import { getUser } from "@/lib/supabase/server";
 
@@ -21,8 +21,12 @@ export async function GET() {
     .from(userProfiles)
     .where(eq(userProfiles.userId, userId));
 
+  const [settingsRow] = await db
+    .select()
+    .from(userSettings)
+    .where(eq(userSettings.userId, userId));
+
   if (!profile) {
-    // Auto-create initial profile for the logged in user
     try {
       const [inserted] = await db
         .insert(userProfiles)
@@ -33,10 +37,8 @@ export async function GET() {
           bio: "กำลังวางแผนจัดการเงินอย่างมีประสิทธิภาพ 🎯",
         })
         .returning();
-
       profile = inserted;
     } catch {
-      // Fallback object if insert fails
       profile = {
         userId,
         displayName: defaultDisplayName,
@@ -51,8 +53,10 @@ export async function GET() {
     profile: {
       ...profile,
       email,
+      showCommunity: settingsRow?.showCommunity ?? true,
     },
     email,
+    showCommunity: settingsRow?.showCommunity ?? true,
   });
 }
 
@@ -68,6 +72,20 @@ export async function POST(req: Request) {
     const displayName = String(body.displayName || "").trim();
     const avatarUrl = String(body.avatarUrl || "").trim();
     const bio = String(body.bio || "").trim();
+    const showCommunity = body.showCommunity !== undefined ? Boolean(body.showCommunity) : undefined;
+
+    if (showCommunity !== undefined) {
+      await db
+        .insert(userSettings)
+        .values({
+          userId,
+          showCommunity,
+        })
+        .onConflictDoUpdate({
+          target: userSettings.userId,
+          set: { showCommunity },
+        });
+    }
 
     const [existing] = await db
       .select()
@@ -98,12 +116,19 @@ export async function POST(req: Request) {
       .from(userProfiles)
       .where(eq(userProfiles.userId, userId));
 
+    const [settingsRow] = await db
+      .select()
+      .from(userSettings)
+      .where(eq(userSettings.userId, userId));
+
     return Response.json({
       success: true,
       profile: {
         ...updated,
         email,
+        showCommunity: settingsRow?.showCommunity ?? true,
       },
+      showCommunity: settingsRow?.showCommunity ?? true,
     });
   } catch (err: any) {
     return Response.json(

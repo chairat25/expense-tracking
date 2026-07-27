@@ -8,7 +8,8 @@ type Props = {
   remaining: number;
   nextYm: string;
   savingsAmount: number | null;
-  onConfirm: (savingsAmount: number) => Promise<void>;
+  onConfirm: (savingsAmount: number, targetYm?: string) => Promise<void>;
+  onCancel?: () => Promise<void> | void;
 };
 
 export default function CarryOverCard({
@@ -16,9 +17,11 @@ export default function CarryOverCard({
   nextYm,
   savingsAmount,
   onConfirm,
+  onCancel,
 }: Props) {
   const [editing, setEditing] = useState(savingsAmount === null);
   const [draft, setDraft] = useState(savingsAmount ?? 0);
+  const [targetYm, setTargetYm] = useState(nextYm);
   const [busy, setBusy] = useState(false);
 
   if (remaining <= 0) {
@@ -38,7 +41,7 @@ export default function CarryOverCard({
           <span className="font-semibold text-income">
             {formatBaht(carryOverAmount)} ฿
           </span>{" "}
-          ไปเดือน{formatMonthTH(nextYm, true)} · เก็บ{" "}
+          ไปเดือน{formatMonthTH(targetYm, true)} · เก็บ{" "}
           <span className="font-semibold text-accent">
             {formatBaht(savingsAmount)} ฿
           </span>
@@ -65,12 +68,28 @@ export default function CarryOverCard({
   return (
     <div className="space-y-3 border-t border-border p-4">
       <div className="flex items-center justify-between text-sm">
-        <span className="flex items-center gap-1.5 text-accent">
-          <PiggyBank size={15} /> เงินเก็บ
+        <span className="flex items-center gap-1.5 text-accent font-semibold">
+          <PiggyBank size={15} /> แบ่งเงินเก็บ
         </span>
-        <span className="flex items-center gap-1.5 text-income">
-          ใช้เดือนหน้า <ArrowRight size={14} />
-        </span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xs text-muted">ยกยอดไปรอบเดือน:</span>
+          <select
+            value={targetYm}
+            onChange={(e) => setTargetYm(e.target.value)}
+            className="rounded-lg border border-border bg-surface-2 px-2 py-1 text-xs font-bold text-income outline-none"
+          >
+            {[-1, 0, 1, 2].map((offset) => {
+              const [y, m] = nextYm.split("-").map(Number);
+              const dt = new Date(y, m - 1 + offset, 1);
+              const ymStr = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}`;
+              return (
+                <option key={ymStr} value={ymStr}>
+                  {formatMonthTH(ymStr)}
+                </option>
+              );
+            })}
+          </select>
+        </div>
       </div>
 
       <input
@@ -92,18 +111,30 @@ export default function CarryOverCard({
         />
       </div>
 
-      <button
-        disabled={busy}
-        onClick={async () => {
-          setBusy(true);
-          await onConfirm(draft);
-          setBusy(false);
-          setEditing(false);
-        }}
-        className="w-full rounded-xl bg-accent py-3 text-sm font-semibold text-white transition active:scale-95 disabled:opacity-50"
-      >
-        {busy ? "กำลังบันทึก…" : "ยืนยันการแบ่ง"}
-      </button>
+      <div className="flex gap-2">
+        <button
+          disabled={busy}
+          onClick={async () => {
+            setBusy(true);
+            await onConfirm(draft, targetYm);
+            setBusy(false);
+            setEditing(false);
+          }}
+          className="flex-1 rounded-xl bg-accent py-3 text-sm font-semibold text-white transition active:scale-95 disabled:opacity-50"
+        >
+          {busy ? "กำลังบันทึก…" : `ยืนยันการแบ่ง & ยกยอดไปเดือน${formatMonthTH(targetYm, true)}`}
+        </button>
+        {onCancel && (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={onCancel}
+            className="rounded-xl border border-border px-4 py-3 text-sm font-semibold text-muted hover:bg-surface-2 transition active:scale-95 shrink-0"
+          >
+            ยกเลิก
+          </button>
+        )}
+      </div>
     </div>
   );
 }

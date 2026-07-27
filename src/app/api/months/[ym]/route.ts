@@ -1,6 +1,6 @@
 import { and, asc, eq, gte, lte } from "drizzle-orm";
 import { db } from "@/db";
-import { months, transactions, dailyBudgets, userSettings } from "@/db/schema";
+import { months, transactions, dailyBudgets, userSettings, salaryPockets, weeklyEnvelopes } from "@/db/schema";
 import {
   badRequest,
   monthPatch,
@@ -24,7 +24,7 @@ export async function GET(_req: Request, { params }: Ctx) {
   const from = `${ym}-01`;
   const to = `${ym}-${String(daysInMonth(ym)).padStart(2, "0")}`;
 
-  const [monthRow, rows, budgets, settings] = await Promise.all([
+  const [monthRow, rows, budgets, settings, pocketRows, envelopeRows] = await Promise.all([
     db.query.months.findFirst({
       where: and(eq(months.userId, userId), eq(months.ym, ym)),
     }),
@@ -49,6 +49,12 @@ export async function GET(_req: Request, { params }: Ctx) {
     db.query.userSettings.findFirst({
       where: eq(userSettings.userId, userId),
     }),
+    db.query.salaryPockets.findMany({
+      where: and(eq(salaryPockets.userId, userId), eq(salaryPockets.ym, ym)),
+    }),
+    db.query.weeklyEnvelopes.findMany({
+      where: and(eq(weeklyEnvelopes.userId, userId), eq(weeklyEnvelopes.ym, ym)),
+    }),
   ]);
 
   const body: MonthData = {
@@ -60,6 +66,7 @@ export async function GET(_req: Request, { params }: Ctx) {
     // ไม่ใช่ข้อมูลของเดือนจริงๆ แต่แถมมากับ response นี้เพื่อไม่ต้อง fetch เพิ่ม
     // และกันไม่ให้โหมดกระพริบผิดตอนโหลด — skeleton คลุมช่วงนี้อยู่แล้ว
     budgetMode: settings?.budgetMode ?? "month",
+    weeklyResetDate: settings?.weeklyResetDate ?? null,
     transactions: rows.map((r) => ({
       id: r.id,
       date: r.date,
@@ -74,6 +81,18 @@ export async function GET(_req: Request, { params }: Ctx) {
       userId: b.userId,
       date: b.date,
       amount: Number(b.amount),
+    })),
+    pockets: pocketRows.map((p) => ({
+      id: p.id,
+      name: p.name,
+      allocatedAmount: Number(p.allocatedAmount),
+      isWeeklyPool: Boolean(p.isWeeklyPool),
+    })),
+    weeklyEnvelopes: envelopeRows.map((e) => ({
+      weekIndex: e.weekIndex,
+      startDate: e.startDate,
+      endDate: e.endDate,
+      budgetAmount: Number(e.budgetAmount),
     })),
   };
 

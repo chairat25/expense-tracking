@@ -38,6 +38,7 @@ export default function ProfileView() {
   const [bio, setBio] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [userEmail, setUserEmail] = useState("");
+  const [showCommunity, setShowCommunity] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -70,6 +71,7 @@ export default function ProfileView() {
             setBio(d.profile.bio || "");
             setAvatarUrl(d.profile.avatarUrl || "");
             setUserEmail(d.email || d.profile.email || "");
+            setShowCommunity(d.showCommunity ?? true);
           }
         }
 
@@ -126,6 +128,7 @@ export default function ProfileView() {
           displayName,
           bio,
           avatarUrl,
+          showCommunity,
         }),
       });
 
@@ -256,6 +259,22 @@ export default function ProfileView() {
             />
           </div>
 
+          <div className="flex items-center justify-between rounded-xl bg-surface-2/60 p-3 border border-border">
+            <div>
+              <p className="text-xs font-bold text-foreground">🌐 เปิดใช้งานโซน Community & แชทกับเพื่อน</p>
+              <p className="text-[10px] text-muted">แสดงเมนูคอมมูนิตี้ในแถบนำทางเพื่อแลกเปลี่ยนแนวทางและส่งคำขอเพื่อน</p>
+            </div>
+            <label className="relative inline-flex cursor-pointer items-center shrink-0 ml-2">
+              <input
+                type="checkbox"
+                checked={showCommunity}
+                onChange={(e) => setShowCommunity(e.target.checked)}
+                className="peer sr-only"
+              />
+              <div className="peer h-6 w-11 rounded-full bg-border border border-border/80 after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-indigo-600 peer-checked:after:translate-x-full" />
+            </label>
+          </div>
+
           <div className="pt-2">
             <button
               type="submit"
@@ -324,6 +343,37 @@ export default function ProfileView() {
               </button>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Danger Zone: Reset Account Data */}
+      <div className="card space-y-3 p-4 border-rose-500/30 bg-rose-500/5">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-xs font-bold text-rose-400">🚨 ล้างข้อมูลทั้งหมดเพื่อเริ่ม Set Zero ใหม่</h3>
+            <p className="text-[11px] text-muted">ลบประวัติการเงินและรายการทั้งหมดของคุณเพื่อเริ่มต้นบัญชีใหม่ตั้งแต่ต้น</p>
+          </div>
+          <button
+            type="button"
+            onClick={async () => {
+              if (confirm("⚠️ คุณแน่ใจหรือไม่ว่าต้องการล้างข้อมูลการเงินทั้งหมด? ข้อมูลทั้งหมดจะถูกลบและไม่สามารถกู้คืนได้!")) {
+                try {
+                  const res = await fetch("/api/user/reset", { method: "POST" });
+                  if (res.ok) {
+                    alert("ล้างข้อมูลเรียบร้อยแล้ว! กำลังโหลดหน้าใหม่...");
+                    window.location.reload();
+                  } else {
+                    alert("ล้างข้อมูลไม่สำเร็จ");
+                  }
+                } catch (e) {
+                  alert("เกิดข้อผิดพลาด");
+                }
+              }
+            }}
+            className="rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 px-3 py-2 text-xs font-bold text-rose-400 transition active:scale-95 shrink-0"
+          >
+            ล้างข้อมูลเริ่มต้นใหม่
+          </button>
         </div>
       </div>
 

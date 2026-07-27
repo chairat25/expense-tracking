@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
-import { Banknote, CalendarDays, ListTodo, Loader2, Settings, BookmarkCheck, Home as HomeIcon, User } from "lucide-react";
+import { Banknote, CalendarDays, ListTodo, Loader2, Settings, BookmarkCheck, Home as HomeIcon, User, Users } from "lucide-react";
 import AccountBar from "@/components/AccountBar";
 import MonthStrip from "@/components/MonthStrip";
 import DayView from "@/components/DayView";
@@ -12,6 +12,7 @@ import MemoView from "@/components/MemoView";
 import HomeView from "@/components/HomeView";
 import ProfileView from "@/components/ProfileView";
 import ChatView from "@/components/ChatView";
+import CommunityView from "@/components/CommunityView";
 import Sidebar from "@/components/Sidebar";
 import AppHeader from "@/components/AppHeader";
 import { Skeleton } from "@/components/Skeleton";
@@ -33,7 +34,7 @@ import {
 import RestrictedNotice from "@/components/RestrictedNotice";
 import { createClient } from "@/lib/supabase/client";
 
-type View = "home" | "day" | "month" | "salary" | "memo" | "profile" | "chat";
+type View = "day" | "month" | "home" | "commu" | "salary" | "memo" | "profile" | "chat";
 
 type DynamicMenu = {
   id: number;
@@ -66,7 +67,7 @@ async function safeJson(res: Response) {
 export default function Home() {
   const [ym, setYm] = useState(thisMonthKey);
   const [date, setDate] = useState(todayKey);
-  const [view, setView] = useState<View>("home");
+  const [view, setView] = useState<View>("day");
   const [month, setMonth] = useState<MonthData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [totalSavings, setTotalSavings] = useState(0);
@@ -190,6 +191,25 @@ export default function Home() {
     [month, date],
   );
 
+  const weekBudget = useMemo(() => {
+    if (!month) return undefined;
+    const slice = weekSliceInMonth(date, ym, month.weeklyResetDate);
+    const resetDate = month.weeklyResetDate;
+    const weekTxs = (month.transactions ?? []).filter(
+      (t) =>
+        t.date >= slice.from &&
+        t.date <= slice.to &&
+        (!resetDate || t.date >= resetDate),
+    );
+    const { expense: weekExpense } = totals(weekTxs);
+    const envelope = budget?.week?.envelope ?? 0;
+    return {
+      opening: envelope,
+      expense: weekExpense,
+      remaining: envelope - weekExpense,
+    };
+  }, [month, date, ym, budget]);
+
   async function updateDailyBudget(amount: number) {
     if (!month) return;
     const dates =
@@ -276,11 +296,11 @@ export default function Home() {
     setMonth((m) => (m ? { ...m, ...data } : m));
   }
 
-  async function confirmCarryOver(savingsAmount: number) {
+  async function confirmCarryOver(savingsAmount: number, targetYm?: string) {
     const res = await fetch(`/api/months/${ym}/carry-over`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ savingsAmount }),
+      body: JSON.stringify({ savingsAmount, targetYm }),
     });
     const data = await safeJson(res);
     if (!res.ok) {
@@ -290,24 +310,55 @@ export default function Home() {
     const { nextYm }: { nextYm?: string } = data;
     setMonth((m) => (m ? { ...m, savingsAmount } : m));
     void loadSavings();
-    if (nextYm && nextYm <= thisMonthKey()) pickMonth(nextYm);
+    if (nextYm) pickMonth(nextYm);
   }
+
+  async function handleSettleWeek(amount: number, weekFrom: string, weekTo: string) {
+    const res = await fetch("/api/weeks/settle", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date, amount, weekFrom, weekTo }),
+    });
+    const data = await safeJson(res);
+    if (!res.ok) {
+      setError(data.error ?? "ตัดยอดสัปดาห์ไม่สำเร็จ");
+      return;
+    }
+    void load(ym);
+    void loadSavings();
+  }
+
+  const [showCommunity, setShowCommunity] = useState(true);
+
+  useEffect(() => {
+    async function loadCommunitySetting() {
+      try {
+        const res = await fetch("/api/profile");
+        if (res.ok) {
+          const data = await res.json();
+          setShowCommunity(data.showCommunity ?? true);
+        }
+      } catch (e) {}
+    }
+    void loadCommunitySetting();
+  }, []);
 
   const lastDay = `${ym}-${String(daysInMonth(ym)).padStart(2, "0")}`;
 
   const defaultTabs: { key: string; label: string; icon: React.ReactNode; view: View }[] = [
     { key: "day", label: "รายวัน", icon: <ListTodo size={18} />, view: "day" },
     { key: "month", label: "สรุปเดือน", icon: <CalendarDays size={18} />, view: "month" },
-    { key: "home", label: "หน้าหลัก", icon: <HomeIcon size={18} />, view: "home" },
+    { key: "home", label: "แดชบอร์ด", icon: <HomeIcon size={18} />, view: "home" },
     { key: "salary", label: "เงินเดือน", icon: <Banknote size={18} />, view: "salary" },
+    ...(showCommunity ? [{ key: "commu", label: "คอมมูนิตี้", icon: <Users size={18} />, view: "commu" as View }] : []),
     { key: "memo", label: "ความจำ", icon: <BookmarkCheck size={18} />, view: "memo" },
   ];
 
   const activeTabs = useMemo(() => {
-    const homeTabItem = { key: "home", label: "หน้าหลัก", icon: <HomeIcon size={18} />, view: "home" as View };
+    const homeTabItem = { key: "home", label: "แดชบอร์ด", icon: <HomeIcon size={18} />, view: "home" as View };
     if (!navMenus) return defaultTabs;
     const dynamic = navMenus
-      .filter((m) => m.key !== "admin")
+      .filter((m) => m.key !== "admin" && (showCommunity || m.key !== "commu"))
       .map((m) => ({
         key: m.key,
         label: m.label,
@@ -318,7 +369,7 @@ export default function Home() {
       dynamic.push(homeTabItem);
     }
     return dynamic;
-  }, [navMenus]);
+  }, [navMenus, showCommunity]);
 
   const isViewAllowed = useMemo(() => {
     if (view === "chat" || view === "profile") return true;
@@ -365,6 +416,8 @@ export default function Home() {
             closed={locked === true}
             loading={showSkeleton}
             currentView={view}
+            budgetMode={month?.budgetMode}
+            weekBudget={weekBudget}
           />
         )}
 
@@ -399,6 +452,8 @@ export default function Home() {
                 setView(firstAllowed);
               }}
             />
+          ) : view === "commu" ? (
+            <CommunityView />
           ) : view === "home" ? (
             <HomeView month={month} />
           ) : view === "day" ? (
@@ -416,6 +471,7 @@ export default function Home() {
               budgetMode={month.budgetMode}
               onBudgetModeChange={changeBudgetMode}
               week={budget?.week ?? null}
+              onSettleWeek={handleSettleWeek}
             />
           ) : view === "salary" ? (
             <SalaryView ym={ym} onSalarySaved={() => void load(ym)} />

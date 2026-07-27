@@ -97,6 +97,8 @@ export const userSettings = pgTable("user_settings", {
   defaultSalary: numeric("default_salary", { precision: 12, scale: 2 })
     .notNull()
     .default("0"),
+  weeklyResetDate: text("weekly_reset_date"),
+  showCommunity: boolean("show_community").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
@@ -324,6 +326,29 @@ export const pushSubscriptions = pgTable("push_subscriptions", {
     .defaultNow(),
 });
 
+export const friendshipStatusEnum = pgEnum("friendship_status", [
+  "pending",
+  "accepted",
+  "rejected",
+]);
+
+export const friendships = pgTable(
+  "friendships",
+  {
+    id: serial("id").primaryKey(),
+    requesterId: uuid("requester_id").notNull(),
+    receiverId: uuid("receiver_id").notNull(),
+    status: friendshipStatusEnum("status").notNull().default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [uniqueIndex("friendships_pair_uq").on(t.requesterId, t.receiverId)],
+);
+
 export type Transaction = typeof transactions.$inferSelect;
 export type Month = typeof months.$inferSelect;
 export type SavingsTransaction = typeof savingsTransactions.$inferSelect;
@@ -339,6 +364,7 @@ export type SalaryPocket = typeof salaryPockets.$inferSelect;
 export type WeeklyEnvelope = typeof weeklyEnvelopes.$inferSelect;
 export type UserProfile = typeof userProfiles.$inferSelect;
 export type UserFriend = typeof userFriends.$inferSelect;
+export type Friendship = typeof friendships.$inferSelect;
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type UserNotification = typeof userNotifications.$inferSelect;
 export type PushSubscriptionItem = typeof pushSubscriptions.$inferSelect;

@@ -53,3 +53,21 @@ export async function PUT(req: Request) {
     );
   }
 }
+
+export async function DELETE() {
+  const userId = await requireUserId();
+  if (!userId) return unauthorized();
+
+  try {
+    await db
+      .delete(userNotifications)
+      .where(eq(userNotifications.userId, userId));
+
+    return Response.json({ success: true });
+  } catch (err: any) {
+    return Response.json(
+      { error: err.message || "ลบการแจ้งเตือนไม่สำเร็จ" },
+      { status: 500 },
+    );
+  }
+}
