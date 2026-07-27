@@ -9,7 +9,7 @@ type CommunityUser = {
   displayName: string;
   avatarUrl: string;
   bio: string;
-  isOnline: boolean;
+  isOnline?: boolean;
 };
 
 type ChatMessageItem = {

@@ -18,6 +18,7 @@ const VIEW_TITLES: Record<View, string> = {
   memo: "ความจำ & เตือนความจำ",
   profile: "โปรไฟล์ส่วนตัว",
   chat: "แชท & ข้อความ (Messenger)",
+  commu: "คอมมูนิตี้ & เพื่อน",
 };
 
 export default function AppHeader({

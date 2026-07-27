@@ -6,6 +6,8 @@ import clsx from "clsx";
 import { Skeleton } from "@/components/Skeleton";
 import { formatBaht, formatMonthTH, shiftMonth, thisMonthKey } from "@/lib/shared";
 
+import type { View } from "./Sidebar";
+
 type Props = {
   ym: string;
   onChange: (ym: string) => void;
@@ -15,7 +17,7 @@ type Props = {
   savings: number;
   closed: boolean;
   loading?: boolean;
-  currentView?: "home" | "day" | "month" | "salary" | "memo" | "profile" | "chat";
+  currentView?: View;
   budgetMode?: "month" | "week";
   weekBudget?: {
     opening: number;
@@ -38,6 +40,7 @@ const VIEW_HEADERS: Record<string, { icon: string; title: string }> = {
   memo: { icon: "🧠", title: "บันทึกความจำ & เตือนความจำ" },
   profile: { icon: "👤", title: "โปรไฟล์ส่วนตัว & สังคมคอมมูนิตี้" },
   chat: { icon: "💬", title: "แชท & ข้อความ (Messenger)" },
+  commu: { icon: "👥", title: "คอมมูนิตี้ & เพื่อน" },
 };
 
 export default function MonthStrip({

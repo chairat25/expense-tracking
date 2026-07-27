@@ -290,6 +290,7 @@ export const chatMessages = pgTable(
     senderId: uuid("sender_id").notNull(),
     receiverId: uuid("receiver_id").notNull(),
     content: text("content").notNull(),
+    isRead: boolean("is_read").notNull().default(false),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
