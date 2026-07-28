@@ -346,18 +346,40 @@ export default function Sidebar({
           </div>
         </div>
 
-        {/* Footer Quick Budget Widget */}
-        {!collapsed && month && (
-          <div className="mx-3 rounded-2xl border border-indigo-500/20 bg-indigo-500/10 p-3 space-y-1">
-            <div className="flex items-center justify-between text-[11px] font-semibold text-indigo-400">
-              <span>งบรวมเดือนนี้</span>
-              <Sparkles size={13} />
+        {/* Footer Quick Quote & Budget Widget */}
+        <div className="mx-3 space-y-2">
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent("open-daily-quote"))}
+            className={clsx(
+              "w-full flex items-center justify-between gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 px-3.5 py-2.5 text-xs font-bold text-amber-400 transition active:scale-95 shadow-xs",
+              collapsed && "justify-center px-0"
+            )}
+            title="พลังใจประจำวัน (คำคม)"
+          >
+            <span className="flex items-center gap-2">
+              <Sparkles size={15} />
+              {!collapsed && <span>พลังใจวันนี้</span>}
+            </span>
+            {!collapsed && (
+              <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] text-amber-300">
+                คำคม
+              </span>
+            )}
+          </button>
+
+          {!collapsed && month && (
+            <div className="rounded-2xl border border-indigo-500/20 bg-indigo-500/10 p-3 space-y-1">
+              <div className="flex items-center justify-between text-[11px] font-semibold text-indigo-400">
+                <span>งบรวมเดือนนี้</span>
+                <Sparkles size={13} />
+              </div>
+              <p className="tnum text-base font-bold text-foreground">
+                {formatBaht(month.openingBalance)} ฿
+              </p>
             </div>
-            <p className="tnum text-base font-bold text-foreground">
-              {formatBaht(month.openingBalance)} ฿
-            </p>
-          </div>
-        )}
+          )}
+        </div>
       </aside>
 
       {/* 2. MOBILE DRAWER SIDEBAR (lg:hidden) */}

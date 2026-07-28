@@ -4,6 +4,7 @@ import "./globals.css";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import Onboarding from "@/components/Onboarding";
 import PullToRefresh from "@/components/PullToRefresh";
+import DailyQuotePreScreen from "@/components/DailyQuotePreScreen";
 
 const notoThai = Noto_Sans_Thai({
   variable: "--font-thai",
@@ -40,6 +41,7 @@ export default function RootLayout({
         style={{ fontFamily: "var(--font-thai), system-ui, sans-serif" }}
         suppressHydrationWarning
       >
+        <DailyQuotePreScreen />
         {children}
         <PwaInstallPrompt />
         <Onboarding />

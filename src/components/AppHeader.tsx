@@ -52,6 +52,14 @@ export default function AppHeader({
 
       {/* Right Controls */}
       <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new CustomEvent("open-daily-quote"))}
+          className="flex size-9 items-center justify-center rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 transition active:scale-95 shadow-xs"
+          title="คำคมพลังใจวันนี้"
+        >
+          <Sparkles size={17} />
+        </button>
         <NotificationCenter onSelectView={onSelectView} />
         <button
           type="button"
