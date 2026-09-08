@@ -1,16 +1,61 @@
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, gte, lte } from "drizzle-orm";
 import { db } from "@/db";
 import { transactions, dailyBudgets } from "@/db/schema";
 import { badRequest, requireUserId, txInput, unauthorized } from "@/lib/api";
-import { todayKey } from "@/lib/shared";
+import { todayKey, shiftDate } from "@/lib/shared";
 
 export async function GET(req: Request) {
   const userId = await requireUserId();
   if (!userId) return unauthorized();
 
   const { searchParams } = new URL(req.url);
+  const isHistory = searchParams.get("history") === "true";
   const date = searchParams.get("date") || todayKey();
 
+  if (isHistory) {
+    const days = Math.min(30, Math.max(7, parseInt(searchParams.get("days") || "14", 10)));
+    const today = todayKey();
+    const fromDate = shiftDate(today, -(days - 1));
+
+    const rows = await db
+      .select()
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.userId, userId),
+          gte(transactions.date, fromDate),
+          lte(transactions.date, today)
+        )
+      )
+      .orderBy(desc(transactions.date), desc(transactions.spentAt));
+
+    const dailySummaryMap: Record<string, { date: string; expense: number; income: number; count: number }> = {};
+
+    // Initialize all dates in range
+    for (let i = 0; i < days; i++) {
+      const d = shiftDate(today, -i);
+      dailySummaryMap[d] = { date: d, expense: 0, income: 0, count: 0 };
+    }
+
+    for (const r of rows) {
+      const amt = Number(r.amount);
+      if (dailySummaryMap[r.date]) {
+        dailySummaryMap[r.date].count += 1;
+        if (r.type === "expense") dailySummaryMap[r.date].expense += amt;
+        else dailySummaryMap[r.date].income += amt;
+      }
+    }
+
+    const history = Object.values(dailySummaryMap).sort((a, b) => b.date.localeCompare(a.date));
+
+    return Response.json({
+      history,
+      fromDate,
+      toDate: today,
+    });
+  }
+
+  // Single Date Query
   const rows = await db
     .select()
     .from(transactions)
