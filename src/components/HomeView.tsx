@@ -21,6 +21,8 @@ import {
   RotateCcw,
   AlertCircle,
   Clock,
+  CalendarDays,
+  CalendarSearch,
 } from "lucide-react";
 import {
   todayKey,
@@ -34,6 +36,7 @@ import {
   type Tx,
 } from "@/lib/shared";
 import { createClient } from "@/lib/supabase/client";
+import MobileDatePicker from "@/components/MobileDatePicker";
 
 interface CategoryOption {
   slug: string;
@@ -65,6 +68,7 @@ export default function HomeView() {
 
   // Selected Date state (defaults to today)
   const [selectedDate, setSelectedDate] = useState<string>(today);
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
 
   // Data States
   const [loading, setLoading] = useState(true);
@@ -76,7 +80,6 @@ export default function HomeView() {
   const [categories, setCategories] = useState<CategoryOption[]>(DEFAULT_CATEGORIES);
 
   // Form State
-  const [formDate, setFormDate] = useState<string>(today);
   const [amount, setAmount] = useState("");
   const [type, setType] = useState<"expense" | "income">("expense");
   const [category, setCategory] = useState<string>("food");
@@ -128,7 +131,6 @@ export default function HomeView() {
   // When selectedDate changes, load data
   useEffect(() => {
     void loadDateData(selectedDate);
-    setFormDate(selectedDate);
   }, [selectedDate, loadDateData]);
 
   // Load Categories & Profile
@@ -204,7 +206,7 @@ export default function HomeView() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          date: formDate,
+          date: selectedDate,
           type,
           amount: numAmount,
           category,
@@ -219,17 +221,11 @@ export default function HomeView() {
 
       const created: Tx = await res.json();
 
-      // If created for the currently viewed date, update list
-      if (formDate === selectedDate) {
-        setTransactions((prev) => [created, ...prev]);
-        if (type === "expense") {
-          setSpentForDate((prev) => prev + numAmount);
-        } else {
-          setIncomeForDate((prev) => prev + numAmount);
-        }
+      setTransactions((prev) => [created, ...prev]);
+      if (type === "expense") {
+        setSpentForDate((prev) => prev + numAmount);
       } else {
-        // If created for a different date (e.g. yesterday while viewing today), switch to that date
-        setSelectedDate(formDate);
+        setIncomeForDate((prev) => prev + numAmount);
       }
 
       // Reset form & Focus back
@@ -308,7 +304,7 @@ export default function HomeView() {
         <div className="mx-auto flex max-w-md items-center justify-between px-4 py-3">
           {/* Logo & App Title */}
           <div className="flex items-center gap-2">
-            <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
               Expense Tracking
             </span>
@@ -318,7 +314,7 @@ export default function HomeView() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setHistoryOpen(true)}
-              className="flex h-9 items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900 px-3 text-xs font-medium text-slate-300 transition-all hover:border-emerald-500/50 hover:bg-slate-800 hover:text-white active:scale-95"
+              className="flex h-9 items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900 px-3 text-xs font-semibold text-slate-300 transition-all hover:border-emerald-500/50 hover:bg-slate-800 hover:text-white active:scale-95"
               title="ประวัติย้อนหลัง"
             >
               <History size={15} className="text-emerald-400" />
@@ -343,94 +339,56 @@ export default function HomeView() {
           </div>
         </div>
 
-        {/* 2. Date Navigator Bar */}
-        <div className="border-t border-slate-900 bg-slate-950/60 px-4 py-2">
-          <div className="mx-auto flex max-w-md items-center justify-between">
-            {/* Prev Day Button */}
+        {/* 2. Compact Mobile-Friendly Date Capsule Bar (Single Row) */}
+        <div className="border-t border-slate-900 bg-slate-950/80 px-4 py-2">
+          <div className="mx-auto flex max-w-md items-center justify-between gap-2">
+            {/* Prev Day Arrow */}
             <button
               onClick={() => setSelectedDate(shiftDate(selectedDate, -1))}
-              className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-800 bg-slate-900 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white active:scale-90"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-800 bg-slate-900 text-slate-400 transition-all hover:bg-slate-800 hover:text-white active:scale-90"
               title="วันก่อนหน้า"
             >
-              <ChevronLeft size={16} />
+              <ChevronLeft size={18} />
             </button>
 
-            {/* Current Date Display */}
-            <div className="flex flex-col items-center">
-              <div className="flex items-center gap-1.5">
-                <span
-                  className={clsx(
-                    "inline-block rounded-full px-2 py-0.5 text-[10px] font-bold uppercase",
-                    isToday
-                      ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                      : isYesterday
-                      ? "bg-amber-500/20 text-amber-400 border border-amber-500/30"
-                      : "bg-slate-800 text-slate-400"
-                  )}
-                >
-                  {isToday ? "☀️ วันนี้" : isYesterday ? "⏪ เมื่อวาน" : "📅 ย้อนหลัง"}
-                </span>
-                <span className="text-sm font-bold text-slate-100">
-                  {formatDayTH(selectedDate)}
-                </span>
-              </div>
-            </div>
+            {/* Middle Capsule Date Button */}
+            <button
+              type="button"
+              onClick={() => setDatePickerOpen(true)}
+              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900/90 py-2 px-3 text-xs font-semibold text-slate-200 transition-all hover:border-emerald-500/50 hover:bg-slate-800 active:scale-[0.98] shadow-sm"
+            >
+              <span
+                className={clsx(
+                  "flex h-2 w-2 rounded-full",
+                  isToday ? "bg-emerald-400" : isYesterday ? "bg-amber-400" : "bg-indigo-400"
+                )}
+              />
+              <span className="font-bold text-white">
+                {isToday ? "วันนี้" : isYesterday ? "เมื่อวาน" : "ย้อนหลัง"}:
+              </span>
+              <span className="text-slate-300">{formatDayTH(selectedDate)}</span>
+              <CalendarDays size={14} className="text-emerald-400 shrink-0 ml-0.5" />
+            </button>
 
-            {/* Next Day Button */}
+            {/* Next Day Arrow */}
             <button
               onClick={() => canGoNext && setSelectedDate(shiftDate(selectedDate, 1))}
               disabled={!canGoNext}
-              className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-800 bg-slate-900 text-slate-400 transition-colors hover:bg-slate-800 hover:text-white active:scale-90 disabled:opacity-30 disabled:pointer-events-none"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-800 bg-slate-900 text-slate-400 transition-all hover:bg-slate-800 hover:text-white active:scale-90 disabled:opacity-20 disabled:pointer-events-none"
               title="วันถัดไป"
             >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-
-          {/* Quick Date Quick-Chips */}
-          <div className="mx-auto mt-2 flex max-w-md items-center justify-center gap-1.5">
-            <button
-              onClick={() => setSelectedDate(today)}
-              className={clsx(
-                "rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all",
-                isToday
-                  ? "bg-emerald-600 text-white shadow-sm"
-                  : "bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800"
-              )}
-            >
-              วันนี้
-            </button>
-            <button
-              onClick={() => setSelectedDate(yesterday)}
-              className={clsx(
-                "rounded-lg px-2.5 py-1 text-[11px] font-semibold transition-all",
-                isYesterday
-                  ? "bg-amber-600 text-white shadow-sm"
-                  : "bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800"
-              )}
-            >
-              เมื่อวาน
+              <ChevronRight size={18} />
             </button>
 
-            {/* Custom Date Input */}
-            <div className="relative">
-              <input
-                type="date"
-                max={today}
-                value={selectedDate}
-                onChange={(e) => e.target.value && setSelectedDate(e.target.value)}
-                className="w-28 rounded-lg border border-slate-800 bg-slate-900 px-2 py-1 text-[11px] font-medium text-slate-300 outline-none focus:border-emerald-500"
-              />
-            </div>
-
+            {/* Jump to Today Button (Appears only when viewing past dates) */}
             {!isToday && (
               <button
                 onClick={() => setSelectedDate(today)}
-                className="flex items-center gap-1 rounded-lg bg-emerald-950/60 border border-emerald-500/30 px-2 py-1 text-[11px] font-bold text-emerald-400 hover:bg-emerald-900/50"
+                className="flex h-9 items-center gap-1 rounded-xl bg-emerald-950/80 border border-emerald-500/40 px-2.5 text-xs font-bold text-emerald-400 hover:bg-emerald-900/60 active:scale-90 transition-all shrink-0"
                 title="กลับสู่วันนี้"
               >
                 <RotateCcw size={12} />
-                <span>กลับวันนี้</span>
+                <span>วันนี้</span>
               </button>
             )}
           </div>
@@ -507,45 +465,25 @@ export default function HomeView() {
           </div>
         </section>
 
-        {/* 5. Quick Add Form (With Backdated Date Selector) */}
+        {/* 5. Quick Add Form */}
         <section className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 shadow-lg backdrop-blur-sm">
           <form onSubmit={handleSubmit} className="space-y-3.5">
-            {/* Target Date Pill in Form */}
-            <div className="flex items-center justify-between rounded-xl bg-slate-950 px-3 py-1.5 border border-slate-800 text-xs">
-              <span className="text-slate-400">บันทึกลงวันที่:</span>
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setFormDate(today)}
-                  className={clsx(
-                    "rounded-md px-2 py-0.5 text-[11px] font-semibold transition-colors",
-                    formDate === today
-                      ? "bg-emerald-600 text-white"
-                      : "text-slate-400 hover:text-slate-200"
-                  )}
-                >
-                  วันนี้
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormDate(yesterday)}
-                  className={clsx(
-                    "rounded-md px-2 py-0.5 text-[11px] font-semibold transition-colors",
-                    formDate === yesterday
-                      ? "bg-amber-600 text-white"
-                      : "text-slate-400 hover:text-slate-200"
-                  )}
-                >
-                  เมื่อวาน
-                </button>
-                <input
-                  type="date"
-                  max={today}
-                  value={formDate}
-                  onChange={(e) => e.target.value && setFormDate(e.target.value)}
-                  className="rounded-md border border-slate-800 bg-slate-900 px-1.5 py-0.5 text-[11px] text-slate-300 outline-none"
-                />
-              </div>
+            {/* Target Date Pill Indicator in Form */}
+            <div className="flex items-center justify-between text-xs px-1">
+              <span className="text-slate-400">
+                บันทึกลง:{" "}
+                <strong className={isToday ? "text-emerald-400" : "text-amber-400"}>
+                  {isToday ? "วันนี้" : isYesterday ? "เมื่อวาน" : formatDayTH(selectedDate)}
+                </strong>
+              </span>
+              <button
+                type="button"
+                onClick={() => setDatePickerOpen(true)}
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 hover:text-emerald-400 transition-colors"
+              >
+                <CalendarSearch size={13} />
+                <span>เปลี่ยนวัน</span>
+              </button>
             </div>
 
             {/* Type Selector (Expense vs Income) */}
@@ -649,7 +587,7 @@ export default function HomeView() {
               ) : (
                 <>
                   <Plus size={18} />
-                  <span>บันทึกรายการ ({formatDayTH(formDate)})</span>
+                  <span>บันทึกรายการ ({formatDayTH(selectedDate)})</span>
                 </>
               )}
             </button>
@@ -744,7 +682,15 @@ export default function HomeView() {
         </section>
       </main>
 
-      {/* 7. History Drawer / Modal (ประวัติย้อนหลัง 14 วัน) */}
+      {/* 7. Mobile Date Picker Bottom Sheet Modal */}
+      <MobileDatePicker
+        isOpen={datePickerOpen}
+        selectedDate={selectedDate}
+        onSelectDate={(date) => setSelectedDate(date)}
+        onClose={() => setDatePickerOpen(false)}
+      />
+
+      {/* 8. History Drawer / Modal (ประวัติย้อนหลัง 14 วัน) */}
       {historyOpen && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4 animate-in fade-in duration-200">
           <div
@@ -841,7 +787,7 @@ export default function HomeView() {
         </div>
       )}
 
-      {/* 8. Profile & Budget Quotas Modal */}
+      {/* 9. Profile & Budget Quotas Modal */}
       {profileOpen && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4 animate-in fade-in duration-200">
           <div
