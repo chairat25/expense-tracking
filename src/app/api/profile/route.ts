@@ -1,8 +1,9 @@
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { db } from "@/db";
-import { userProfiles, userSettings } from "@/db/schema";
+import { userProfiles, userSettings, dailyBudgets, salaries, weeklyEnvelopes } from "@/db/schema";
 import { requireUserId, unauthorized } from "@/lib/api";
 import { getUser } from "@/lib/supabase/server";
+import { todayKey, thisMonthKey, getMonthWeeks } from "@/lib/shared";
 
 export async function GET() {
   const userId = await requireUserId();
@@ -34,7 +35,7 @@ export async function GET() {
           userId,
           displayName: defaultDisplayName,
           avatarUrl: googleAvatar,
-          bio: "กำลังวางแผนจัดการเงินอย่างมีประสิทธิภาพ 🎯",
+          bio: "บันทึกรายรับ-รายจ่ายประจำวัน 🎯",
         })
         .returning();
       profile = inserted;
@@ -43,20 +44,64 @@ export async function GET() {
         userId,
         displayName: defaultDisplayName,
         avatarUrl: googleAvatar,
-        bio: "กำลังวางแผนจัดการเงินอย่างมีประสิทธิภาพ 🎯",
+        bio: "บันทึกรายรับ-รายจ่ายประจำวัน 🎯",
         updatedAt: new Date(),
       };
     }
   }
 
+  const today = todayKey();
+  const currentYm = thisMonthKey();
+
+  // 1. Fetch Daily Budget for today
+  const [dailyRow] = await db
+    .select()
+    .from(dailyBudgets)
+    .where(and(eq(dailyBudgets.userId, userId), eq(dailyBudgets.date, today)));
+
+  // 2. Fetch Monthly Salary / Budget for current month
+  const [salaryRow] = await db
+    .select()
+    .from(salaries)
+    .where(and(eq(salaries.userId, userId), eq(salaries.ym, currentYm)));
+
+  // 3. Fetch Weekly Envelope for the current week
+  const weeks = getMonthWeeks(currentYm);
+  const currentWeek = weeks.find((w) => w.startDate <= today && today <= w.endDate) || weeks[0];
+
+  let weeklyEnvelopeBudget = 0;
+  if (currentWeek) {
+    const [envRow] = await db
+      .select()
+      .from(weeklyEnvelopes)
+      .where(
+        and(
+          eq(weeklyEnvelopes.userId, userId),
+          eq(weeklyEnvelopes.ym, currentYm),
+          eq(weeklyEnvelopes.weekIndex, currentWeek.weekIndex)
+        )
+      );
+    if (envRow) {
+      weeklyEnvelopeBudget = Number(envRow.budgetAmount);
+    }
+  }
+
+  const monthlyBudget = salaryRow ? Number(salaryRow.amount) : Number(settingsRow?.defaultSalary ?? 0);
+  const dailyBudget = dailyRow ? Number(dailyRow.amount) : (weeklyEnvelopeBudget > 0 && currentWeek ? weeklyEnvelopeBudget / currentWeek.days : (monthlyBudget > 0 ? monthlyBudget / 30 : 0));
+
   return Response.json({
     profile: {
       ...profile,
       email,
-      showCommunity: settingsRow?.showCommunity ?? true,
     },
     email,
-    showCommunity: settingsRow?.showCommunity ?? true,
+    budgets: {
+      daily: dailyBudget,
+      weekly: weeklyEnvelopeBudget,
+      monthly: monthlyBudget,
+      currentYm,
+      today,
+    },
   });
 }
 
@@ -72,20 +117,6 @@ export async function POST(req: Request) {
     const displayName = String(body.displayName || "").trim();
     const avatarUrl = String(body.avatarUrl || "").trim();
     const bio = String(body.bio || "").trim();
-    const showCommunity = body.showCommunity !== undefined ? Boolean(body.showCommunity) : undefined;
-
-    if (showCommunity !== undefined) {
-      await db
-        .insert(userSettings)
-        .values({
-          userId,
-          showCommunity,
-        })
-        .onConflictDoUpdate({
-          target: userSettings.userId,
-          set: { showCommunity },
-        });
-    }
 
     const [existing] = await db
       .select()
@@ -107,7 +138,7 @@ export async function POST(req: Request) {
         userId,
         displayName: displayName || "ผู้ใช้งาน Expense Tracker",
         avatarUrl,
-        bio: bio || "กำลังวางแผนจัดการเงินอย่างมีประสิทธิภาพ 🎯",
+        bio: bio || "บันทึกรายรับ-รายจ่ายประจำวัน 🎯",
       });
     }
 
@@ -116,19 +147,12 @@ export async function POST(req: Request) {
       .from(userProfiles)
       .where(eq(userProfiles.userId, userId));
 
-    const [settingsRow] = await db
-      .select()
-      .from(userSettings)
-      .where(eq(userSettings.userId, userId));
-
     return Response.json({
       success: true,
       profile: {
         ...updated,
         email,
-        showCommunity: settingsRow?.showCommunity ?? true,
       },
-      showCommunity: settingsRow?.showCommunity ?? true,
     });
   } catch (err: any) {
     return Response.json(

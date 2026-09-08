@@ -2,9 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Noto_Sans_Thai } from "next/font/google";
 import "./globals.css";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
-import Onboarding from "@/components/Onboarding";
 import PullToRefresh from "@/components/PullToRefresh";
-import DailyQuotePreScreen from "@/components/DailyQuotePreScreen";
 
 const notoThai = Noto_Sans_Thai({
   variable: "--font-thai",
@@ -13,15 +11,15 @@ const notoThai = Noto_Sans_Thai({
 });
 
 export const metadata: Metadata = {
-  title: "บันทึกรายรับรายจ่าย",
-  description: "จดรายรับรายจ่ายรายวัน สรุปยอดสิ้นเดือน",
+  title: "Expense Tracking - บันทึกรายรับรายจ่าย",
+  description: "เว็บบันทึกรายรับรายจ่ายรายวัน รวดเร็ว เรียบง่าย",
   manifest: "/manifest.json",
 };
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f3f4f6" },
-    { media: "(prefers-color-scheme: dark)", color: "#0c0e12" },
+    { media: "(prefers-color-scheme: light)", color: "#020617" },
+    { media: "(prefers-color-scheme: dark)", color: "#020617" },
   ],
   width: "device-width",
   initialScale: 1,
@@ -35,16 +33,14 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="th" className={`${notoThai.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang="th" className={`${notoThai.variable} h-full antialiased dark`} suppressHydrationWarning>
       <body
-        className="min-h-full flex flex-col relative"
+        className="min-h-full flex flex-col relative bg-slate-950 text-slate-100"
         style={{ fontFamily: "var(--font-thai), system-ui, sans-serif" }}
         suppressHydrationWarning
       >
-        <DailyQuotePreScreen />
         {children}
         <PwaInstallPrompt />
-        <Onboarding />
         <PullToRefresh />
       </body>
     </html>

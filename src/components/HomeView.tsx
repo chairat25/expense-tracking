@@ -1,653 +1,657 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import clsx from "clsx";
 import {
-  TrendingUp,
-  TrendingDown,
-  PieChart,
-  BarChart3,
+  User,
+  Plus,
+  Trash2,
+  LogOut,
+  X,
   Sparkles,
-  Zap,
-  ArrowUpRight,
-  ArrowDownRight,
-  ShieldCheck,
-  Loader2,
+  TrendingDown,
+  TrendingUp,
+  Wallet,
   Calendar,
-  Info,
-  Users,
-  MessageCircle,
+  Layers,
+  Sun,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import {
+  todayKey,
+  formatDayTH,
+  formatTimeTH,
+  formatBaht,
   CATEGORY_ICON,
   CATEGORY_LABEL,
-  formatBaht,
-  formatMonthTH,
-  shiftDate,
-  todayKey,
-  totals,
   type Category,
-  type MonthData,
+  type Tx,
 } from "@/lib/shared";
-import DirectChatModal from "./DirectChatModal";
+import { createClient } from "@/lib/supabase/client";
 
-type Props = {
-  month: MonthData | null;
-};
+interface CategoryOption {
+  slug: string;
+  name: string;
+  icon: string;
+  type: string;
+}
 
-type Range = "1W" | "1M" | "1Y" | "2Y" | "3Y" | "5Y";
+const DEFAULT_CATEGORIES: CategoryOption[] = [
+  { slug: "food", name: "อาหาร", icon: "🍚", type: "expense" },
+  { slug: "drink", name: "เครื่องดื่ม", icon: "🧋", type: "expense" },
+  { slug: "transport", name: "เดินทาง", icon: "🚗", type: "expense" },
+  { slug: "bill", name: "บิล/ค่างวด", icon: "🧾", type: "expense" },
+  { slug: "shopping", name: "ของใช้", icon: "🛍️", type: "expense" },
+  { slug: "fun", name: "บันเทิง", icon: "🎬", type: "expense" },
+  { slug: "other", name: "อื่นๆ", icon: "📦", type: "expense" },
+];
 
-type MonthlyAnalytics = {
-  ym: string;
-  income: number;
-  expense: number;
-};
+export default function HomeView() {
+  const today = todayKey();
 
-type CategoryAnalytics = {
-  category: Category;
-  amount: number;
-};
+  // State
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [transactions, setTransactions] = useState<Tx[]>([]);
+  const [todaySpent, setTodaySpent] = useState(0);
+  const [todayIncome, setTodayIncome] = useState(0);
+  const [dailyBudget, setDailyBudget] = useState<number | null>(null);
+  const [categories, setCategories] = useState<CategoryOption[]>(DEFAULT_CATEGORIES);
 
-type CommunityUser = {
-  userId: string;
-  displayName: string;
-  avatarUrl: string;
-  bio: string;
-  isOnline: boolean;
-};
+  // Form State
+  const [amount, setAmount] = useState("");
+  const [type, setType] = useState<"expense" | "income">("expense");
+  const [category, setCategory] = useState<string>("food");
+  const [note, setNote] = useState("");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-export default function HomeView({ month }: Props) {
-  const [range, setRange] = useState<Range>("1M");
-  const [loading, setLoading] = useState(false);
-  const [historicalData, setHistoricalData] = useState<MonthlyAnalytics[]>([]);
-  const [historicalCategories, setHistoricalCategories] = useState<CategoryAnalytics[]>([]);
+  // Profile & Modal State
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [profile, setProfile] = useState<{
+    displayName: string;
+    email: string;
+    avatarUrl: string;
+    bio: string;
+  } | null>(null);
+  const [budgets, setBudgets] = useState<{
+    daily: number;
+    weekly: number;
+    monthly: number;
+  } | null>(null);
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [editName, setEditName] = useState("");
 
-  // Community & Direct Chat States
-  const [communityUsers, setCommunityUsers] = useState<CommunityUser[]>([]);
-  const [activeChatFriend, setActiveChatFriend] = useState<CommunityUser | null>(null);
+  const amountInputRef = useRef<HTMLInputElement>(null);
 
-  // Load Community Users List
-  useEffect(() => {
-    let isCancelled = false;
-    async function loadCommunity() {
-      try {
-        const res = await fetch("/api/community/users");
+  // Load Transactions for Today
+  const loadTodayData = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/transactions?date=${today}`, { cache: "no-store" });
+      if (res.ok) {
         const data = await res.json();
-        if (!isCancelled && data.users) {
-          setCommunityUsers(data.users);
+        setTransactions(data.transactions || []);
+        setTodaySpent(data.todaySpent || 0);
+        setTodayIncome(data.todayIncome || 0);
+        setDailyBudget(data.dailyBudget ?? null);
+      }
+    } catch (err) {
+      console.error("Failed to load today transactions:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [today]);
+
+  // Load Categories & Profile
+  useEffect(() => {
+    void loadTodayData();
+
+    async function loadMeta() {
+      try {
+        const [catRes, profRes] = await Promise.all([
+          fetch("/api/categories", { cache: "no-store" }),
+          fetch("/api/profile", { cache: "no-store" }),
+        ]);
+
+        if (catRes.ok) {
+          const catData = await catRes.json();
+          if (Array.isArray(catData.categories) && catData.categories.length > 0) {
+            setCategories(catData.categories);
+          }
+        }
+
+        if (profRes.ok) {
+          const profData = await profRes.json();
+          setProfile(profData.profile || null);
+          setEditName(profData.profile?.displayName || "");
+          setBudgets(profData.budgets || null);
+          if (profData.budgets?.daily && dailyBudget === null) {
+            setDailyBudget(profData.budgets.daily);
+          }
         }
       } catch (err) {
-        console.error("Failed to load community users", err);
+        console.error("Failed to load meta data:", err);
       }
     }
-    void loadCommunity();
-    return () => {
-      isCancelled = true;
-    };
-  }, []);
 
-  // Hover Tooltip State
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const svgRef = useRef<SVGSVGElement | null>(null);
+    void loadMeta();
+  }, [loadTodayData]);
 
-  // โหลดข้อมูลย้อนหลังเมื่อเลือกช่วงเวลา 1Y, 2Y, 3Y, 5Y
-  useEffect(() => {
-    if (range === "1W" || range === "1M") {
-      setLoading(false);
+  // Handle Quick Add Submit
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount) || numAmount <= 0) {
+      setErrorMsg("กรุณาระบุจำนวนเงินที่ถูกต้อง");
+      amountInputRef.current?.focus();
       return;
     }
 
-    const years = range === "1Y" ? 1 : range === "2Y" ? 2 : range === "3Y" ? 3 : 5;
-    let isCancelled = false;
+    setSubmitting(true);
+    setErrorMsg(null);
 
-    async function loadAnalytics() {
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/analytics?years=${years}`);
-        const data = await res.json();
-        if (!isCancelled && data.success) {
-          setHistoricalData(data.monthlyData || []);
-          setHistoricalCategories(data.categoryData || []);
-        }
-      } catch (err) {
-        console.error("Failed to load analytics", err);
-      } finally {
-        if (!isCancelled) setLoading(false);
-      }
-    }
-
-    void loadAnalytics();
-    return () => {
-      isCancelled = true;
-    };
-  }, [range]);
-
-  // --- ข้อมูล 1M / 1W (จากเดือนปัจจุบัน) ---
-  const currentMonthTxs = month?.transactions ?? [];
-  const currentTotals = useMemo(() => totals(currentMonthTxs), [currentMonthTxs]);
-
-  // 1W: ย้อนหลัง 7 วันนับจากวันนี้
-  const weeklyChartData = useMemo(() => {
-    const today = todayKey();
-    const dates: string[] = [];
-    for (let i = 6; i >= 0; i--) {
-      dates.push(shiftDate(today, -i));
-    }
-
-    const dayMap = new Map<string, number>();
-    for (const t of currentMonthTxs) {
-      if (t.type === "expense") {
-        dayMap.set(t.date, (dayMap.get(t.date) || 0) + t.amount);
-      }
-    }
-
-    return dates.map((d) => {
-      const parts = d.split("-");
-      return {
-        label: `${parts[2]}/${parts[1]}`,
-        fullLabel: `วันที่ ${parts[2]}/${parts[1]}/${parts[0]}`,
-        amount: dayMap.get(d) || 0,
-      };
-    });
-  }, [currentMonthTxs]);
-
-  // 1M: รายวันทั้งเดือน
-  const dailyChartData = useMemo(() => {
-    if (!month?.ym) return [];
-    const [y, m] = month.ym.split("-").map(Number);
-    const totalDays = new Date(y, m, 0).getDate();
-
-    const dayMap = new Map<number, number>();
-    for (const t of currentMonthTxs) {
-      if (t.type === "expense") {
-        const day = Number(t.date.split("-")[2]);
-        dayMap.set(day, (dayMap.get(day) || 0) + t.amount);
-      }
-    }
-
-    const data: { label: string; fullLabel: string; amount: number }[] = [];
-    for (let d = 1; d <= totalDays; d++) {
-      data.push({
-        label: `${d}`,
-        fullLabel: `วันที่ ${d} ${formatMonthTH(month.ym, true)}`,
-        amount: dayMap.get(d) || 0,
-      });
-    }
-    return data;
-  }, [month?.ym, currentMonthTxs]);
-
-  // --- รวมจุดข้อมูลตามช่วงเวลาที่เลือก ---
-  const chartPoints = useMemo(() => {
-    if (range === "1W") return weeklyChartData;
-    if (range === "1M") return dailyChartData;
-    return historicalData.map((d) => ({
-      label: formatMonthTH(d.ym, true),
-      fullLabel: `เดือน ${formatMonthTH(d.ym)}`,
-      amount: d.expense,
-    }));
-  }, [range, weeklyChartData, dailyChartData, historicalData]);
-
-  // คำนวณสรุปยอดเงิน
-  const totalExpense = useMemo(() => {
-    if (range === "1W") return weeklyChartData.reduce((acc, d) => acc + d.amount, 0);
-    if (range === "1M") return currentTotals.expense;
-    return historicalData.reduce((acc, d) => acc + d.expense, 0);
-  }, [range, weeklyChartData, currentTotals.expense, historicalData]);
-
-  const totalIncome = useMemo(() => {
-    if (range === "1W" || range === "1M") return currentTotals.income;
-    return historicalData.reduce((acc, d) => acc + d.income, 0);
-  }, [range, currentTotals.income, historicalData]);
-
-  // จุดสูงสุดของช่วงเวลาที่เลือก
-  const maxPoint = useMemo(() => {
-    if (chartPoints.length === 0) return { label: "-", fullLabel: "-", amount: 0 };
-    return chartPoints.reduce(
-      (max, cur) => (cur.amount > max.amount ? cur : max),
-      { label: "-", fullLabel: "-", amount: 0 },
-    );
-  }, [chartPoints]);
-
-  const maxChartVal = Math.max(...chartPoints.map((d) => d.amount), 100);
-
-  // ค่าเฉลี่ย
-  const avgExpense = useMemo(() => {
-    if (chartPoints.length === 0) return 0;
-    return totalExpense / chartPoints.length;
-  }, [totalExpense, chartPoints]);
-
-  // หมวดหมู่ค่าใช้จ่าย
-  const categoryList = useMemo(() => {
-    if (range === "1W" || range === "1M") {
-      const map = new Map<Category, number>();
-      for (const t of currentMonthTxs) {
-        if (t.type === "expense") {
-          map.set(t.category, (map.get(t.category) || 0) + t.amount);
-        }
-      }
-      return Array.from(map.entries())
-        .map(([category, amount]) => ({
+    try {
+      const res = await fetch("/api/transactions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date: today,
+          type,
+          amount: numAmount,
           category,
-          amount,
-          pct: totalExpense > 0 ? (amount / totalExpense) * 100 : 0,
-        }))
-        .sort((a, b) => b.amount - a.amount);
-    } else {
-      return historicalCategories.map((item) => ({
-        category: item.category,
-        amount: item.amount,
-        pct: totalExpense > 0 ? (item.amount / totalExpense) * 100 : 0,
-      }));
-    }
-  }, [range, currentMonthTxs, historicalCategories, totalExpense]);
+          note: note.trim(),
+        }),
+      });
 
-  // Interactive Hover Handler
-  function handleSvgMouseMove(e: React.MouseEvent<SVGSVGElement>) {
-    if (!svgRef.current || chartPoints.length === 0) return;
-    const rect = svgRef.current.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const pct = mouseX / rect.width;
-    const index = Math.min(
-      Math.max(Math.floor(pct * chartPoints.length), 0),
-      chartPoints.length - 1,
-    );
-    setHoveredIndex(index);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "บันทึกรายการไม่สำเร็จ");
+      }
+
+      const created: Tx = await res.json();
+      setTransactions((prev) => [created, ...prev]);
+
+      if (type === "expense") {
+        setTodaySpent((prev) => prev + numAmount);
+      } else {
+        setTodayIncome((prev) => prev + numAmount);
+      }
+
+      // Reset form & Focus back
+      setAmount("");
+      setNote("");
+      amountInputRef.current?.focus();
+    } catch (err: any) {
+      setErrorMsg(err.message || "เกิดข้อผิดพลาดในการบันทึก");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-  const activeHoveredPoint =
-    hoveredIndex !== null && chartPoints[hoveredIndex]
-      ? chartPoints[hoveredIndex]
-      : null;
+  // Handle Delete
+  async function handleDelete(id: number, txAmount: number, txType: "income" | "expense") {
+    const beforeTxs = transactions;
+    setTransactions((prev) => prev.filter((t) => t.id !== id));
+    if (txType === "expense") {
+      setTodaySpent((prev) => Math.max(0, prev - txAmount));
+    } else {
+      setTodayIncome((prev) => Math.max(0, prev - txAmount));
+    }
+
+    try {
+      const res = await fetch(`/api/transactions/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        throw new Error("ลบรายการไม่สำเร็จ");
+      }
+    } catch {
+      setTransactions(beforeTxs);
+      if (txType === "expense") setTodaySpent((prev) => prev + txAmount);
+      else setTodayIncome((prev) => prev + txAmount);
+      alert("ไม่สามารถลบรายการได้ กรุณาลองใหม่อีกครั้ง");
+    }
+  }
+
+  // Handle Logout
+  async function handleLogout() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  }
+
+  // Handle Save Profile
+  async function handleSaveProfile() {
+    if (!editName.trim()) return;
+    setSavingProfile(true);
+    try {
+      const res = await fetch("/api/profile", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ displayName: editName.trim() }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setProfile(data.profile);
+      }
+    } catch (err) {
+      console.error("Save profile failed:", err);
+    } finally {
+      setSavingProfile(false);
+    }
+  }
+
+  const activeDailyBudget = dailyBudget ?? budgets?.daily ?? 0;
+  const budgetRemaining = activeDailyBudget > 0 ? activeDailyBudget - todaySpent : null;
 
   return (
-    <div className="space-y-4 pop-in pb-8">
-      {/* 1. Header Overview Banner */}
-      <div className="card space-y-4 p-5 bg-gradient-to-br from-indigo-900/40 via-surface to-surface border-indigo-500/30">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex size-10 items-center justify-center rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 shadow-md">
-              <Sparkles size={20} />
+    <div className="min-h-screen bg-slate-950 text-slate-100 antialiased selection:bg-emerald-500/30">
+      {/* 1. Header Bar */}
+      <header className="sticky top-0 z-30 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-md">
+        <div className="mx-auto flex max-w-md items-center justify-between px-4 py-3.5">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2">
+              <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs font-medium uppercase tracking-wider text-emerald-400">
+                Expense Tracking
+              </span>
             </div>
-            <div>
-              <h2 className="text-base font-bold text-foreground">
-                วิเคราะห์การใช้เงิน
-              </h2>
-              <p className="text-[11px] text-muted">
-                {range === "1W"
-                  ? "ย้อนหลัง 7 วันล่าสุด"
-                  : range === "1M"
-                    ? month?.ym
-                      ? formatMonthTH(month.ym)
-                      : "เดือนปัจจุบัน"
-                    : `ภาพรวมย้อนหลัง ${range}`}
-              </p>
-            </div>
+            <h1 className="text-base font-semibold text-slate-100">
+              {formatDayTH(today)}
+            </h1>
           </div>
 
-          <div className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 px-3 py-1 text-[11px] font-semibold text-emerald-400">
-            <ShieldCheck size={13} /> สถานะปกติ
-          </div>
+          <button
+            onClick={() => setProfileOpen(true)}
+            className="group flex h-9 w-9 items-center justify-center rounded-full border border-slate-800 bg-slate-900 text-slate-300 transition-all hover:border-emerald-500/50 hover:bg-slate-800 hover:text-white active:scale-95"
+            title="โปรไฟล์และงบประมาณ"
+          >
+            {profile?.avatarUrl ? (
+              <img
+                src={profile.avatarUrl}
+                alt="Avatar"
+                className="h-full w-full rounded-full object-cover"
+              />
+            ) : (
+              <User size={18} className="transition-transform group-hover:scale-110" />
+            )}
+          </button>
         </div>
+      </header>
 
-        <div className="grid grid-cols-2 gap-3 pt-1">
-          <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 p-3">
-            <div className="flex items-center gap-1 text-[11px] text-emerald-400 font-medium">
-              <ArrowUpRight size={13} />
-              <span>รายรับช่วงนี้</span>
+      {/* 2. Main Content Container */}
+      <main className="mx-auto max-w-md space-y-4 px-4 pb-12 pt-4">
+        {/* Error Alert */}
+        {errorMsg && (
+          <div className="flex items-center justify-between rounded-xl border border-rose-500/30 bg-rose-950/50 px-3.5 py-2.5 text-xs text-rose-300">
+            <div className="flex items-center gap-2">
+              <AlertCircle size={16} className="shrink-0 text-rose-400" />
+              <span>{errorMsg}</span>
             </div>
-            <p className="tnum mt-1 text-lg font-bold text-emerald-400">
-              +{formatBaht(totalIncome)} ฿
-            </p>
+            <button
+              onClick={() => setErrorMsg(null)}
+              className="text-rose-400 hover:text-rose-200"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
+
+        {/* 3. Today's Status Card */}
+        <section className="relative overflow-hidden rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900/90 to-slate-950 p-5 shadow-xl">
+          <div className="absolute right-0 top-0 -mr-6 -mt-6 h-28 w-28 rounded-full bg-emerald-500/10 blur-2xl" />
+
+          <div className="relative flex items-center justify-between">
+            <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
+              ยอดใช้จ่ายวันนี้
+            </span>
+            {todayIncome > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-950/40 px-2.5 py-0.5 text-[11px] font-medium text-emerald-400">
+                <TrendingUp size={12} />
+                +฿{formatBaht(todayIncome)}
+              </span>
+            )}
           </div>
 
-          <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 p-3">
-            <div className="flex items-center gap-1 text-[11px] text-rose-400 font-medium">
-              <ArrowDownRight size={13} />
-              <span>รายจ่ายช่วงนี้</span>
-            </div>
-            <p className="tnum mt-1 text-lg font-bold text-rose-400">
-              −{formatBaht(totalExpense)} ฿
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. Spending Trend Chart with X-Axis, Y-Axis, and Hover Tooltip */}
-      <div className="card space-y-4 p-5">
-        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border/80 pb-3">
-          <div className="flex items-center gap-2">
-            <BarChart3 className="text-indigo-400" size={18} />
-            <h3 className="text-sm font-bold text-foreground">
-              แนวโน้มการใช้เงิน (Spending Trend)
-            </h3>
+          <div className="relative mt-2 flex items-baseline gap-1.5">
+            <span className="text-sm font-semibold text-rose-400">฿</span>
+            <span className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+              {formatBaht(todaySpent)}
+            </span>
           </div>
 
-          {/* Time Range Selector Filter */}
-          <div role="group" className="flex items-center rounded-xl bg-surface-2 p-1 border border-border">
-            {(["1W", "1M", "1Y", "2Y", "3Y", "5Y"] as Range[]).map((r) => (
+          {/* Budget Comparison Subtitle */}
+          <div className="mt-3.5 border-t border-slate-800/80 pt-3 text-xs">
+            {activeDailyBudget > 0 ? (
+              <div className="flex items-center justify-between text-slate-400">
+                <span>
+                  งบรายวัน: <strong className="text-slate-200">฿{formatBaht(activeDailyBudget)}</strong>
+                </span>
+                {budgetRemaining !== null && (
+                  <span
+                    className={clsx(
+                      "font-medium",
+                      budgetRemaining >= 0 ? "text-emerald-400" : "text-rose-400"
+                    )}
+                  >
+                    {budgetRemaining >= 0
+                      ? `เหลือ ฿${formatBaht(budgetRemaining)}`
+                      : `เกินงบ ฿${formatBaht(Math.abs(budgetRemaining))}`}
+                  </span>
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center justify-between text-slate-500">
+                <span>ยังไม่ได้ตั้งงบรายวัน</span>
+                <span className="text-[11px] text-slate-500">กำหนดได้ใน Dashboard</span>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* 4. Quick Add Form */}
+        <section className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 shadow-lg backdrop-blur-sm">
+          <form onSubmit={handleSubmit} className="space-y-3.5">
+            {/* Type Selector (Expense vs Income) */}
+            <div className="grid grid-cols-2 gap-1.5 rounded-xl bg-slate-950/80 p-1 border border-slate-800">
               <button
-                key={r}
-                onClick={() => {
-                  setRange(r);
-                  setHoveredIndex(null);
-                }}
+                type="button"
+                onClick={() => setType("expense")}
                 className={clsx(
-                  "px-2.5 py-1 text-xs font-semibold rounded-lg transition-all duration-200 active:scale-95",
-                  range === r
-                    ? "bg-indigo-600 text-white shadow-sm shadow-indigo-600/50"
-                    : "text-muted hover:text-foreground",
+                  "flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all",
+                  type === "expense"
+                    ? "bg-rose-500 text-white shadow-md shadow-rose-500/20"
+                    : "text-slate-400 hover:text-slate-200"
                 )}
               >
-                {r}
+                <TrendingDown size={14} />
+                รายจ่าย
               </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Dynamic SVG Chart with Axes & Hover Tooltip */}
-        {loading ? (
-          <div className="flex h-48 items-center justify-center text-xs text-muted gap-2">
-            <Loader2 className="animate-spin text-indigo-400" size={18} />
-            <span>กำลังโหลดข้อมูลย้อนหลัง {range}...</span>
-          </div>
-        ) : chartPoints.length > 0 ? (
-          <div className="space-y-3 pt-1">
-            {/* Hover Floating Tooltip Card */}
-            <div className="min-h-[44px] flex items-center justify-between rounded-xl bg-surface-2/80 px-3 py-2 border border-border/80">
-              {activeHoveredPoint ? (
-                <div className="flex items-center justify-between w-full text-xs">
-                  <div className="flex items-center gap-1.5 font-medium text-foreground">
-                    <Calendar size={14} className="text-indigo-400" />
-                    <span>{activeHoveredPoint.fullLabel}</span>
-                  </div>
-                  <div className="tnum font-bold text-rose-400">
-                    ใช้เงินไป: {formatBaht(activeHoveredPoint.amount)} ฿
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center gap-1.5 text-xs text-muted">
-                  <Info size={14} className="text-muted" />
-                  <span>แตะหรือเลื่อนเมาส์บนกราฟเพื่อดูรายจ่ายรายวัน/รายเดือน</span>
-                </div>
-              )}
+              <button
+                type="button"
+                onClick={() => setType("income")}
+                className={clsx(
+                  "flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all",
+                  type === "income"
+                    ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20"
+                    : "text-slate-400 hover:text-slate-200"
+                )}
+              >
+                <TrendingUp size={14} />
+                รายรับ
+              </button>
             </div>
 
-            {/* Chart Area with Left Y-Axis & Bottom X-Axis */}
-            <div className="flex gap-2">
-              {/* Y-AXIS LABELS (แกน Y ด้านซ้าย) */}
-              <div className="flex flex-col justify-between py-1 text-[10px] text-muted font-medium tnum text-right w-12 shrink-0">
-                <span>{formatBaht(maxChartVal)}</span>
-                <span>{formatBaht(maxChartVal / 2)}</span>
-                <span>0</span>
+            {/* Amount Input */}
+            <div className="relative">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-lg font-bold text-slate-400">
+                ฿
+              </span>
+              <input
+                ref={amountInputRef}
+                type="number"
+                step="any"
+                inputMode="decimal"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0.00"
+                className="w-full rounded-xl border border-slate-800 bg-slate-950 py-3 pl-9 pr-4 text-2xl font-bold tracking-tight text-white placeholder-slate-600 outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                autoFocus
+              />
+            </div>
+
+            {/* Category Chips Selector */}
+            <div>
+              <label className="mb-1.5 block text-[11px] font-medium uppercase tracking-wider text-slate-400">
+                หมวดหมู่
+              </label>
+              <div className="flex flex-wrap gap-1.5">
+                {categories.map((cat) => {
+                  const isSelected = category === cat.slug;
+                  return (
+                    <button
+                      key={cat.slug}
+                      type="button"
+                      onClick={() => setCategory(cat.slug)}
+                      className={clsx(
+                        "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all active:scale-95",
+                        isSelected
+                          ? "border border-emerald-500/60 bg-emerald-500/20 text-emerald-300 shadow-sm"
+                          : "border border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700 hover:text-slate-200"
+                      )}
+                    >
+                      <span>{cat.icon || CATEGORY_ICON[cat.slug as Category] || "📦"}</span>
+                      <span>{cat.name || CATEGORY_LABEL[cat.slug as Category] || cat.slug}</span>
+                    </button>
+                  );
+                })}
               </div>
+            </div>
 
-              {/* MAIN SVG CANVAS */}
-              <div className="relative flex-1">
-                <div className="relative h-44 w-full">
-                  <svg
-                    ref={svgRef}
-                    onMouseMove={handleSvgMouseMove}
-                    onMouseLeave={() => setHoveredIndex(null)}
-                    className="h-full w-full overflow-visible cursor-crosshair select-none"
-                    viewBox={`0 0 ${Math.max(chartPoints.length * 10, 10)} 100`}
-                    preserveAspectRatio="none"
+            {/* Note Input */}
+            <div>
+              <input
+                type="text"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="หมายเหตุ (เช่น ข้าวกะเพราหมูกรอบ, ค่าน้ำมัน)"
+                className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-xs text-slate-200 placeholder-slate-600 outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+              />
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={submitting}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-600/30 transition-all hover:bg-emerald-500 active:scale-[0.98] disabled:opacity-50"
+            >
+              {submitting ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  <span>กำลังบันทึก...</span>
+                </>
+              ) : (
+                <>
+                  <Plus size={18} />
+                  <span>บันทึกรายการ</span>
+                </>
+              )}
+            </button>
+          </form>
+        </section>
+
+        {/* 5. Today's Timeline */}
+        <section className="space-y-2.5">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+              รายการวันนี้ ({transactions.length})
+            </h2>
+            {transactions.length > 0 && (
+              <span className="text-[11px] text-slate-500">เรียงตามเวลาล่าสุด</span>
+            )}
+          </div>
+
+          {loading ? (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-800 bg-slate-900/40 py-12 text-slate-500">
+              <Loader2 size={24} className="animate-spin text-emerald-500 mb-2" />
+              <p className="text-xs">กำลังโหลดข้อมูลวันนี้...</p>
+            </div>
+          ) : transactions.length === 0 ? (
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-800 bg-slate-900/20 py-10 text-center text-slate-500">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-slate-900 text-emerald-400 mb-2">
+                <Sparkles size={20} />
+              </div>
+              <p className="text-sm font-medium text-slate-300">ยังไม่มีรายการใช้จ่ายวันนี้</p>
+              <p className="text-xs text-slate-500 mt-0.5">
+                ระบุจำนวนเงินด้านบนแล้วกดบันทึกได้เลย ✨
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-800/80 rounded-2xl border border-slate-800 bg-slate-900/60 overflow-hidden shadow-md">
+              {transactions.map((tx) => {
+                const isExp = tx.type === "expense";
+                const catObj = categories.find((c) => c.slug === tx.category);
+                const icon = catObj?.icon || CATEGORY_ICON[tx.category] || "📦";
+                const catName = catObj?.name || CATEGORY_LABEL[tx.category] || tx.category;
+
+                return (
+                  <div
+                    key={tx.id}
+                    className="flex items-center justify-between p-3.5 transition-colors hover:bg-slate-800/30"
                   >
-                    <defs>
-                      <linearGradient id="chartGlow" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#6366f1" stopOpacity="0.4" />
-                        <stop offset="100%" stopColor="#6366f1" stopOpacity="0.0" />
-                      </linearGradient>
-                    </defs>
+                    {/* Left details */}
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-950 border border-slate-800 text-lg">
+                        {icon}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-slate-200">
+                          {tx.note || catName}
+                        </p>
+                        <div className="flex items-center gap-2 text-[11px] text-slate-400">
+                          <span>{formatTimeTH(tx.spentAt)}</span>
+                          {tx.note && (
+                            <>
+                              <span>•</span>
+                              <span className="truncate">{catName}</span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
 
-                    {/* Horizontal Grid Lines */}
-                    <line x1="0" y1="10" x2={chartPoints.length * 10} y2="10" stroke="#334155" strokeDasharray="3 3" strokeWidth="0.5" opacity="0.5" />
-                    <line x1="0" y1="52.5" x2={chartPoints.length * 10} y2="52.5" stroke="#334155" strokeDasharray="3 3" strokeWidth="0.5" opacity="0.5" />
-                    <line x1="0" y1="95" x2={chartPoints.length * 10} y2="95" stroke="#334155" strokeWidth="0.5" opacity="0.5" />
+                    {/* Right amount & delete */}
+                    <div className="flex items-center gap-3 shrink-0 ml-3">
+                      <span
+                        className={clsx(
+                          "text-sm font-bold tracking-tight",
+                          isExp ? "text-rose-400" : "text-emerald-400"
+                        )}
+                      >
+                        {isExp ? "-" : "+"}฿{formatBaht(tx.amount)}
+                      </span>
+                      <button
+                        onClick={() => handleDelete(tx.id, tx.amount, tx.type)}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-500 transition-colors hover:bg-rose-950/40 hover:text-rose-400 active:scale-95"
+                        title="ลบรายการ"
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      </main>
 
-                    {/* Area Gradient */}
-                    <path
-                      d={`
-                        M 5 95
-                        ${chartPoints
-                          .map((d, i) => {
-                            const x = i * 10 + 5;
-                            const y = 95 - (d.amount / maxChartVal) * 85;
-                            return `L ${x} ${y}`;
-                          })
-                          .join(" ")}
-                        L ${(chartPoints.length - 1) * 10 + 5} 95 Z
-                      `}
-                      fill="url(#chartGlow)"
+      {/* 6. Profile & Budget Quotas Modal */}
+      {profileOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4 animate-in fade-in duration-200">
+          <div
+            className="w-full max-w-md rounded-t-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl sm:rounded-3xl animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold">
+                  {profile?.avatarUrl ? (
+                    <img
+                      src={profile.avatarUrl}
+                      alt="Avatar"
+                      className="h-full w-full rounded-full object-cover"
                     />
-
-                    {/* Main Curve Line */}
-                    <path
-                      d={`
-                        M 5 ${95 - (chartPoints[0]?.amount / maxChartVal) * 85}
-                        ${chartPoints
-                          .map((d, i) => {
-                            const x = i * 10 + 5;
-                            const y = 95 - (d.amount / maxChartVal) * 85;
-                            return `L ${x} ${y}`;
-                          })
-                          .join(" ")}
-                      `}
-                      fill="none"
-                      stroke="#818cf8"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-
-                    {/* Peak Point Circle */}
-                    {maxPoint.amount > 0 && (
-                      <circle
-                        cx={
-                          (chartPoints.findIndex((p) => p.fullLabel === maxPoint.fullLabel) ?? 0) * 10 + 5
-                        }
-                        cy={95 - (maxPoint.amount / maxChartVal) * 85}
-                        r="4"
-                        fill="#f43f5e"
-                        stroke="#ffffff"
-                        strokeWidth="1.5"
-                      />
-                    )}
-
-                    {/* Hover Guide Line & Active Circle */}
-                    {hoveredIndex !== null && chartPoints[hoveredIndex] && (
-                      <g>
-                        <line
-                          x1={hoveredIndex * 10 + 5}
-                          y1="10"
-                          x2={hoveredIndex * 10 + 5}
-                          y2="95"
-                          stroke="#a5b4fc"
-                          strokeDasharray="2 2"
-                          strokeWidth="1"
-                        />
-                        <circle
-                          cx={hoveredIndex * 10 + 5}
-                          cy={
-                            95 -
-                            (chartPoints[hoveredIndex].amount / maxChartVal) *
-                              85
-                          }
-                          r="5"
-                          fill="#6366f1"
-                          stroke="#ffffff"
-                          strokeWidth="2"
-                        />
-                      </g>
-                    )}
-                  </svg>
-                </div>
-
-                {/* X-AXIS LABELS (แกน X ด้านล่าง) */}
-                <div className="flex justify-between pt-2 text-[10px] text-muted font-medium">
-                  {range === "1W" ? (
-                    chartPoints.map((p, i) => <span key={i}>{p.label}</span>)
-                  ) : range === "1M" ? (
-                    <>
-                      <span>1</span>
-                      <span>5</span>
-                      <span>10</span>
-                      <span>15</span>
-                      <span>20</span>
-                      <span>25</span>
-                      <span>{chartPoints.length}</span>
-                    </>
                   ) : (
-                    chartPoints
-                      .filter((_, i) => i % Math.ceil(chartPoints.length / 6) === 0)
-                      .map((p, i) => <span key={i}>{p.label}</span>)
+                    profile?.displayName?.slice(0, 1).toUpperCase() || <User size={20} />
                   )}
                 </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">
+                    {profile?.displayName || "โปรไฟล์ผู้ใช้"}
+                  </h3>
+                  <p className="text-xs text-slate-400">{profile?.email || ""}</p>
+                </div>
               </div>
+              <button
+                onClick={() => setProfileOpen(false)}
+                className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-800 hover:text-white"
+              >
+                <X size={18} />
+              </button>
             </div>
 
-            {/* Chart Footer Info */}
-            <div className="flex flex-wrap items-center justify-between text-[11px] text-muted pt-2 border-t border-border/40 gap-2">
-              <div className="flex items-center gap-1.5">
-                <Zap size={13} className="text-amber-400" />
-                <span>จุดใช้เงินสูงสุด: </span>
-                <span className="font-bold text-rose-400">
-                  {maxPoint.fullLabel} ({formatBaht(maxPoint.amount)} ฿)
-                </span>
-              </div>
+            {/* Modal Body: Budget Quota Summary */}
+            <div className="mt-5 space-y-4">
               <div>
-                เฉลี่ย/{range === "1W" || range === "1M" ? "วัน" : "เดือน"}:{" "}
-                <span className="font-semibold text-foreground">
-                  {formatBaht(avgExpense)} ฿
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400">
+                  โควต้างบประมาณ (กำหนดจากหลังบ้าน)
                 </span>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <p className="text-center text-xs text-muted py-8">
-            ยังไม่มีข้อมูลประวัติในช่วงเวลาที่เลือก
-          </p>
-        )}
-      </div>
-
-      {/* 3. Category Breakdown (สัดส่วนการใช้เงินตามหมวดหมู่) */}
-      <div className="card space-y-3 p-5">
-        <div className="flex items-center justify-between border-b border-border pb-2.5">
-          <div className="flex items-center gap-2">
-            <PieChart className="text-emerald-400" size={18} />
-            <h3 className="text-sm font-bold text-foreground">
-              สัดส่วนค่าใช้จ่ายตามหมวดหมู่ ({range})
-            </h3>
-          </div>
-          <span className="text-[11px] text-muted font-medium">
-            รวม {categoryList.length} หมวด
-          </span>
-        </div>
-
-        {categoryList.length > 0 ? (
-          <div className="space-y-3 pt-1">
-            {categoryList.map((item) => (
-              <div key={item.category} className="space-y-1.5">
-                <div className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2 font-medium">
-                    <span className="text-base">{CATEGORY_ICON[item.category]}</span>
-                    <span className="text-foreground">
-                      {CATEGORY_LABEL[item.category]}
+                <div className="mt-2 grid grid-cols-3 gap-2">
+                  <div className="rounded-xl border border-slate-800 bg-slate-950 p-3 text-center">
+                    <Sun size={16} className="mx-auto text-amber-400 mb-1" />
+                    <span className="block text-[10px] text-slate-400">งบรายวัน</span>
+                    <span className="mt-0.5 block text-xs font-bold text-white">
+                      ฿{formatBaht(budgets?.daily || 0)}
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-2 tnum">
-                    <span className="font-bold text-foreground">
-                      {formatBaht(item.amount)} ฿
+                  <div className="rounded-xl border border-slate-800 bg-slate-950 p-3 text-center">
+                    <Calendar size={16} className="mx-auto text-indigo-400 mb-1" />
+                    <span className="block text-[10px] text-slate-400">งบรายสัปดาห์</span>
+                    <span className="mt-0.5 block text-xs font-bold text-white">
+                      ฿{formatBaht(budgets?.weekly || 0)}
                     </span>
-                    <span className="text-[11px] font-semibold text-indigo-400 w-10 text-right">
-                      {item.pct.toFixed(0)}%
+                  </div>
+
+                  <div className="rounded-xl border border-slate-800 bg-slate-950 p-3 text-center">
+                    <Wallet size={16} className="mx-auto text-emerald-400 mb-1" />
+                    <span className="block text-[10px] text-slate-400">งบประจำเดือน</span>
+                    <span className="mt-0.5 block text-xs font-bold text-white">
+                      ฿{formatBaht(budgets?.monthly || 0)}
                     </span>
                   </div>
                 </div>
-
-                {/* Progress Bar */}
-                <div className="h-2 w-full overflow-hidden rounded-full bg-surface-2">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 transition-all duration-500"
-                    style={{ width: `${Math.min(item.pct, 100)}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-center text-xs text-muted py-6">
-            ยังไม่มีรายการรายจ่ายสำหรับประมวลผลหมวดหมู่
-          </p>
-        )}
-      </div>
-
-      {/* 4. Community Section (Horizontal Scrollable User List) */}
-      <div className="card space-y-3.5 p-5">
-        <div className="flex items-center justify-between border-b border-border/80 pb-2.5">
-          <div className="flex items-center gap-2">
-            <Users className="text-indigo-400" size={18} />
-            <h3 className="text-sm font-bold text-foreground">
-              Community (สังคมผู้ใช้งาน)
-            </h3>
-          </div>
-          <span className="text-[11px] text-muted font-medium">
-            {communityUsers.length} สมาชิกในระบบ
-          </span>
-        </div>
-
-        {/* Horizontal Scroll List */}
-        <div className="flex items-center gap-3 overflow-x-auto pb-2 pt-1 scrollbar-none snap-x">
-          {communityUsers.map((user) => (
-            <div
-              key={user.userId}
-              className="flex w-44 shrink-0 snap-start flex-col items-center justify-between rounded-2xl border border-border/80 bg-surface-2/60 p-3.5 text-center shadow-xs transition hover:border-indigo-500/50 hover:bg-surface-2"
-            >
-              <div className="relative">
-                {user.avatarUrl ? (
-                  <img
-                    src={user.avatarUrl}
-                    alt={user.displayName}
-                    className="size-12 rounded-2xl object-cover border border-indigo-500/30 shadow-sm"
-                  />
-                ) : (
-                  <div className="flex size-12 items-center justify-center rounded-2xl bg-indigo-500/20 text-indigo-400 font-bold border border-indigo-500/30 text-sm">
-                    {user.displayName.slice(0, 2).toUpperCase()}
-                  </div>
-                )}
-                {user.isOnline && (
-                  <span className="absolute -bottom-0.5 -right-0.5 size-3 rounded-full bg-emerald-500 border-2 border-surface" />
-                )}
-              </div>
-
-              <div className="my-2 space-y-0.5 w-full">
-                <h4 className="text-xs font-bold text-foreground truncate">
-                  {user.displayName}
-                </h4>
-                <p className="text-[10px] text-muted line-clamp-2 min-h-[28px]">
-                  {user.bio || "สมาชิกสังคมการเงิน"}
+                <p className="mt-1.5 text-[11px] text-slate-500">
+                  💡 กำหนดและปรับเปลี่ยนตัวเลขงบประมาณได้ที่ระบบ Expense Dashboard หลังบ้าน
                 </p>
               </div>
 
-              <button
-                type="button"
-                onClick={() => setActiveChatFriend(user)}
-                className="flex w-full items-center justify-center gap-1 rounded-xl bg-indigo-600 px-3 py-1.5 text-[11px] font-semibold text-white shadow-xs hover:bg-indigo-500 transition active:scale-95"
-              >
-                <MessageCircle size={13} />
-                <span>ทักแชท</span>
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
+              {/* Edit Display Name */}
+              <div className="border-t border-slate-800/80 pt-4">
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                  ชื่อที่แสดง
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="flex-1 rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-200 outline-none focus:border-emerald-500"
+                  />
+                  <button
+                    onClick={handleSaveProfile}
+                    disabled={savingProfile}
+                    className="rounded-xl bg-slate-800 px-3.5 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-700 disabled:opacity-50"
+                  >
+                    {savingProfile ? "กำลังบันทึก..." : "บันทึกชื่อ"}
+                  </button>
+                </div>
+              </div>
 
-      {/* Direct Chat Modal */}
-      {activeChatFriend && (
-        <DirectChatModal
-          friend={activeChatFriend}
-          onClose={() => setActiveChatFriend(null)}
-        />
+              {/* Logout Button */}
+              <div className="border-t border-slate-800/80 pt-4">
+                <button
+                  onClick={handleLogout}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-500/30 bg-rose-950/20 py-2.5 text-xs font-bold text-rose-400 transition-colors hover:bg-rose-950/50 active:scale-[0.98]"
+                >
+                  <LogOut size={16} />
+                  <span>ออกจากระบบ</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
