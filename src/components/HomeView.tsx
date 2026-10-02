@@ -25,6 +25,7 @@ import {
   CalendarSearch,
   ScanText,
   FileImage,
+  ClipboardPaste,
 } from "lucide-react";
 import {
   todayKey,
@@ -266,7 +267,7 @@ export default function HomeView() {
   }
 
   // Handle Receipt Upload & OCR
-  async function handleReceiptFile(file: File) {
+  const handleReceiptFile = useCallback(async (file: File) => {
     if (!file) return;
     setScanningReceipt(true);
     setErrorMsg(null);
@@ -309,7 +310,61 @@ export default function HomeView() {
       setScanProgress(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
-  }
+  }, []);
+
+  // Handle Paste from Clipboard (For Automated iOS Shortcut / 1-tap paste)
+  const handlePasteFromClipboard = useCallback(async () => {
+    if (typeof navigator === "undefined" || !navigator.clipboard?.read) {
+      fileInputRef.current?.click();
+      return;
+    }
+    try {
+      const items = await navigator.clipboard.read();
+      for (const item of items) {
+        const imgType = item.types.find((t) => t.startsWith("image/"));
+        if (imgType) {
+          const blob = await item.getType(imgType);
+          const file = new File([blob], "clipboard-slip.png", { type: imgType });
+          void handleReceiptFile(file);
+          return;
+        }
+      }
+      // If no image in clipboard, gracefully fallback to file picker
+      fileInputRef.current?.click();
+    } catch {
+      fileInputRef.current?.click();
+    }
+  }, [handleReceiptFile]);
+
+  // Global window paste listener (Support Command+V or long-press paste on mobile)
+  useEffect(() => {
+    function onWindowPaste(e: ClipboardEvent) {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of items) {
+        if (item.type.startsWith("image/")) {
+          const file = item.getAsFile();
+          if (file) {
+            e.preventDefault();
+            void handleReceiptFile(file);
+            break;
+          }
+        }
+      }
+    }
+    window.addEventListener("paste", onWindowPaste);
+    return () => window.removeEventListener("paste", onWindowPaste);
+  }, [handleReceiptFile]);
+
+  // Detect URL parameter for Automation: e.g. ?paste=1 or ?auto=1
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("paste") === "1" || params.get("auto") === "1") {
+        void handlePasteFromClipboard();
+      }
+    }
+  }, [handlePasteFromClipboard]);
 
   // Handle Delete
   async function handleDelete(id: number, txAmount: number, txType: "income" | "expense") {
@@ -574,13 +629,24 @@ export default function HomeView() {
 
                 <button
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={handlePasteFromClipboard}
                   disabled={scanningReceipt || submitting}
                   className="inline-flex items-center gap-1 rounded-lg border border-indigo-500/40 bg-indigo-950/70 px-2 py-1 text-[11px] font-semibold text-indigo-300 hover:border-indigo-400 hover:bg-indigo-900/60 transition-all active:scale-95 disabled:opacity-50 shadow-sm"
-                  title="อ่านยอดเงินจากรูปสลิปในเครื่อง"
+                  title="วางสลิปจากคลิปบอร์ดทันที (สำหรับระบบ Automate)"
                 >
-                  <ScanText size={13} className="text-indigo-400" />
-                  <span>อ่านสลิป</span>
+                  <ClipboardPaste size={13} className="text-indigo-400" />
+                  <span>วางสลิป</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={scanningReceipt || submitting}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-950 px-2 py-1 text-[11px] font-semibold text-slate-400 hover:text-slate-200 hover:border-slate-700 transition-colors active:scale-95 disabled:opacity-50"
+                  title="เลือกรูปสลิปจากอัลบั้ม"
+                >
+                  <ScanText size={13} className="text-slate-400" />
+                  <span>เลือกรูป</span>
                 </button>
 
                 <button
