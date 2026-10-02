@@ -23,6 +23,8 @@ import {
   Clock,
   CalendarDays,
   CalendarSearch,
+  ScanText,
+  FileImage,
 } from "lucide-react";
 import {
   todayKey,
@@ -37,6 +39,10 @@ import {
 } from "@/lib/shared";
 import { createClient } from "@/lib/supabase/client";
 import MobileDatePicker from "@/components/MobileDatePicker";
+import { Skeleton } from "@/components/Skeleton";
+import { recognizeReceiptImage } from "@/lib/receipt/ocr";
+import { parseReceiptText } from "@/lib/receipt/parser";
+import { getSavedPattern, savePattern, getQuickNoteSuggestions } from "@/lib/receipt/patterns";
 
 interface CategoryOption {
   slug: string;
@@ -108,14 +114,26 @@ export default function HomeView() {
   const [editName, setEditName] = useState("");
 
   const amountInputRef = useRef<HTMLInputElement>(null);
+  const activeDateRef = useRef<string>(today);
+
+  // Receipt OCR State
+  const [scanningReceipt, setScanningReceipt] = useState(false);
+  const [scanProgress, setScanProgress] = useState<{ percent: number; status: string } | null>(null);
+  const [detectedMerchant, setDetectedMerchant] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const noteSuggestions = getQuickNoteSuggestions(detectedMerchant);
 
   // Load Transactions for Selected Date
   const loadDateData = useCallback(async (targetDate: string) => {
+    activeDateRef.current = targetDate;
     setLoading(true);
     try {
       const res = await fetch(`/api/transactions?date=${targetDate}`, { cache: "no-store" });
       if (res.ok) {
         const data = await res.json();
+        // Ignore stale response if user switched to another date in the meantime
+        if (activeDateRef.current !== targetDate) return;
         setTransactions(data.transactions || []);
         setSpentForDate(data.todaySpent || 0);
         setIncomeForDate(data.todayIncome || 0);
@@ -124,7 +142,9 @@ export default function HomeView() {
     } catch (err) {
       console.error("Failed to load date transactions:", err);
     } finally {
-      setLoading(false);
+      if (activeDateRef.current === targetDate) {
+        setLoading(false);
+      }
     }
   }, []);
 
@@ -228,14 +248,66 @@ export default function HomeView() {
         setIncomeForDate((prev) => prev + numAmount);
       }
 
+      // Save merchant pattern if detected
+      if (detectedMerchant && note.trim()) {
+        savePattern(detectedMerchant, category, note.trim());
+      }
+
       // Reset form & Focus back
       setAmount("");
       setNote("");
+      setDetectedMerchant(null);
       amountInputRef.current?.focus();
     } catch (err: any) {
       setErrorMsg(err.message || "เกิดข้อผิดพลาดในการบันทึก");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  // Handle Receipt Upload & OCR
+  async function handleReceiptFile(file: File) {
+    if (!file) return;
+    setScanningReceipt(true);
+    setErrorMsg(null);
+    setScanProgress({ percent: 10, status: "กำลังเตรียมรูปภาพ..." });
+
+    try {
+      const rawText = await recognizeReceiptImage(file, (percent, status) => {
+        setScanProgress({ percent, status: status || "กำลังอ่านสลิป..." });
+      });
+
+      const parsed = parseReceiptText(rawText);
+
+      if (parsed.amount) {
+        setAmount(parsed.amount.toString());
+      } else {
+        setErrorMsg("ไม่พบตัวเลขยอดเงินในรูปภาพ กรุณาระบุจำนวนเงินด้วยตนเอง");
+      }
+
+      if (parsed.date) {
+        setSelectedDate(parsed.date);
+      }
+
+      if (parsed.merchant) {
+        setDetectedMerchant(parsed.merchant);
+        const saved = getSavedPattern(parsed.merchant);
+        if (saved) {
+          if (saved.note) setNote(saved.note);
+          if (saved.category) setCategory(saved.category);
+        } else {
+          setNote(parsed.merchant);
+        }
+      }
+
+      amountInputRef.current?.focus();
+    } catch (err: any) {
+      console.error("Receipt recognition error", err);
+      setErrorMsg("ไม่สามารถอ่านสลิปได้ กรุณาลองใหม่อีกครั้งหรือกรอกข้อมูลเอง");
+    } finally {
+      setScanningReceipt(false);
+      setScanProgress(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }
 
@@ -421,25 +493,36 @@ export default function HomeView() {
             <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
               {isToday ? "ยอดใช้จ่ายวันนี้" : `ยอดใช้จ่าย (${formatDayTH(selectedDate)})`}
             </span>
-            {incomeForDate > 0 && (
-              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-950/40 px-2.5 py-0.5 text-[11px] font-medium text-emerald-400">
+            {!loading && incomeForDate > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-950/40 px-2.5 py-0.5 text-[11px] font-medium text-emerald-400 pop-in">
                 <TrendingUp size={12} />
                 +฿{formatBaht(incomeForDate)}
               </span>
             )}
           </div>
 
-          <div className="relative mt-2 flex items-baseline gap-1.5">
-            <span className="text-sm font-semibold text-rose-400">฿</span>
-            <span className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-              {formatBaht(spentForDate)}
-            </span>
-          </div>
+          {loading ? (
+            <div className="relative mt-2 flex items-center h-10">
+              <Skeleton className="h-8 w-36 rounded-xl bg-slate-800/80" />
+            </div>
+          ) : (
+            <div className="relative mt-2 flex items-baseline gap-1.5 pop-in">
+              <span className="text-sm font-semibold text-rose-400">฿</span>
+              <span className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+                {formatBaht(spentForDate)}
+              </span>
+            </div>
+          )}
 
           {/* Budget Comparison Subtitle */}
           <div className="mt-3.5 border-t border-slate-800/80 pt-3 text-xs">
-            {activeDailyBudget > 0 ? (
-              <div className="flex items-center justify-between text-slate-400">
+            {loading ? (
+              <div className="flex items-center justify-between py-0.5">
+                <Skeleton className="h-3.5 w-28 rounded-md bg-slate-800/80" />
+                <Skeleton className="h-3.5 w-20 rounded-md bg-slate-800/80" />
+              </div>
+            ) : activeDailyBudget > 0 ? (
+              <div className="flex items-center justify-between text-slate-400 pop-in">
                 <span>
                   งบรายวัน: <strong className="text-slate-200">฿{formatBaht(activeDailyBudget)}</strong>
                 </span>
@@ -457,7 +540,7 @@ export default function HomeView() {
                 )}
               </div>
             ) : (
-              <div className="flex items-center justify-between text-slate-500">
+              <div className="flex items-center justify-between text-slate-500 pop-in">
                 <span>ยังไม่ได้ตั้งงบรายวัน</span>
                 <span className="text-[11px] text-slate-500">กำหนดได้ใน Dashboard</span>
               </div>
@@ -468,7 +551,7 @@ export default function HomeView() {
         {/* 5. Quick Add Form */}
         <section className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 shadow-lg backdrop-blur-sm">
           <form onSubmit={handleSubmit} className="space-y-3.5">
-            {/* Target Date Pill Indicator in Form */}
+            {/* Target Date Pill Indicator in Form & Slip Scan Button */}
             <div className="flex items-center justify-between text-xs px-1">
               <span className="text-slate-400">
                 บันทึกลง:{" "}
@@ -476,15 +559,59 @@ export default function HomeView() {
                   {isToday ? "วันนี้" : isYesterday ? "เมื่อวาน" : formatDayTH(selectedDate)}
                 </strong>
               </span>
-              <button
-                type="button"
-                onClick={() => setDatePickerOpen(true)}
-                className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-400 hover:text-emerald-400 transition-colors"
-              >
-                <CalendarSearch size={13} />
-                <span>เปลี่ยนวัน</span>
-              </button>
+
+              <div className="flex items-center gap-1.5">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) void handleReceiptFile(f);
+                  }}
+                />
+
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={scanningReceipt || submitting}
+                  className="inline-flex items-center gap-1 rounded-lg border border-indigo-500/40 bg-indigo-950/70 px-2 py-1 text-[11px] font-semibold text-indigo-300 hover:border-indigo-400 hover:bg-indigo-900/60 transition-all active:scale-95 disabled:opacity-50 shadow-sm"
+                  title="อ่านยอดเงินจากรูปสลิปในเครื่อง"
+                >
+                  <ScanText size={13} className="text-indigo-400" />
+                  <span>อ่านสลิป</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setDatePickerOpen(true)}
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-950 px-2 py-1 text-[11px] font-semibold text-slate-400 hover:text-emerald-400 hover:border-slate-700 transition-colors"
+                >
+                  <CalendarSearch size={13} />
+                  <span>เปลี่ยนวัน</span>
+                </button>
+              </div>
             </div>
+
+            {/* OCR Progress Indicator */}
+            {scanningReceipt && scanProgress && (
+              <div className="rounded-xl border border-indigo-500/30 bg-indigo-950/40 p-3 space-y-2 pop-in">
+                <div className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2 text-indigo-300 font-medium">
+                    <Loader2 size={14} className="animate-spin text-indigo-400" />
+                    <span>{scanProgress.status}</span>
+                  </div>
+                  <span className="text-[11px] font-bold text-indigo-400">{scanProgress.percent}%</span>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-950">
+                  <div
+                    className="h-full bg-gradient-to-r from-indigo-500 to-emerald-400 transition-all duration-200"
+                    style={{ width: `${scanProgress.percent}%` }}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Type Selector (Expense vs Income) */}
             <div className="grid grid-cols-2 gap-1.5 rounded-xl bg-slate-950/80 p-1 border border-slate-800">
@@ -562,8 +689,8 @@ export default function HomeView() {
               </div>
             </div>
 
-            {/* Note Input */}
-            <div>
+            {/* Note Input & Suggestion Chips */}
+            <div className="space-y-1.5">
               <input
                 type="text"
                 value={note}
@@ -571,6 +698,26 @@ export default function HomeView() {
                 placeholder="หมายเหตุ (เช่น ข้าวกะเพรา, ค่าน้ำมัน)"
                 className="w-full rounded-xl border border-slate-800 bg-slate-950 px-3.5 py-2.5 text-xs text-slate-200 placeholder-slate-600 outline-none transition-all focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
               />
+
+              {/* Suggestion Chips (Zero-Emoji compliant) */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                <span className="text-[10px] text-slate-500 font-medium">ตัวอย่าง:</span>
+                {noteSuggestions.map((sug) => (
+                  <button
+                    key={sug}
+                    type="button"
+                    onClick={() => setNote(sug)}
+                    className={clsx(
+                      "rounded-lg border px-2 py-0.5 text-[11px] transition-all active:scale-95",
+                      note === sug
+                        ? "border-emerald-500/80 bg-emerald-950/60 text-emerald-300 font-semibold"
+                        : "border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700 hover:text-slate-300"
+                    )}
+                  >
+                    {sug}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Submit Button */}
