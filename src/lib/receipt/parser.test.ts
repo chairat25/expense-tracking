@@ -42,4 +42,25 @@ describe("parseReceiptText", () => {
     expect(res.date).toBe("2026-08-20");
     expect(res.merchant).toContain("Amazon");
   });
+
+  it("handles 2-digit Thai Buddhist year (e.g. 69 -> 2026)", () => {
+    const sample = `
+      02 ต.ค. 69 13:40
+      จำนวนเงิน 60.00 บาท
+    `;
+    const res = parseReceiptText(sample);
+    expect(res.amount).toBe(60);
+    expect(res.date).toBe("2026-10-02");
+  });
+
+  it("discards bogus year artifacts outside valid window", () => {
+    const sample = `
+      02 ต.ค. 1995
+      จำนวนเงิน 60.00 บาท
+    `;
+    const res = parseReceiptText(sample);
+    expect(res.amount).toBe(60);
+    // 1995 is outside currentYear - 3..+1, should be ignored/null
+    expect(res.date).toBeNull();
+  });
 });

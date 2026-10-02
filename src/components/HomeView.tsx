@@ -121,6 +121,7 @@ export default function HomeView() {
   const [scanningReceipt, setScanningReceipt] = useState(false);
   const [scanProgress, setScanProgress] = useState<{ percent: number; status: string } | null>(null);
   const [detectedMerchant, setDetectedMerchant] = useState<string | null>(null);
+  const [detectedDate, setDetectedDate] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const noteSuggestions = getQuickNoteSuggestions(detectedMerchant);
@@ -258,6 +259,7 @@ export default function HomeView() {
       setAmount("");
       setNote("");
       setDetectedMerchant(null);
+      setDetectedDate(null);
       amountInputRef.current?.focus();
     } catch (err: any) {
       setErrorMsg(err.message || "เกิดข้อผิดพลาดในการบันทึก");
@@ -287,7 +289,11 @@ export default function HomeView() {
       }
 
       if (parsed.date) {
-        setSelectedDate(parsed.date);
+        if (parsed.date !== activeDateRef.current) {
+          setDetectedDate(parsed.date);
+        } else {
+          setDetectedDate(null);
+        }
       }
 
       if (parsed.merchant) {
@@ -675,6 +681,36 @@ export default function HomeView() {
                     className="h-full bg-gradient-to-r from-indigo-500 to-emerald-400 transition-all duration-200"
                     style={{ width: `${scanProgress.percent}%` }}
                   />
+                </div>
+              </div>
+            )}
+
+            {/* Detected Date from Receipt Badge */}
+            {detectedDate && detectedDate !== selectedDate && (
+              <div className="flex items-center justify-between rounded-xl border border-indigo-500/30 bg-indigo-950/40 px-3 py-2 text-xs text-indigo-300 pop-in">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <Calendar size={14} className="text-indigo-400 shrink-0" />
+                  <span className="truncate">พบวันที่ในสลิป: <strong className="text-white">{formatDayTH(detectedDate)}</strong></span>
+                </div>
+                <div className="flex items-center gap-1 shrink-0 ml-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedDate(detectedDate);
+                      setDetectedDate(null);
+                    }}
+                    className="rounded-lg bg-indigo-600/70 hover:bg-indigo-600 px-2.5 py-1 text-[11px] font-semibold text-white transition-all active:scale-95"
+                  >
+                    ใช้วันที่นี้
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDetectedDate(null)}
+                    className="rounded-lg p-1 text-slate-400 hover:text-white"
+                    title="ละเว้น"
+                  >
+                    <X size={14} />
+                  </button>
                 </div>
               </div>
             )}

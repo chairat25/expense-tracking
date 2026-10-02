@@ -47,12 +47,9 @@ export function parseReceiptText(rawText: string): ParsedReceipt {
   const cleaned = rawText.replace(/\r/g, "\n");
 
   // 1. Amount Extraction
-  // Prefer lines with keywords "จำนวนเงิน", "ยอดเงิน", "โอนเงิน", "Total", "Amount", "THB", "บาท"
-  // Exclude lines explicitly saying "ค่าธรรมเนียม: 0.00"
   const lines = cleaned.split("\n").map((l) => l.trim()).filter(Boolean);
 
   for (const line of lines) {
-    // Ignore fee lines
     if (/ค่าธรรมเนียม|fee/i.test(line) && !/จำนวนเงิน|ยอดเงิน|total|amount/i.test(line)) {
       continue;
     }
@@ -69,7 +66,6 @@ export function parseReceiptText(rawText: string): ParsedReceipt {
     }
   }
 
-  // Fallback: look for "xxx.xx บาท" or "xxx.xx THB"
   if (amount === null) {
     const currencySuffixMatch = cleaned.match(/([0-9,]+\.[0-9]{2})\s*(?:บาท|THB)/i);
     if (currencySuffixMatch && currencySuffixMatch[1]) {
@@ -80,7 +76,6 @@ export function parseReceiptText(rawText: string): ParsedReceipt {
     }
   }
 
-  // Fallback 2: largest plausible decimal number in the document (avoiding 0.00 fee)
   if (amount === null) {
     const allDecimals = Array.from(cleaned.matchAll(/\b([0-9]{1,3}(?:,[0-9]{3})*\.[0-9]{2})\b/g))
       .map((m) => parseFloat(m[1].replace(/,/g, "")))
@@ -92,44 +87,63 @@ export function parseReceiptText(rawText: string): ParsedReceipt {
   }
 
   // 2. Date Extraction
+  const currentYear = new Date().getFullYear();
   const thaiDateRegex = /(\d{1,2})\s*(ม\.ค\.|ก\.พ\.|มี\.ค\.|เม\.ย\.|พ\.ค\.|มิ\.ย\.|ก\.ค\.|ส\.ค\.|ก\.ย\.|ต\.ค\.|พ\.ย\.|ธ\.ค\.|มกราคม|กุมภาพันธ์|มีนาคม|เมษายน|พฤษภาคม|มิถุนายน|กรกฎาคม|สิงหาคม|กันยายน|ตุลาคม|พฤศจิกายน|ธันวาคม)\s*(\d{2,4})/;
   const thaiMatch = cleaned.match(thaiDateRegex);
   if (thaiMatch) {
     const day = thaiMatch[1].padStart(2, "0");
     const mStr = THAI_MONTHS[thaiMatch[2]] || "01";
     let yr = parseInt(thaiMatch[3], 10);
-    if (yr > 2500) yr -= 543;
-    else if (yr < 100) yr += yr >= 50 ? 1900 + (yr - 43) : 2000 + yr;
-    date = `${yr}-${mStr}-${day}`;
+    if (yr > 2500) {
+      yr -= 543;
+    } else if (yr >= 2000) {
+      // already Gregorian
+    } else if (yr < 100) {
+      // 2-digit year: 67 -> 2567 -> 2024
+      if (yr >= 50) {
+        yr = 2500 + yr - 543;
+      } else {
+        yr = 2000 + yr;
+      }
+    }
+    // Sanity check: must be within plausible range
+    if (yr >= currentYear - 3 && yr <= currentYear + 1) {
+      date = `${yr}-${mStr}-${day}`;
+    }
   } else {
     const engDateRegex = /(\d{1,2})\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s*(\d{4})/i;
     const engMatch = cleaned.match(engDateRegex);
     if (engMatch) {
       const day = engMatch[1].padStart(2, "0");
       const mStr = ENGLISH_MONTHS[engMatch[2].toLowerCase()] || "01";
-      const yr = engMatch[3];
-      date = `${yr}-${mStr}-${day}`;
+      const yr = parseInt(engMatch[3], 10);
+      if (yr >= currentYear - 3 && yr <= currentYear + 1) {
+        date = `${yr}-${mStr}-${day}`;
+      }
     } else {
       const slashMatch = cleaned.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
       if (slashMatch) {
         let yr = parseInt(slashMatch[3], 10);
         if (yr > 2500) yr -= 543;
-        date = `${yr}-${slashMatch[2].padStart(2, "0")}-${slashMatch[1].padStart(2, "0")}`;
+        if (yr >= currentYear - 3 && yr <= currentYear + 1) {
+          date = `${yr}-${slashMatch[2].padStart(2, "0")}-${slashMatch[1].padStart(2, "0")}`;
+        }
       } else {
         const isoMatch = cleaned.match(/(\d{4})[-/](\d{2})[-/](\d{2})/);
         if (isoMatch) {
-          date = `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+          const yr = parseInt(isoMatch[1], 10);
+          if (yr >= currentYear - 3 && yr <= currentYear + 1) {
+            date = `${yr}-${isoMatch[2]}-${isoMatch[3]}`;
+          }
         }
       }
     }
   }
 
   // 3. Merchant / Receiver Extraction
-  // Use word boundaries for English keywords (\bTo\b) to avoid matching "Total"
   const targetMatch = cleaned.match(/(?:ไปยัง|โอนให้|โอนเงินให้|ผู้รับเงิน|\bTo\b|Receiver|Merchant|ร้านค้า)\s*[:\s]?\s*([^\n\r]+)/i);
   if (targetMatch && targetMatch[1]) {
     const rawName = targetMatch[1].trim();
-    // Exclude if it accidentally captured amount or fee words
     if (!/total|amount|fee|baht|บาท/i.test(rawName)) {
       const cleanName = rawName.replace(/[^\u0E00-\u0E7Fa-zA-Z0-9\s.-]/g, "").trim();
       if (cleanName.length > 1) {
@@ -138,7 +152,6 @@ export function parseReceiptText(rawText: string): ParsedReceipt {
     }
   }
 
-  // Common chain names sorted by length descending so specific chains take priority
   const commonChains = [
     "Seven Eleven", "7-Eleven", "เซเว่น",
     "Café Amazon", "Amazon", "Starbucks",
