@@ -268,6 +268,36 @@ export default function HomeView() {
     }
   }
 
+  // Apply parsed receipt data into form fields
+  const applyParsedReceipt = useCallback((parsed: ReturnType<typeof parseReceiptText>) => {
+    if (parsed.amount) {
+      setAmount(parsed.amount.toString());
+    } else {
+      setErrorMsg("ไม่พบตัวเลขยอดเงินในรูปภาพ กรุณาระบุจำนวนเงินด้วยตนเอง");
+    }
+
+    if (parsed.date) {
+      if (parsed.date !== activeDateRef.current) {
+        setDetectedDate(parsed.date);
+      } else {
+        setDetectedDate(null);
+      }
+    }
+
+    if (parsed.merchant) {
+      setDetectedMerchant(parsed.merchant);
+      const saved = getSavedPattern(parsed.merchant);
+      if (saved) {
+        if (saved.note) setNote(saved.note);
+        if (saved.category) setCategory(saved.category);
+      } else {
+        setNote(parsed.merchant);
+      }
+    }
+
+    amountInputRef.current?.focus();
+  }, []);
+
   // Handle Receipt Upload & OCR
   const handleReceiptFile = useCallback(async (file: File) => {
     if (!file) return;
@@ -281,33 +311,7 @@ export default function HomeView() {
       });
 
       const parsed = parseReceiptText(rawText);
-
-      if (parsed.amount) {
-        setAmount(parsed.amount.toString());
-      } else {
-        setErrorMsg("ไม่พบตัวเลขยอดเงินในรูปภาพ กรุณาระบุจำนวนเงินด้วยตนเอง");
-      }
-
-      if (parsed.date) {
-        if (parsed.date !== activeDateRef.current) {
-          setDetectedDate(parsed.date);
-        } else {
-          setDetectedDate(null);
-        }
-      }
-
-      if (parsed.merchant) {
-        setDetectedMerchant(parsed.merchant);
-        const saved = getSavedPattern(parsed.merchant);
-        if (saved) {
-          if (saved.note) setNote(saved.note);
-          if (saved.category) setCategory(saved.category);
-        } else {
-          setNote(parsed.merchant);
-        }
-      }
-
-      amountInputRef.current?.focus();
+      applyParsedReceipt(parsed);
     } catch (err: any) {
       console.error("Receipt recognition error", err);
       setErrorMsg("ไม่สามารถอ่านสลิปได้ กรุณาลองใหม่อีกครั้งหรือกรอกข้อมูลเอง");
@@ -316,7 +320,7 @@ export default function HomeView() {
       setScanProgress(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
-  }, []);
+  }, [applyParsedReceipt]);
 
   // Handle Paste from Clipboard (For Automated iOS Shortcut / 1-tap paste)
   const handlePasteFromClipboard = useCallback(async () => {
@@ -362,15 +366,31 @@ export default function HomeView() {
     return () => window.removeEventListener("paste", onWindowPaste);
   }, [handleReceiptFile]);
 
-  // Detect URL parameter for Automation: e.g. ?paste=1 or ?auto=1
+  // Detect URL parameter for Automation: e.g. ?paste=1, ?auto=1, ?text=..., or ?amount=...
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
-      if (params.get("paste") === "1" || params.get("auto") === "1") {
+      const rawText = params.get("slip") || params.get("text");
+      const urlAmount = params.get("amount");
+
+      if (rawText) {
+        try {
+          const parsed = parseReceiptText(decodeURIComponent(rawText));
+          applyParsedReceipt(parsed);
+        } catch (e) {
+          console.error("Failed to parse slip text from URL param", e);
+        }
+      } else if (urlAmount) {
+        setAmount(urlAmount);
+        const urlNote = params.get("note");
+        const urlCategory = params.get("category");
+        if (urlNote) setNote(decodeURIComponent(urlNote));
+        if (urlCategory) setCategory(urlCategory);
+      } else if (params.get("paste") === "1" || params.get("auto") === "1") {
         void handlePasteFromClipboard();
       }
     }
-  }, [handlePasteFromClipboard]);
+  }, [applyParsedReceipt, handlePasteFromClipboard]);
 
   // Handle Delete
   async function handleDelete(id: number, txAmount: number, txType: "income" | "expense") {
