@@ -26,6 +26,7 @@ import {
   ScanText,
   FileImage,
   ClipboardPaste,
+  ListPlus,
 } from "lucide-react";
 import {
   todayKey,
@@ -45,6 +46,7 @@ import { recognizeReceiptImage } from "@/lib/receipt/ocr";
 import { parseReceiptText } from "@/lib/receipt/parser";
 import { getSavedPattern, savePattern, getQuickNoteSuggestions } from "@/lib/receipt/patterns";
 import ReceiptBatchModal from "@/components/ReceiptBatchModal";
+import BatchAddModal from "@/components/BatchAddModal";
 
 interface CategoryOption {
   slug: string;
@@ -125,6 +127,7 @@ export default function HomeView() {
   const [detectedDate, setDetectedDate] = useState<string | null>(null);
   const [batchModalOpen, setBatchModalOpen] = useState(false);
   const [stagedFiles, setStagedFiles] = useState<File[]>([]);
+  const [batchAddOpen, setBatchAddOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const noteSuggestions = getQuickNoteSuggestions(detectedMerchant);
@@ -138,6 +141,27 @@ export default function HomeView() {
       } else {
         setIncomeForDate((prev) => prev + Number(createdTx.amount));
       }
+    }
+  }, []);
+
+  // Handle multiple transactions added from batch manual entry modal
+  const handleTransactionsAddedFromBatchManual = useCallback((createdTxs: Tx[]) => {
+    let addedSpent = 0;
+    let addedIncome = 0;
+    const matchingTxs: Tx[] = [];
+
+    for (const tx of createdTxs) {
+      if (tx.date === activeDateRef.current) {
+        matchingTxs.push(tx);
+        if (tx.type === "expense") addedSpent += Number(tx.amount);
+        else addedIncome += Number(tx.amount);
+      }
+    }
+
+    if (matchingTxs.length > 0) {
+      setTransactions((prev) => [...matchingTxs, ...prev]);
+      if (addedSpent > 0) setSpentForDate((prev) => prev + addedSpent);
+      if (addedIncome > 0) setIncomeForDate((prev) => prev + addedIncome);
     }
   }, []);
 
@@ -699,6 +723,17 @@ export default function HomeView() {
 
                 <button
                   type="button"
+                  onClick={() => setBatchAddOpen(true)}
+                  disabled={submitting}
+                  className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/40 bg-emerald-950/70 px-2 py-1 text-[11px] font-semibold text-emerald-300 hover:border-emerald-400 hover:bg-emerald-900/60 transition-all active:scale-95 disabled:opacity-50 shadow-sm"
+                  title="เพิ่มหลายรายการพร้อมกัน (ไม่ต้องมีสลิป)"
+                >
+                  <ListPlus size={13} className="text-emerald-400" />
+                  <span>เพิ่มหลายรายการ</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => setDatePickerOpen(true)}
                   className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-950 px-2 py-1 text-[11px] font-semibold text-slate-400 hover:text-emerald-400 hover:border-slate-700 transition-colors"
                 >
@@ -1198,6 +1233,15 @@ export default function HomeView() {
         categories={categories}
         currentDate={selectedDate}
         onTransactionAdded={handleTransactionAddedFromBatch}
+      />
+
+      {/* Batch Manual Add Modal */}
+      <BatchAddModal
+        isOpen={batchAddOpen}
+        onClose={() => setBatchAddOpen(false)}
+        categories={categories}
+        currentDate={selectedDate}
+        onTransactionsAdded={handleTransactionsAddedFromBatchManual}
       />
     </div>
   );
