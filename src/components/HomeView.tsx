@@ -44,6 +44,7 @@ import { Skeleton } from "@/components/Skeleton";
 import { recognizeReceiptImage } from "@/lib/receipt/ocr";
 import { parseReceiptText } from "@/lib/receipt/parser";
 import { getSavedPattern, savePattern, getQuickNoteSuggestions } from "@/lib/receipt/patterns";
+import ReceiptBatchModal from "@/components/ReceiptBatchModal";
 
 interface CategoryOption {
   slug: string;
@@ -122,9 +123,23 @@ export default function HomeView() {
   const [scanProgress, setScanProgress] = useState<{ percent: number; status: string } | null>(null);
   const [detectedMerchant, setDetectedMerchant] = useState<string | null>(null);
   const [detectedDate, setDetectedDate] = useState<string | null>(null);
+  const [batchModalOpen, setBatchModalOpen] = useState(false);
+  const [stagedFiles, setStagedFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const noteSuggestions = getQuickNoteSuggestions(detectedMerchant);
+
+  // Handle transaction added from batch review modal
+  const handleTransactionAddedFromBatch = useCallback((createdTx: Tx) => {
+    if (createdTx.date === activeDateRef.current) {
+      setTransactions((prev) => [createdTx, ...prev]);
+      if (createdTx.type === "expense") {
+        setSpentForDate((prev) => prev + Number(createdTx.amount));
+      } else {
+        setIncomeForDate((prev) => prev + Number(createdTx.amount));
+      }
+    }
+  }, []);
 
   // Load Transactions for Selected Date
   const loadDateData = useCallback(async (targetDate: string) => {
@@ -335,7 +350,8 @@ export default function HomeView() {
         if (imgType) {
           const blob = await item.getType(imgType);
           const file = new File([blob], "clipboard-slip.png", { type: imgType });
-          void handleReceiptFile(file);
+          setStagedFiles([file]);
+          setBatchModalOpen(true);
           return;
         }
       }
@@ -344,7 +360,7 @@ export default function HomeView() {
     } catch {
       fileInputRef.current?.click();
     }
-  }, [handleReceiptFile]);
+  }, []);
 
   // Global window paste listener (Support Command+V or long-press paste on mobile)
   useEffect(() => {
@@ -356,7 +372,8 @@ export default function HomeView() {
           const file = item.getAsFile();
           if (file) {
             e.preventDefault();
-            void handleReceiptFile(file);
+            setStagedFiles([file]);
+            setBatchModalOpen(true);
             break;
           }
         }
@@ -364,7 +381,7 @@ export default function HomeView() {
     }
     window.addEventListener("paste", onWindowPaste);
     return () => window.removeEventListener("paste", onWindowPaste);
-  }, [handleReceiptFile]);
+  }, []);
 
   // Detect URL parameter for Automation: e.g. ?paste=1, ?auto=1, ?text=..., or ?amount=...
   useEffect(() => {
@@ -646,19 +663,24 @@ export default function HomeView() {
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
+                  multiple
                   className="hidden"
                   onChange={(e) => {
-                    const f = e.target.files?.[0];
-                    if (f) void handleReceiptFile(f);
+                    const selected = Array.from(e.target.files || []);
+                    if (selected.length > 0) {
+                      setStagedFiles(selected);
+                      setBatchModalOpen(true);
+                    }
+                    if (fileInputRef.current) fileInputRef.current.value = "";
                   }}
                 />
 
                 <button
                   type="button"
                   onClick={handlePasteFromClipboard}
-                  disabled={scanningReceipt || submitting}
+                  disabled={submitting}
                   className="inline-flex items-center gap-1 rounded-lg border border-indigo-500/40 bg-indigo-950/70 px-2 py-1 text-[11px] font-semibold text-indigo-300 hover:border-indigo-400 hover:bg-indigo-900/60 transition-all active:scale-95 disabled:opacity-50 shadow-sm"
-                  title="วางสลิปจากคลิปบอร์ดทันที (สำหรับระบบ Automate)"
+                  title="วางสลิปจากคลิปบอร์ดทันที"
                 >
                   <ClipboardPaste size={13} className="text-indigo-400" />
                   <span>วางสลิป</span>
@@ -667,12 +689,12 @@ export default function HomeView() {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={scanningReceipt || submitting}
+                  disabled={submitting}
                   className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-950 px-2 py-1 text-[11px] font-semibold text-slate-400 hover:text-slate-200 hover:border-slate-700 transition-colors active:scale-95 disabled:opacity-50"
-                  title="เลือกรูปสลิปจากอัลบั้ม"
+                  title="เลือกรูปสลิปจากอัลบั้ม (เลือกได้หลายรูปพร้อมกัน)"
                 >
                   <ScanText size={13} className="text-slate-400" />
-                  <span>เลือกรูป</span>
+                  <span>เลือกสลิป</span>
                 </button>
 
                 <button
@@ -1164,6 +1186,19 @@ export default function HomeView() {
           </div>
         </div>
       )}
+
+      {/* Batch Receipt Review Modal */}
+      <ReceiptBatchModal
+        isOpen={batchModalOpen}
+        onClose={() => {
+          setBatchModalOpen(false);
+          setStagedFiles([]);
+        }}
+        files={stagedFiles}
+        categories={categories}
+        currentDate={selectedDate}
+        onTransactionAdded={handleTransactionAddedFromBatch}
+      />
     </div>
   );
 }
