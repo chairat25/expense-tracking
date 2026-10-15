@@ -23,27 +23,31 @@
    - `AutoReceiptModal.tsx`: หน้าต่างตรวจสลิปอัตโนมัติพร้อมพรีวิวภาพ ให้กดยืนยันบันทึกใน 1 วินาที
 5. **Root Entrypoint (`App.tsx`) & Supabase Integration**:
    - รวมทุก Component และเชื่อมต่อกับฐานข้อมูล Supabase ตาราง `transactions`
-   - รัน Unit Tests ผ่านครบถ้วน 100% (45 tests across 6 suites)
+   - รัน Unit Tests ผ่านครบถ้วน 100%
+6. **Bank Slip Parser & Auto-Tagging (`src/mobile/lib/slipParser.ts`)**:
+   - ยิงโจทย์ให้ Gemini Web ผ่าน `scripts/gemini_web_coder.js` ช่วยออกแบบสถาปัตยกรรม Parser สำหรับสลิปธนาคารไทย (K PLUS, SCB Easy, Krungthai NEXT ฯลฯ)
+   - สกัดยอดเงิน, วันที่ (แปลง พ.ศ. เป็น ค.ศ.), และชื่อผู้รับเงิน/ร้านค้า พร้อมจัดหมวดหมู่อัตโนมัติ (อาหาร, เครื่องดื่ม, เดินทาง, บิล, ช้อปปิ้ง) ด้วย Pattern Learning
+   - เชื่อมต่อเข้ากับ `AutoReceiptModal` เพื่อ Autocomplete ข้อมูลจากสลิปอัตโนมัติ
+   - ชุดทดสอบผ่านครบ 100% (47 tests across 7 test suites)
 
 ---
 
 ### ⏳ งานที่ค้างอยู่และแผนพัฒนาต่อ (Next Steps)
-1. **Slip OCR & Pattern Integration**:
-   - เชื่อมต่อตัวถอดรหัสข้อความภาษาไทย/ตัวเลขจากรูปสลิปที่ได้จาก `useRecentReceiptSniffer` ร่วมกับ `src/lib/receipt/parser.ts` และ `patterns.ts`
-   - สามารถเรียกใช้ `node scripts/gemini_web_coder.js` ส่งภาพหรือข้อความไปให้ Gemini Web ช่วยวิเคราะห์รูปแบบสลิปใหม่ๆ
-2. **การทดสอบบนอุปกรณ์จริง (Device Testing)**:
+1. **การทดสอบบนอุปกรณ์จริง (Device Testing)**:
    - ทดสอบรันผ่าน `yarn start` บน Expo Go (iOS / Android) เพื่อทดสอบการขอสิทธิ์ Photo Library และดึงสลิปจริงหลังโอนเงินในแอปธนาคาร
+2. **Offline Transaction Queue**:
+   - บันทึกรายการลงในเครื่องก่อนเมื่อไม่มีอินเทอร์เน็ต และ Sync ขึ้น Supabase ทันทีเมื่อกลับมาต่อเน็ต
 
 ---
 
 ### 📋 Handoff Block (สำหรับการส่งต่องานข้าม Session)
 ```markdown
 [KEYWORD: expense-tracking-react-native-mobile]
-- สถานะปัจจุบัน: แตก branch `feat/react-native-mobile` โครงสร้าง Expo SDK 52 + Zero-Click Sniffer + Zero-Emoji UI เสร็จสมบูรณ์และผ่าน 45 tests
-- งานถัดไป: เชื่อมต่อ OCR parser เข้ากับรูปภาพสลิปที่ตรวจจับได้ และทดสอบรันแอปบนอุปกรณ์จริงผ่าน Expo
+- สถานะปัจจุบัน: แตก branch `feat/react-native-mobile` โครงสร้าง Expo SDK 52 + Zero-Click Sniffer + Slip Parser (Gemini Web Assisted) + Zero-Emoji UI เสร็จสมบูรณ์และผ่าน 47 tests
+- งานถัดไป: ทดสอบรันบน Expo Go บนมือถือจริง หรือเพิ่มระบบ Offline Transaction Queue
 - ตัวช่วยที่มีอยู่: มี `scripts/gemini_web_coder.js` สำหรับสั่งงานแท็บ Gemini บน Chrome ช่วยเขียนโค้ด
 - คำสั่งรันโปรเจกต์: `yarn start` (เปิด Expo Dev Server)
 - คำสั่งทดสอบ: `yarn test`
 - Prompt สำหรับเริ่ม Session ถัดไป:
-  "ต่อยอด branch feat/react-native-mobile ของ expense-tracking โดยเชื่อมต่อ OCR parser เข้ากับสลิปที่ตรวจจับได้จาก useRecentReceiptSniffer และใช้ scripts/gemini_web_coder.js ช่วย implement โค้ด"
+  "ต่อยอด branch feat/react-native-mobile ของ expense-tracking โดยทดสอบระบบ Zero-Click Slip Ingestion บน Expo Go หรือเพิ่มระบบ Offline Queue ร่วมกับ Supabase"
 ```
