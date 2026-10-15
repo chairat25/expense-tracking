@@ -1,0 +1,104 @@
+import React, { useState } from "react";
+import { StyleSheet, View, SafeAreaView, ScrollView, Text, StatusBar } from "react-native";
+import { DateCapsuleBar } from "./src/mobile/components/DateCapsuleBar";
+import { StatusCard } from "./src/mobile/components/StatusCard";
+import { QuickAddForm } from "./src/mobile/components/QuickAddForm";
+import { AutoReceiptModal } from "./src/mobile/components/AutoReceiptModal";
+import { useRecentReceiptSniffer, DetectedReceipt } from "./src/mobile/hooks/useRecentReceiptSniffer";
+import { todayKey, CategorySlug } from "./src/mobile/lib/shared";
+import { supabase } from "./src/mobile/lib/supabase";
+
+export default function App() {
+  const [selectedDate, setSelectedDate] = useState<string>(todayKey());
+  const [spent, setSpent] = useState<number>(0);
+  const [income, setIncome] = useState<number>(0);
+  const [dailyBudget, setDailyBudget] = useState<number | null>(500);
+
+  // Auto Receipt Modal state
+  const [autoReceiptVisible, setAutoReceiptVisible] = useState(false);
+  const [pendingReceipt, setPendingReceipt] = useState<DetectedReceipt | null>(null);
+
+  // Zero-Click Ingestion Sniffer
+  useRecentReceiptSniffer((receipt) => {
+    setPendingReceipt(receipt);
+    setAutoReceiptVisible(true);
+  });
+
+  const handleAddTransaction = async (data: {
+    amount: number;
+    type: "expense" | "income";
+    category: CategorySlug;
+    note: string;
+  }) => {
+    if (data.type === "expense") {
+      setSpent((prev) => prev + data.amount);
+    } else {
+      setIncome((prev) => prev + data.amount);
+    }
+
+    try {
+      await supabase.from("transactions").insert({
+        date: selectedDate,
+        spent_at: new Date().toISOString(),
+        type: data.type,
+        amount: data.amount,
+        category: data.category,
+        note: data.note,
+      });
+    } catch (err) {
+      console.warn("Offline or Supabase sync error:", err);
+    }
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#020617" />
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={styles.header}>
+          <Text style={styles.appTitle}>Expense Tracker</Text>
+        </View>
+
+        <DateCapsuleBar selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+        <StatusCard spent={spent} income={income} budget={dailyBudget} />
+        <QuickAddForm onAddTransaction={handleAddTransaction} />
+      </ScrollView>
+
+      <AutoReceiptModal
+        visible={autoReceiptVisible}
+        receiptUri={pendingReceipt?.uri || null}
+        amount={120.0}
+        note="โอนเงินผ่านโมบายแบงก์กิ้ง"
+        onAccept={() => {
+          handleAddTransaction({
+            amount: 120.0,
+            type: "expense",
+            category: "food",
+            note: "สแกนสลิปอัตโนมัติ",
+          });
+          setAutoReceiptVisible(false);
+        }}
+        onReject={() => setAutoReceiptVisible(false)}
+      />
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#020617",
+  },
+  scroll: {
+    paddingBottom: 40,
+  },
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  appTitle: {
+    color: "#ffffff",
+    fontSize: 22,
+    fontWeight: "800",
+  },
+});
