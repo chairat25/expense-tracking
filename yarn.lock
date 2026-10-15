@@ -5768,7 +5768,9 @@ __metadata:
     eslint-config-next: "npm:16.2.10"
     expo: "npm:^57.0.29"
     expo-image-picker: "npm:^57.0.20"
+    expo-local-authentication: "npm:^57.0.3"
     expo-media-library: "npm:^57.0.5"
+    expo-secure-store: "npm:^57.0.4"
     expo-status-bar: "npm:^57.0.1"
     lucide-react: "npm:^1.24.0"
     lucide-react-native: "npm:^1.57.0"
@@ -5868,6 +5870,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"expo-local-authentication@npm:^57.0.3":
+  version: 57.0.3
+  resolution: "expo-local-authentication@npm:57.0.3"
+  dependencies:
+    invariant: "npm:^2.2.4"
+  peerDependencies:
+    expo: "*"
+  checksum: 10c0/c6e32ce2f1579b947960760e796554ba63d00deeb53a81109bae41e82e9650f491f1f30ce35aac1e1f84a28549ba4ee44caa8147bdc1cd005371e9bc8d3f3df3
+  languageName: node
+  linkType: hard
+
 "expo-media-library@npm:^57.0.5":
   version: 57.0.5
   resolution: "expo-media-library@npm:57.0.5"
@@ -5916,6 +5929,15 @@ __metadata:
   peerDependencies:
     react-native: "*"
   checksum: 10c0/7cb451113f1a0b64b608968dcdd43c0707f4ea8de047e24459259bf1c1f8adab614a6cf1fd74c8a427de440ac77f8ef0a9d459f1d17c849f202944c11ca4226c
+  languageName: node
+  linkType: hard
+
+"expo-secure-store@npm:^57.0.4":
+  version: 57.0.4
+  resolution: "expo-secure-store@npm:57.0.4"
+  peerDependencies:
+    expo: "*"
+  checksum: 10c0/8f94ff747808d6a270536171bf14eaa3e75aeae31c7a20615a76d101e167d2cf7a09db6c7f9b770a587a8852362bb69ecb15b4208db0789fcd24a61a50941c0f
   languageName: node
   linkType: hard
 

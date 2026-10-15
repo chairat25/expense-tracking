@@ -29,12 +29,16 @@
    - สกัดยอดเงิน, วันที่ (แปลง พ.ศ. เป็น ค.ศ.), และชื่อผู้รับเงิน/ร้านค้า พร้อมจัดหมวดหมู่อัตโนมัติ (อาหาร, เครื่องดื่ม, เดินทาง, บิล, ช้อปปิ้ง) ด้วย Pattern Learning
    - เชื่อมต่อเข้ากับ `AutoReceiptModal` เพื่อ Autocomplete ข้อมูลจากสลิปอัตโนมัติ
    - ชุดทดสอบผ่านครบ 100% (47 tests across 7 test suites)
+7. **Enterprise Mobile Security Suite**:
+   - **Hardware Secure Storage (`src/mobile/lib/supabase.ts`)**: ย้ายจากการใช้ AsyncStorage ธรรมดามาใช้ `expo-secure-store` (Keychain / Keystore เข้ารหัสระดับ Hardware) สำหรับเก็บ Supabase Auth Session Token ป้องกันการดักขโมยข้อมูล
+   - **Biometric Authentication (`src/mobile/context/SecurityContext.tsx`)**: ระบบล็อกแอปด้วย Face ID / สแกนลายนิ้วมือ และรหัสผ่านเครื่อง (Device PIN fallback) พร้อมตั้งเวลาล็อกอัตโนมัติ (Auto-Lock) หากแอปอยู่ใน Background เกิน 60 วินาที
+   - **Privacy Shield (`src/mobile/components/PrivacyShield.tsx`)**: แผ่นบังหน้าจออัตโนมัติเมื่อผู้ใช้สลับหน้าจอ (App Switcher / Multitasking) ป้องกันการถูกแอบมองยอดเงินบัญชี และป้องกัน OS ทำ Snapshot หน้าจอติดข้อมูลการเงิน
 
 ---
 
 ### ⏳ งานที่ค้างอยู่และแผนพัฒนาต่อ (Next Steps)
 1. **การทดสอบบนอุปกรณ์จริง (Device Testing)**:
-   - ทดสอบรันผ่าน `yarn start` บน Expo Go (iOS / Android) เพื่อทดสอบการขอสิทธิ์ Photo Library และดึงสลิปจริงหลังโอนเงินในแอปธนาคาร
+   - ทดสอบรันผ่าน `yarn start` บน Expo Go (iOS / Android) เพื่อทดสอบการขอสิทธิ์ Photo Library, Face ID prompt และ Privacy Shield
 2. **Offline Transaction Queue**:
    - บันทึกรายการลงในเครื่องก่อนเมื่อไม่มีอินเทอร์เน็ต และ Sync ขึ้น Supabase ทันทีเมื่อกลับมาต่อเน็ต
 
@@ -43,11 +47,11 @@
 ### 📋 Handoff Block (สำหรับการส่งต่องานข้าม Session)
 ```markdown
 [KEYWORD: expense-tracking-react-native-mobile]
-- สถานะปัจจุบัน: แตก branch `feat/react-native-mobile` โครงสร้าง Expo SDK 52 + Zero-Click Sniffer + Slip Parser (Gemini Web Assisted) + Zero-Emoji UI เสร็จสมบูรณ์และผ่าน 47 tests
-- งานถัดไป: ทดสอบรันบน Expo Go บนมือถือจริง หรือเพิ่มระบบ Offline Transaction Queue
+- สถานะปัจจุบัน: แตก branch `feat/react-native-mobile` โครงสร้าง Expo SDK 52 + Zero-Click Sniffer + Slip Parser + Zero-Emoji UI + Enterprise Security Suite (SecureStore, Biometrics, PrivacyShield) ผ่าน 47 tests สมบูรณ์
+- งานถัดไป: ทดสอบรันบน Expo Go บนมือถือจริง หรือเพิ่มระบบ Offline Transaction Queue ร่วมกับ Supabase
 - ตัวช่วยที่มีอยู่: มี `scripts/gemini_web_coder.js` สำหรับสั่งงานแท็บ Gemini บน Chrome ช่วยเขียนโค้ด
 - คำสั่งรันโปรเจกต์: `yarn start` (เปิด Expo Dev Server)
 - คำสั่งทดสอบ: `yarn test`
 - Prompt สำหรับเริ่ม Session ถัดไป:
-  "ต่อยอด branch feat/react-native-mobile ของ expense-tracking โดยทดสอบระบบ Zero-Click Slip Ingestion บน Expo Go หรือเพิ่มระบบ Offline Queue ร่วมกับ Supabase"
+  "ต่อยอด branch feat/react-native-mobile ของ expense-tracking โดยทดสอบระบบ Zero-Click Slip Ingestion และความปลอดภัยบน Expo Go หรือเพิ่มระบบ Offline Queue ร่วมกับ Supabase"
 ```

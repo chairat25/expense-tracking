@@ -7,7 +7,8 @@ import { AutoReceiptModal } from "./src/mobile/components/AutoReceiptModal";
 import { useRecentReceiptSniffer, DetectedReceipt } from "./src/mobile/hooks/useRecentReceiptSniffer";
 import { todayKey, CategorySlug } from "./src/mobile/lib/shared";
 import { supabase } from "./src/mobile/lib/supabase";
-import { parseSlipImage } from "./src/mobile/lib/slipParser";
+import { SecurityProvider } from "./src/mobile/context/SecurityContext";
+import { PrivacyShield } from "./src/mobile/components/PrivacyShield";
 
 export default function App() {
   const [selectedDate, setSelectedDate] = useState<string>(todayKey());
@@ -70,36 +71,40 @@ export default function App() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#020617" />
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.header}>
-          <Text style={styles.appTitle}>Expense Tracker</Text>
-        </View>
+    <SecurityProvider>
+      <PrivacyShield>
+        <SafeAreaView style={styles.container}>
+          <StatusBar barStyle="light-content" backgroundColor="#020617" />
+          <ScrollView contentContainerStyle={styles.scroll}>
+            <View style={styles.header}>
+              <Text style={styles.appTitle}>Expense Tracker</Text>
+            </View>
 
-        <DateCapsuleBar selectedDate={selectedDate} onSelectDate={setSelectedDate} />
-        <StatusCard spent={spent} income={income} budget={dailyBudget} />
-        <QuickAddForm onAddTransaction={handleAddTransaction} />
-      </ScrollView>
+            <DateCapsuleBar selectedDate={selectedDate} onSelectDate={setSelectedDate} />
+            <StatusCard spent={spent} income={income} budget={dailyBudget} />
+            <QuickAddForm onAddTransaction={handleAddTransaction} />
+          </ScrollView>
 
-      <AutoReceiptModal
-        visible={autoReceiptVisible}
-        receiptUri={pendingReceipt?.uri || null}
-        amount={parsedSlip.amount}
-        note={parsedSlip.receiver}
-        category={parsedSlip.category}
-        onAccept={() => {
-          handleAddTransaction({
-            amount: parsedSlip.amount,
-            type: "expense",
-            category: parsedSlip.category,
-            note: parsedSlip.receiver,
-          });
-          setAutoReceiptVisible(false);
-        }}
-        onReject={() => setAutoReceiptVisible(false)}
-      />
-    </SafeAreaView>
+          <AutoReceiptModal
+            visible={autoReceiptVisible}
+            receiptUri={pendingReceipt?.uri || null}
+            amount={parsedSlip.amount}
+            note={parsedSlip.receiver}
+            category={parsedSlip.category}
+            onAccept={() => {
+              handleAddTransaction({
+                amount: parsedSlip.amount,
+                type: "expense",
+                category: parsedSlip.category,
+                note: parsedSlip.receiver,
+              });
+              setAutoReceiptVisible(false);
+            }}
+            onReject={() => setAutoReceiptVisible(false)}
+          />
+        </SafeAreaView>
+      </PrivacyShield>
+    </SecurityProvider>
   );
 }
 
