@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
-    "ios": "expo start --ios",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "dev:web": "next dev",
     "build:web": "next build",
     "test": "vitest run",
@@ -15,7 +15,7 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "@react-native-async-storage/async-storage": "^3.1.1",
+    "@react-native-async-storage/async-storage": "2.2.0",
     "@supabase/ssr": "^0.12.3",
     "@supabase/supabase-js": "^2.110.5",
     "clsx": "^2.1.1",
@@ -32,11 +32,11 @@
     "lucide-react-native": "^1.57.0",
     "next": "16.2.10",
     "postgres": "^3.4.9",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
-    "react-native": "^0.87.1",
-    "react-native-safe-area-context": "^5.10.1",
-    "react-native-svg": "^15.15.5",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.86.3",
+    "react-native-safe-area-context": "5.7.0",
+    "react-native-svg": "15.15.4",
     "tesseract.js": "^7.0.0",
     "web-push": "^3.6.7",
     "zod": "^4.4.3"

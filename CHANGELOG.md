@@ -33,25 +33,33 @@
    - **Hardware Secure Storage (`src/mobile/lib/supabase.ts`)**: ย้ายจากการใช้ AsyncStorage ธรรมดามาใช้ `expo-secure-store` (Keychain / Keystore เข้ารหัสระดับ Hardware) สำหรับเก็บ Supabase Auth Session Token ป้องกันการดักขโมยข้อมูล
    - **Biometric Authentication (`src/mobile/context/SecurityContext.tsx`)**: ระบบล็อกแอปด้วย Face ID / สแกนลายนิ้วมือ และรหัสผ่านเครื่อง (Device PIN fallback) พร้อมตั้งเวลาล็อกอัตโนมัติ (Auto-Lock) หากแอปอยู่ใน Background เกิน 60 วินาที
    - **Privacy Shield (`src/mobile/components/PrivacyShield.tsx`)**: แผ่นบังหน้าจออัตโนมัติเมื่อผู้ใช้สลับหน้าจอ (App Switcher / Multitasking) ป้องกันการถูกแอบมองยอดเงินบัญชี และป้องกัน OS ทำ Snapshot หน้าจอติดข้อมูลการเงิน
+8. **Native iOS & Android Prebuild & Toolchain Alignment**:
+   - ปรับแก้ Version Dependencies ให้ตรงกับ Expo SDK (`react-native@0.86.3`, `react@19.2.3`, `react-native-safe-area-context@5.7.0`, `react-native-svg@15.15.4`)
+   - สร้างโปรเจกต์ Native iOS (`ExpenseTracker.xcworkspace`) และ Android สมบูรณ์ พร้อมผูก CocoaPods ครบ 93 pods
+   - ตั้งค่า Apple Development Team (`6333JAQ493`) และสิทธิ์ Face ID / Photo Library ใน `app.json` และ `Info.plist`
+   - คอมไพล์ Native iOS ผ่าน `xcodebuild` สำเร็จ 100% (Build Succeeded)
+   - ชุดทดสอบทั้งหมดยังคงผ่านครบ 100% (47 tests across 7 test suites)
 
 ---
 
-### ⏳ งานที่ค้างอยู่และแผนพัฒนาต่อ (Next Steps)
-1. **การทดสอบบนอุปกรณ์จริง (Device Testing)**:
-   - ทดสอบรันผ่าน `yarn start` บน Expo Go (iOS / Android) เพื่อทดสอบการขอสิทธิ์ Photo Library, Face ID prompt และ Privacy Shield
-2. **Offline Transaction Queue**:
-   - บันทึกรายการลงในเครื่องก่อนเมื่อไม่มีอินเทอร์เน็ต และ Sync ขึ้น Supabase ทันทีเมื่อกลับมาต่อเน็ต
+### ⏳ วิธีการติดตั้งและรันลงในมือถือ iPhone (Installation Guide)
+- **วิธีที่ 1 (สะดวกและเร็วที่สุดผ่าน Expo Go)**:
+  - รันคำสั่ง `yarn start` ใน Terminal
+  - เปิดกล้อง หรือแอป **Expo Go** บน iPhone 15 Plus สแกน QR Code แล้วเปิดใช้งานได้ทันที
+- **วิธีที่ 2 (ติดตั้งเป็น Native App ตรงผ่าน Xcode)**:
+  - รันคำสั่ง `open ios/ExpenseTracker.xcworkspace`
+  - ใน Xcode ให้ตรวจสอบ Signing & Capabilities เลือก Team `6333JAQ493`
+  - เลือกเป้าหมายเป็นเครื่อง iPhone ของคุณ (`YyY`) แล้วกดปุ่ม **▶ (Run)** Xcode จะ Compile, Sign และ Install App ลงในเครื่องโดยตรง
 
 ---
 
 ### 📋 Handoff Block (สำหรับการส่งต่องานข้าม Session)
 ```markdown
-[KEYWORD: expense-tracking-react-native-mobile]
-- สถานะปัจจุบัน: แตก branch `feat/react-native-mobile` โครงสร้าง Expo SDK 52 + Zero-Click Sniffer + Slip Parser + Zero-Emoji UI + Enterprise Security Suite (SecureStore, Biometrics, PrivacyShield) ผ่าน 47 tests สมบูรณ์
-- งานถัดไป: ทดสอบรันบน Expo Go บนมือถือจริง หรือเพิ่มระบบ Offline Transaction Queue ร่วมกับ Supabase
-- ตัวช่วยที่มีอยู่: มี `scripts/gemini_web_coder.js` สำหรับสั่งงานแท็บ Gemini บน Chrome ช่วยเขียนโค้ด
-- คำสั่งรันโปรเจกต์: `yarn start` (เปิด Expo Dev Server)
+[KEYWORD: expense-tracking-react-native-mobile-installed]
+- สถานะปัจจุบัน: Native Prebuild สำเร็จ (React Native 0.86.3 + Expo SDK 52) คอมไพล์ผ่าน 100% และ Unit Tests 47 tests ผ่านครบ
+- งานถัดไป: ทดสอบรันและทดลองถ่าย/อ่านสลิปธนาคารบน iPhone 15 Plus
+- คำสั่งรันโปรเจกต์: `yarn start` (เปิด Expo Server) หรือ `open ios/ExpenseTracker.xcworkspace` (เปิด Xcode)
 - คำสั่งทดสอบ: `yarn test`
 - Prompt สำหรับเริ่ม Session ถัดไป:
-  "ต่อยอด branch feat/react-native-mobile ของ expense-tracking โดยทดสอบระบบ Zero-Click Slip Ingestion และความปลอดภัยบน Expo Go หรือเพิ่มระบบ Offline Queue ร่วมกับ Supabase"
+  "ทดสอบการใช้งาน Receipt Ingestion บน iPhone 15 Plus และปรับปรุงฟีเจอร์เพิ่มเติม"
 ```

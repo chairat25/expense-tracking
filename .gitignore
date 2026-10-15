@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# mobile / expo
+.expo/
+ios/Pods/
+ios/build/
+android/app/build/
+android/.gradle/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+

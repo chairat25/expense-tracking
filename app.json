@@ -11,13 +11,15 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.expensetracker.mobile",
+      "appleTeamId": "6333JAQ493",
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "แอปต้องการเข้าถึงรูปภาพเพื่อตรวจจับสลิปธนาคารล่าสุดโดยอัตโนมัติ"
+        "NSPhotoLibraryUsageDescription": "แอปต้องการเข้าถึงรูปภาพเพื่อตรวจจับสลิปธนาคารล่าสุดโดยอัตโนมัติ",
+        "NSFaceIDUsageDescription": "แอปต้องการใช้งาน Face ID เพื่อยืนยันตัวตนก่อนเข้าใช้งานข้อมูลการเงิน"
       }
     },
     "android": {
       "package": "com.expensetracker.mobile",
-      "permissions": ["READ_MEDIA_IMAGES", "READ_EXTERNAL_STORAGE"]
+      "permissions": ["READ_MEDIA_IMAGES", "READ_EXTERNAL_STORAGE", "USE_BIOMETRIC", "USE_FINGERPRINT"]
     },
     "plugins": [
       [
@@ -25,7 +27,14 @@
         {
           "photosPermission": "แอปต้องการเข้าถึงรูปภาพเพื่อตรวจจับสลิปธนาคารล่าสุดโดยอัตโนมัติ"
         }
-      ]
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "แอปต้องการใช้งาน Face ID เพื่อยืนยันตัวตนก่อนเข้าใช้งานข้อมูลการเงิน"
+        }
+      ],
+      "expo-secure-store"
     ]
   }
 }
