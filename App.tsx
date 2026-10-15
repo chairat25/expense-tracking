@@ -7,6 +7,7 @@ import { AutoReceiptModal } from "./src/mobile/components/AutoReceiptModal";
 import { useRecentReceiptSniffer, DetectedReceipt } from "./src/mobile/hooks/useRecentReceiptSniffer";
 import { todayKey, CategorySlug } from "./src/mobile/lib/shared";
 import { supabase } from "./src/mobile/lib/supabase";
+import { parseSlipImage } from "./src/mobile/lib/slipParser";
 
 export default function App() {
   const [selectedDate, setSelectedDate] = useState<string>(todayKey());
@@ -17,10 +18,28 @@ export default function App() {
   // Auto Receipt Modal state
   const [autoReceiptVisible, setAutoReceiptVisible] = useState(false);
   const [pendingReceipt, setPendingReceipt] = useState<DetectedReceipt | null>(null);
+  const [parsedSlip, setParsedSlip] = useState<{
+    amount: number;
+    category: CategorySlug;
+    receiver: string;
+    date: string;
+  }>({
+    amount: 0,
+    category: "food",
+    receiver: "",
+    date: todayKey(),
+  });
 
   // Zero-Click Ingestion Sniffer
-  useRecentReceiptSniffer((receipt) => {
+  useRecentReceiptSniffer(async (receipt) => {
     setPendingReceipt(receipt);
+    const parsed = await parseSlipImage(receipt.uri);
+    setParsedSlip({
+      amount: parsed.amount || 0,
+      category: parsed.category || "food",
+      receiver: parsed.receiver || "สแกนสลิปโอนเงิน",
+      date: parsed.date || todayKey(),
+    });
     setAutoReceiptVisible(true);
   });
 
@@ -66,14 +85,15 @@ export default function App() {
       <AutoReceiptModal
         visible={autoReceiptVisible}
         receiptUri={pendingReceipt?.uri || null}
-        amount={120.0}
-        note="โอนเงินผ่านโมบายแบงก์กิ้ง"
+        amount={parsedSlip.amount}
+        note={parsedSlip.receiver}
+        category={parsedSlip.category}
         onAccept={() => {
           handleAddTransaction({
-            amount: 120.0,
+            amount: parsedSlip.amount,
             type: "expense",
-            category: "food",
-            note: "สแกนสลิปอัตโนมัติ",
+            category: parsedSlip.category,
+            note: parsedSlip.receiver,
           });
           setAutoReceiptVisible(false);
         }}

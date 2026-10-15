@@ -1,13 +1,14 @@
 import React from "react";
 import { View, Text, Modal, Image, TouchableOpacity, StyleSheet } from "react-native";
-import { Check, X, ScanText } from "lucide-react-native";
-import { formatBaht } from "../lib/shared";
+import { Check, X, ScanText, Tag } from "lucide-react-native";
+import { formatBaht, CategorySlug, CATEGORIES } from "../lib/shared";
 
 interface Props {
   visible: boolean;
   receiptUri: string | null;
   amount: number;
   note: string;
+  category?: CategorySlug;
   onAccept: () => void;
   onReject: () => void;
 }
@@ -17,9 +18,12 @@ export const AutoReceiptModal: React.FC<Props> = ({
   receiptUri,
   amount,
   note,
+  category = "food",
   onAccept,
   onReject,
 }) => {
+  const catItem = CATEGORIES.find((c) => c.slug === category);
+
   return (
     <Modal visible={visible} transparent animationType="slide">
       <View style={styles.overlay}>
@@ -36,6 +40,10 @@ export const AutoReceiptModal: React.FC<Props> = ({
           <View style={styles.infoBox}>
             <Text style={styles.amountText}>{formatBaht(amount)} ฿</Text>
             {note ? <Text style={styles.noteText}>{note}</Text> : null}
+            <View style={styles.catBadge}>
+              <Tag size={12} color="#10b981" />
+              <Text style={styles.catBadgeText}>{catItem ? catItem.name : "ทั่วไป"}</Text>
+            </View>
           </View>
 
           <View style={styles.actions}>
@@ -99,6 +107,21 @@ const styles = StyleSheet.create({
     color: "#cbd5e1",
     fontSize: 14,
     marginTop: 4,
+  },
+  catBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(16, 185, 129, 0.15)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginTop: 8,
+  },
+  catBadgeText: {
+    color: "#10b981",
+    fontSize: 12,
+    fontWeight: "600",
   },
   actions: {
     flexDirection: "row",
