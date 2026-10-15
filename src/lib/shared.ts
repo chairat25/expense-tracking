@@ -377,6 +377,8 @@ function weekInfo(month: MonthData, date: string) {
     share = matchingEnvelope.budgetAmount;
   } else if (weeklyPocketsSum > 0) {
     share = weeklyPocketsSum;
+  } else if (month.openingBalance > 0 && !month.pockets && !month.weeklyEnvelopes) {
+    share = (month.openingBalance * days) / daysInMonth(month.ym);
   } else {
     // ไม่เฉลี่ยเงินเดือนทั้งก้อนลงสัปดาห์อัตโนมัติ (ไม่เอา 4,883.06 ฿) — แสดง 0.00 ฿ จนกว่าผู้ใช้จะจัดสรรเงินสัปดาห์เอง
     share = 0;
