@@ -1,0 +1,31 @@
+{
+  "expo": {
+    "name": "Expense Tracker",
+    "slug": "expense-tracker",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "backgroundColor": "#020617"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.expensetracker.mobile",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "แอปต้องการเข้าถึงรูปภาพเพื่อตรวจจับสลิปธนาคารล่าสุดโดยอัตโนมัติ"
+      }
+    },
+    "android": {
+      "package": "com.expensetracker.mobile",
+      "permissions": ["READ_MEDIA_IMAGES", "READ_EXTERNAL_STORAGE"]
+    },
+    "plugins": [
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "แอปต้องการเข้าถึงรูปภาพเพื่อตรวจจับสลิปธนาคารล่าสุดโดยอัตโนมัติ"
+        }
+      ]
+    ]
+  }
+}
