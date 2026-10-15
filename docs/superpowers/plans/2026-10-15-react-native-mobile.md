@@ -30,7 +30,7 @@
 **Interfaces:**
 - Produces: Base Expo SDK 52 configuration, React Native entry points, and required native packages (`expo-media-library`, `lucide-react-native`, `react-native-svg`, `@supabase/supabase-js`, `@react-native-async-storage/async-storage`).
 
-- [ ] **Step 1: Update package.json with Expo and React Native dependencies**
+- [x] **Step 1: Update package.json with Expo and React Native dependencies**
 Configure `package.json` with scripts and dependencies for Expo SDK 52:
 ```json
 {
@@ -67,7 +67,7 @@ Configure `package.json` with scripts and dependencies for Expo SDK 52:
 }
 ```
 
-- [ ] **Step 2: Create app.json configuration**
+- [x] **Step 2: Create app.json configuration**
 Create `app.json` with iOS permissions for `expo-media-library`:
 ```json
 {
@@ -103,11 +103,11 @@ Create `app.json` with iOS permissions for `expo-media-library`:
 }
 ```
 
-- [ ] **Step 3: Run yarn install**
+- [x] **Step 3: Run yarn install**
 Run: `yarn install`
 Expected: Dependencies resolved and installed successfully.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 ```bash
 git add package.json app.json
 git commit -m "chore(mobile): scaffold Expo SDK 52 configuration and dependencies"
@@ -131,7 +131,7 @@ git commit -m "chore(mobile): scaffold Expo SDK 52 configuration and dependencie
   - `formatBaht(amount)`: Formatted currency string.
   - `CATEGORIES`: List of category configurations with Lucide icon components.
 
-- [ ] **Step 1: Write test for mobile shared business logic**
+- [x] **Step 1: Write test for mobile shared business logic**
 Create `src/mobile/lib/shared.test.ts`:
 ```typescript
 import { describe, it, expect } from "vitest";
@@ -155,11 +155,11 @@ describe("Mobile Shared Utils", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify failure**
+- [x] **Step 2: Run test to verify failure**
 Run: `yarn test src/mobile/lib/shared.test.ts`
 Expected: FAIL (Cannot find module `./shared`).
 
-- [ ] **Step 3: Implement shared.ts and supabase.ts**
+- [x] **Step 3: Implement shared.ts and supabase.ts**
 Implement `src/mobile/lib/shared.ts`:
 ```typescript
 export type CategorySlug = "food" | "drink" | "transport" | "bill" | "shopping" | "fun" | "other";
@@ -226,11 +226,11 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 });
 ```
 
-- [ ] **Step 4: Run tests to verify passing**
+- [x] **Step 4: Run tests to verify passing**
 Run: `yarn test src/mobile/lib/shared.test.ts`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add src/mobile/lib/
 git commit -m "feat(mobile): implement shared business logic and mobile Supabase client"
@@ -251,7 +251,7 @@ git commit -m "feat(mobile): implement shared business logic and mobile Supabase
   - Compares photo ID against `AsyncStorage.getItem('@last_processed_receipt_id')`.
   - Dispatches `onNewReceiptDetected(asset)` when an unprocessed slip image is detected.
 
-- [ ] **Step 1: Write unit test for receipt sniffer logic**
+- [x] **Step 1: Write unit test for receipt sniffer logic**
 Create `src/mobile/hooks/useRecentReceiptSniffer.test.ts`:
 ```typescript
 import { describe, it, expect, vi } from "vitest";
@@ -273,11 +273,11 @@ describe("Receipt Sniffer Validation", () => {
 });
 ```
 
-- [ ] **Step 2: Run test to verify it passes**
+- [x] **Step 2: Run test to verify it passes**
 Run: `yarn test src/mobile/hooks/useRecentReceiptSniffer.test.ts`
 Expected: PASS.
 
-- [ ] **Step 3: Implement useRecentReceiptSniffer.ts**
+- [x] **Step 3: Implement useRecentReceiptSniffer.ts**
 Create `src/mobile/hooks/useRecentReceiptSniffer.ts`:
 ```typescript
 import { useEffect, useCallback } from "react";
@@ -344,7 +344,7 @@ export function useRecentReceiptSniffer(onNewReceiptDetected: (receipt: Detected
 }
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 ```bash
 git add src/mobile/hooks/
 git commit -m "feat(mobile): implement zero-click receipt sniffer hook"
@@ -369,7 +369,7 @@ git commit -m "feat(mobile): implement zero-click receipt sniffer hook"
   - `TransactionList`: Scrollable list of day transactions with delete support.
   - `AutoReceiptModal`: Modal for reviewing auto-detected bank receipts.
 
-- [ ] **Step 1: Implement DateCapsuleBar.tsx**
+- [x] **Step 1: Implement DateCapsuleBar.tsx**
 Create `src/mobile/components/DateCapsuleBar.tsx`:
 ```tsx
 import React from "react";
@@ -453,7 +453,7 @@ const styles = StyleSheet.create({
 });
 ```
 
-- [ ] **Step 2: Implement StatusCard.tsx**
+- [x] **Step 2: Implement StatusCard.tsx**
 Create `src/mobile/components/StatusCard.tsx`:
 ```tsx
 import React from "react";
@@ -560,7 +560,7 @@ const styles = StyleSheet.create({
 });
 ```
 
-- [ ] **Step 3: Implement QuickAddForm.tsx**
+- [x] **Step 3: Implement QuickAddForm.tsx**
 Create `src/mobile/components/QuickAddForm.tsx` using Lucide icons exclusively:
 ```tsx
 import React, { useState } from "react";
@@ -753,7 +753,7 @@ const styles = StyleSheet.create({
 });
 ```
 
-- [ ] **Step 4: Implement AutoReceiptModal.tsx**
+- [x] **Step 4: Implement AutoReceiptModal.tsx**
 Create `src/mobile/components/AutoReceiptModal.tsx`:
 ```tsx
 import React from "react";
@@ -896,7 +896,7 @@ const styles = StyleSheet.create({
 });
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 ```bash
 git add src/mobile/components/
 git commit -m "feat(mobile): add zero-emoji vector UI components and auto-receipt modal"
@@ -913,7 +913,7 @@ git commit -m "feat(mobile): add zero-emoji vector UI components and auto-receip
 - Consumes: `useRecentReceiptSniffer`, `DateCapsuleBar`, `StatusCard`, `QuickAddForm`, `AutoReceiptModal`, `supabase`.
 - Produces: Complete working React Native application with Zero-Click Ingestion and Supabase sync.
 
-- [ ] **Step 1: Implement App.tsx**
+- [x] **Step 1: Implement App.tsx**
 Create `App.tsx`:
 ```tsx
 import React, { useState, useEffect } from "react";
@@ -1022,11 +1022,11 @@ const styles = StyleSheet.create({
 });
 ```
 
-- [ ] **Step 2: Run test suite to verify all logic**
+- [x] **Step 2: Run test suite to verify all logic**
 Run: `yarn test`
 Expected: All tests PASS.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 ```bash
 git add App.tsx
 git commit -m "feat(mobile): assemble complete React Native app with zero-click ingestion"
