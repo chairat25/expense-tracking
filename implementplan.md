@@ -126,11 +126,14 @@ transactions               -- ทั้งรายรับและราย�
 | **M0** | `create-next-app` + Tailwind + โครงโปรเจกต์ | ✅ เสร็จ |
 | **M1** | Drizzle schema (`months`, `transactions`) + migration SQL | ✅ เสร็จ (`drizzle/0000_*.sql`) |
 | **M2** | API: `GET/PUT /api/months/[ym]`, `POST /api/transactions`, `PATCH/DELETE /api/transactions/[id]` | ✅ เสร็จ |
-| **M3** | UI: month carousel + แท็บรายวัน (quick add) + แท็บสรุปเดือน | ✅ เสร็จ (`npm run build` ผ่าน) |
+| **M3** | UI: month carousel + แท็บรายวัน (quick add) + แท็บสรุปเดือน | ✅ เสร็จ |
 | **M4** | Auth: Supabase Auth (Google + อีเมล), หน้า `/login`, `proxy.ts` กันหน้า, RLS | ✅ เสร็จ |
-| **M5** | **สร้าง Supabase project → ใส่ env → `npm run db:push` → รัน `rls.sql`** | ⏳ **รออยู่ตรงนี้** |
-| **M6** | Deploy (Vercel เป็นตัวเต็ง) — ยังไม่สรุปว่าลงที่ไหน | ⬜ |
-| **M7** | ขัดผิว: PWA เพิ่มลงจอโฮม, export CSV, ยกยอดข้ามเดือน | ⬜ |
+| **M5** | สร้าง Supabase project → ใส่ env → `db:push` → รัน `rls.sql` | ✅ เสร็จ |
+| **M6** | Deploy ขึ้น Production (Vercel PWA) | ✅ เสร็จ |
+| **M7** | PWA Icons, Manifest, ติดตั้งลงหน้าจอโฮมมือถือ | ✅ เสร็จ |
+| **M8** | OCR & Slip Intelligence: Tesseract.js, Thai/Eng date parser, Pattern Learning | ✅ เสร็จ |
+| **M9** | Multi-Receipt Staging Queue (`ReceiptBatchModal`) + Batch Manual Add (`BatchAddModal`) | ✅ เสร็จ |
+| **M10** | Universal Receipt AI Engine (Gemini Vision) + React Native Expo Mobile App | ⏳ วางแผนพัฒนา |
 
 ### ไฟล์สำคัญของ auth
 - `src/proxy.ts` — Next 16 เปลี่ยนชื่อจาก `middleware` เป็น `proxy` แล้ว ทำหน้าที่ต่ออายุ session
