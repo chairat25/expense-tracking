@@ -1,5 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { createClient as createTokenClient } from "@supabase/supabase-js";
+import { cookies, headers } from "next/headers";
+
+const BEARER_PREFIX = "Bearer ";
+
+/** token จากแอปมือถือ (Authorization: Bearer ...) — เว็บใช้ cookie ตามเดิม */
+export async function getBearerToken(): Promise<string | null> {
+  const auth = (await headers()).get("authorization");
+  return auth?.startsWith(BEARER_PREFIX) ? auth.slice(BEARER_PREFIX.length) : null;
+}
 
 /** Supabase client ฝั่ง server — อ่าน session จาก cookie */
 export async function createClient() {
@@ -31,6 +40,15 @@ export async function createClient() {
  * ส่วน getSession() แค่อ่าน cookie ดิบๆ ซึ่งปลอมได้ ห้ามเอามาตัดสินสิทธิ์
  */
 export async function getUser() {
+  const token = await getBearerToken();
+  if (token) {
+    const tokenClient = createTokenClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    );
+    const { data } = await tokenClient.auth.getUser(token);
+    return data.user;
+  }
   const supabase = await createClient();
   const {
     data: { user },
