@@ -1,6 +1,6 @@
 import { useEffect, useCallback } from "react";
 import { AppState, AppStateStatus } from "react-native";
-import * as MediaLibrary from "expo-media-library";
+import * as MediaLibrary from "expo-media-library/legacy";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const STORAGE_KEY = "@last_processed_receipt_id";

@@ -10,7 +10,7 @@
     },
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "com.expensetracker.mobile",
+      "bundleIdentifier": "com.pond.expensetracker",
       "appleTeamId": "6333JAQ493",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "แอปต้องการเข้าถึงรูปภาพเพื่อตรวจจับสลิปธนาคารล่าสุดโดยอัตโนมัติ",
@@ -18,7 +18,7 @@
       }
     },
     "android": {
-      "package": "com.expensetracker.mobile",
+      "package": "com.pond.expensetracker",
       "permissions": ["READ_MEDIA_IMAGES", "READ_EXTERNAL_STORAGE", "USE_BIOMETRIC", "USE_FINGERPRINT"]
     },
     "plugins": [

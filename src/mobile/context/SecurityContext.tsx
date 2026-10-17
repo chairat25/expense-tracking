@@ -104,7 +104,7 @@ export const useSecurity = () => {
 
 const styles = StyleSheet.create({
   lockOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: "#020617",
     justifyContent: "center",
     alignItems: "center",

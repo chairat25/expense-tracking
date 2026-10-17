@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   shieldOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     backgroundColor: "#020617",
     justifyContent: "center",
     alignItems: "center",
