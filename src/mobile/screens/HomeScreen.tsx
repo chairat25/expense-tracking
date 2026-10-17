@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { bkkDateKey, shiftDate, todayKey, type Tx } from "../../lib/shared";
@@ -11,8 +11,11 @@ import { QuickAddCard } from "../components/QuickAddCard";
 import { SummaryCard } from "../components/SummaryCard";
 import { TransactionList } from "../components/TransactionList";
 import { AutoReceiptModal } from "../components/AutoReceiptModal";
+import { useSecurity } from "../context/SecurityContext";
 import { useDayData } from "../hooks/useDayData";
 import { useRecentReceiptSniffer } from "../hooks/useRecentReceiptSniffer";
+import { useSlipDeepLink } from "../hooks/useSlipDeepLink";
+import { prepareNativeSlipFeatures } from "../lib/nativeBridge";
 import { scanSlipAsset } from "../lib/slipScanner";
 import type { CategorySlug } from "../lib/shared";
 import { useUserMeta } from "../hooks/useUserMeta";
@@ -36,6 +39,7 @@ export function HomeScreen() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [batchOpen, setBatchOpen] = useState(false);
 
+  const { isLocked } = useSecurity();
   const day = useDayData(selectedDate);
   const { categories, profile, budgets, saveDisplayName } = useUserMeta();
 
@@ -44,18 +48,26 @@ export function HomeScreen() {
   // Zero-click ingestion: สลิปใหม่ในอัลบั้ม → เสนอบันทึกอัตโนมัติ
   const [pendingSlip, setPendingSlip] = useState<PendingSlip | null>(null);
 
-  useRecentReceiptSniffer(async (receipt) => {
-    const scanned = await scanSlipAsset(receipt.id);
+  const offerSlip = useCallback(async (assetId: string) => {
+    const scanned = await scanSlipAsset(assetId);
     if (!scanned) return;
     setPendingSlip({
-      amount: scanned.parsed.amount,
-      note: scanned.parsed.receiver ?? "สแกนสลิปโอนเงิน",
-      category: scanned.parsed.category,
-      // สลิปเพิ่งถ่าย (≤15 นาที) จึงใช้เวลาสร้างรูป แม่นกว่าปี พ.ศ. ย่อที่ OCR อ่านได้
-      date: receipt.creationTime ? bkkDateKey(new Date(receipt.creationTime)) : todayKey(),
+      amount: scanned.amount,
+      note: scanned.note,
+      category: scanned.category,
+      // ใช้เวลาสร้างรูป (= เวลาโอน) แม่นกว่าปี พ.ศ. ย่อที่ OCR อ่านได้
+      date: scanned.creationTime ? bkkDateKey(new Date(scanned.creationTime)) : todayKey(),
       imageUri: scanned.imageUri,
     });
-  });
+  }, []);
+
+  useRecentReceiptSniffer(useCallback((receipt) => void offerSlip(receipt.id), [offerSlip]));
+  // แตะ Dynamic Island / แจ้งเตือนสลิป → เปิด popup แก้หมายเหตุก่อนบันทึก
+  useSlipDeepLink(offerSlip);
+
+  useEffect(() => {
+    void prepareNativeSlipFeatures();
+  }, []);
 
   async function acceptReceipt(note: string) {
     if (!pendingSlip) return;
@@ -152,7 +164,8 @@ export function HomeScreen() {
       />
       <AutoReceiptModal
         key={pendingSlip?.imageUri ?? "none"}
-        visible={pendingSlip !== null}
+        // A Modal renders above the Face ID lock overlay, so wait for unlock.
+        visible={pendingSlip !== null && !isLocked}
         receiptUri={pendingSlip?.imageUri ?? null}
         amount={pendingSlip?.amount ?? 0}
         initialNote={pendingSlip?.note ?? ""}

@@ -1,9 +1,14 @@
 import * as MediaLibrary from "expo-media-library/legacy";
 import { isSlipOcrAvailable, recognizeText } from "../../../modules/slip-ocr";
-import { isLikelySlip, parseSlipText, type ParsedSlipResult } from "./slipParser";
+import type { CategorySlug } from "./shared";
+import { analyzeSlip } from "./slipAnalyzer";
 
 export interface ScannedSlip {
-  parsed: ParsedSlipResult & { amount: number };
+  amount: number;
+  note: string;
+  category: CategorySlug;
+  /** When the photo was taken (ms); the slip's transfer time for freshly saved slips. */
+  creationTime: number;
   /** file:// URI that <Image> can render (photo-library ph:// URIs cannot). */
   imageUri: string;
 }
@@ -20,12 +25,16 @@ export async function scanSlipAsset(assetId: string): Promise<ScannedSlip | null
     const info = await MediaLibrary.getAssetInfoAsync(assetId, { shouldDownloadFromNetwork: false });
     if (!info.localUri) return null;
 
-    const text = await recognizeText(info.localUri);
-    if (!isLikelySlip(text)) return null;
+    const analysis = analyzeSlip(await recognizeText(info.localUri));
+    if (!analysis.isSlip) return null;
 
-    const parsed = parseSlipText(text);
-    if (parsed.amount === null) return null;
-    return { parsed: { ...parsed, amount: parsed.amount }, imageUri: info.localUri };
+    return {
+      amount: analysis.amount,
+      note: analysis.note,
+      category: analysis.category,
+      creationTime: info.creationTime,
+      imageUri: info.localUri,
+    };
   } catch (err) {
     console.warn("[SlipScanner] failed to scan asset", assetId, err);
     return null;

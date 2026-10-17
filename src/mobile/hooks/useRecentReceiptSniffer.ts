@@ -1,10 +1,9 @@
 import { useEffect, useCallback } from "react";
 import { AppState, AppStateStatus } from "react-native";
 import * as MediaLibrary from "expo-media-library/legacy";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { isAssetHandled, isSlipOcrAvailable, markAssetHandled } from "../../../modules/slip-ocr";
 
-const STORAGE_KEY = "@last_processed_receipt_id";
-const MAX_AGE_MS = 15 * 60 * 1000; // 15 minutes
+const MAX_AGE_MS = 15 * 60 * 1000; // 15 minutes, same window as ios/ExpenseTracker/Slip/SlipInbox.swift
 
 export interface DetectedReceipt {
   id: string;
@@ -14,6 +13,8 @@ export interface DetectedReceipt {
 
 export function useRecentReceiptSniffer(onNewReceiptDetected: (receipt: DetectedReceipt) => void) {
   const checkLatestPhoto = useCallback(async () => {
+    // Slip detection needs on-device OCR (iOS only).
+    if (!isSlipOcrAvailable) return;
     try {
       const { status } = await MediaLibrary.requestPermissionsAsync();
       if (status !== "granted") return;
@@ -31,11 +32,10 @@ export function useRecentReceiptSniffer(onNewReceiptDetected: (receipt: Detected
       const age = now - (latest.creationTime || now);
       if (age > MAX_AGE_MS) return;
 
-      const lastProcessed = await AsyncStorage.getItem(STORAGE_KEY);
-      if (lastProcessed === latest.id) return;
+      // Shared with the Shortcuts intent, so a slip announced on the Dynamic Island is not offered again.
+      if (isAssetHandled(latest.id)) return;
+      markAssetHandled(latest.id);
 
-      // Mark as acknowledged and trigger callback
-      await AsyncStorage.setItem(STORAGE_KEY, latest.id);
       onNewReceiptDetected({
         id: latest.id,
         uri: latest.uri,

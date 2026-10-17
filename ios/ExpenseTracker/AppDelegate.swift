@@ -1,6 +1,7 @@
 internal import Expo
 import React
 import ReactAppDependencyProvider
+import UserNotifications
 
 @main
 class AppDelegate: ExpoAppDelegate {
@@ -18,6 +19,7 @@ class AppDelegate: ExpoAppDelegate {
     delegate.dependencyProvider = RCTAppDependencyProvider()
 
     reactNativeDelegate = delegate
+    UNUserNotificationCenter.current().delegate = SlipNotificationDelegate.shared
     reactNativeFactory = factory
 
 #if os(iOS) || os(tvOS)
@@ -37,6 +39,10 @@ class AppDelegate: ExpoAppDelegate {
     open url: URL,
     options: [UIApplication.OpenURLOptionsKey: Any] = [:]
   ) -> Bool {
+    // The RN app takes over a slip (edit popup) once its Live Activity link is opened.
+    if url.host == "slip" {
+      Task { await SlipActivities.endAll() }
+    }
     return super.application(app, open: url, options: options) || RCTLinkingManager.application(app, open: url, options: options)
   }
 

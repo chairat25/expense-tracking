@@ -7,29 +7,107 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		040743AD37AFBE8A77AFD4C7 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 520F4F0EB3D0664BDDAF3DDB /* Foundation.framework */; };
+		109DB263B2AEBB133DC3CABC /* ShareSlip.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A39D31AC6B92DFE89CFBCE7B /* ShareSlip.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		1C28622E33B7CC86F297753E /* ExpenseAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B99E159A8F1C7A4C44CA58B0 /* ExpenseAPI.swift */; };
+		1E8EE764486C0263C904254A /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 520F4F0EB3D0664BDDAF3DDB /* Foundation.framework */; };
+		1FC67834708753E753A4049F /* SlipActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F93CC64D53E01CDD981610B /* SlipActivity.swift */; };
+		2940CEED5E8F203117140DFE /* AuthSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA82229A81C7F7DAA22EAC81 /* AuthSession.swift */; };
+		38DF3CA578E3540E358EEE85 /* SlipKitModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A259DD1E3190B717D934E4D /* SlipKitModels.swift */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
+		4DCF8BF44DA37ACB9DAF5614 /* ShareSlipView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25DF46BC9220E3A2B5BE9DC8 /* ShareSlipView.swift */; };
+		59B026058905C74F25789E1E /* CheckLatestSlipIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5890CFE32E971AAEDEA5553E /* CheckLatestSlipIntent.swift */; };
+		6CC24E839461DA7A3D8E6261 /* SlipRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37880EB9236D90C46AD9A29B /* SlipRecognizer.swift */; };
+		78A68AA92827074376D89B1E /* SlipKitModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A259DD1E3190B717D934E4D /* SlipKitModels.swift */; };
+		822C3E03032D7B98943C89CC /* SharedKeychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58B3FACAD9822353761C17E /* SharedKeychain.swift */; };
+		905C398682407802E228693B /* ExpenseAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B99E159A8F1C7A4C44CA58B0 /* ExpenseAPI.swift */; };
+		941922CFA9D3B8CC8BB7E5D1 /* SlipKitModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3A259DD1E3190B717D934E4D /* SlipKitModels.swift */; };
 		9B3259B0BAEE345461582719 /* libPods-ExpenseTracker.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9F34226E77735FA803F277E0 /* libPods-ExpenseTracker.a */; };
+		9B51CEAA8EA3C938D1288D5E /* SlipActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F93CC64D53E01CDD981610B /* SlipActivity.swift */; };
+		A152B6C4C908241FEF635D71 /* SharedKeychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58B3FACAD9822353761C17E /* SharedKeychain.swift */; };
+		A65C589C94C970BC1755CE88 /* slip-analyzer.js in Resources */ = {isa = PBXBuildFile; fileRef = 3B604EAB74ED824627D0EAFD /* slip-analyzer.js */; };
+		B3486191DF184BF2B5072B93 /* ExpenseAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = B99E159A8F1C7A4C44CA58B0 /* ExpenseAPI.swift */; };
+		BA0CA0E8F3DF9700D0B3BB4A /* SlipRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37880EB9236D90C46AD9A29B /* SlipRecognizer.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
+		BB84BE5E85F4C534A7D9F2AF /* AuthSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA82229A81C7F7DAA22EAC81 /* AuthSession.swift */; };
+		C1A8DF912A3B8E362D88F65A /* SlipWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 3AD21BC5096937A51C1EFB42 /* SlipWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		C4D83A1F174E80D6DEEF8E57 /* SlipLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CF1B83EE97C439935CCC75B /* SlipLiveActivity.swift */; };
 		C620C65AFDEFAFEDF00100E1 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 87B82D7CF0F77A0E408EEFFB /* PrivacyInfo.xcprivacy */; };
+		D6BBFBF3B5DCE2F2D6FBF171 /* AuthSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA82229A81C7F7DAA22EAC81 /* AuthSession.swift */; };
+		DA9DD4D2E5586B9AF901BA7A /* slip-analyzer.js in Resources */ = {isa = PBXBuildFile; fileRef = 3B604EAB74ED824627D0EAFD /* slip-analyzer.js */; };
+		EC6D199B7A23A011F7668C9C /* SlipInbox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C86BE018153FC7FA6B5CC09 /* SlipInbox.swift */; };
+		ECE872ABC9CE2F74E318262C /* SharedKeychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = C58B3FACAD9822353761C17E /* SharedKeychain.swift */; };
 		EED95B880C46F5336F12AEC6 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7776BC7A49CBBF79238155F /* ExpoModulesProvider.swift */; };
+		EF40A212F509A61E42628E19 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19E91D9F9252499CCEAEC6B1 /* ShareViewController.swift */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		1A1C325E27BFDCE996FF9972 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9B541B733A66B519C46D328F;
+			remoteInfo = ShareSlip;
+		};
+		DAB8E463CC2CF30947535487 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 410CB85894F0A557AC9A6836;
+			remoteInfo = SlipWidget;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		88C1161681CA95E9C0AFC415 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				C1A8DF912A3B8E362D88F65A /* SlipWidget.appex in Embed Foundation Extensions */,
+				109DB263B2AEBB133DC3CABC /* ShareSlip.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		095BC9EF2A044C9B6851F7F0 /* Pods-ExpenseTracker.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ExpenseTracker.debug.xcconfig"; path = "Target Support Files/Pods-ExpenseTracker/Pods-ExpenseTracker.debug.xcconfig"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* ExpenseTracker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ExpenseTracker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = ExpenseTracker/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = ExpenseTracker/Info.plist; sourceTree = "<group>"; };
+		19E91D9F9252499CCEAEC6B1 /* ShareViewController.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
+		1F93CC64D53E01CDD981610B /* SlipActivity.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SlipActivity.swift; sourceTree = "<group>"; };
+		25DF46BC9220E3A2B5BE9DC8 /* ShareSlipView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShareSlipView.swift; sourceTree = "<group>"; };
+		264E1A594DB81D4FCD357972 /* SlipWidget.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = SlipWidget.entitlements; sourceTree = "<group>"; };
+		31F18DCFFF2BEA39B21787DE /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		37880EB9236D90C46AD9A29B /* SlipRecognizer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SlipRecognizer.swift; sourceTree = "<group>"; };
+		3A259DD1E3190B717D934E4D /* SlipKitModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SlipKitModels.swift; sourceTree = "<group>"; };
+		3AD21BC5096937A51C1EFB42 /* SlipWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SlipWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		3B604EAB74ED824627D0EAFD /* slip-analyzer.js */ = {isa = PBXFileReference; includeInIndex = 1; path = "slip-analyzer.js"; sourceTree = "<group>"; };
+		3C86BE018153FC7FA6B5CC09 /* SlipInbox.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SlipInbox.swift; sourceTree = "<group>"; };
+		520F4F0EB3D0664BDDAF3DDB /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		5890CFE32E971AAEDEA5553E /* CheckLatestSlipIntent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CheckLatestSlipIntent.swift; sourceTree = "<group>"; };
+		6CF1B83EE97C439935CCC75B /* SlipLiveActivity.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SlipLiveActivity.swift; sourceTree = "<group>"; };
 		87B82D7CF0F77A0E408EEFFB /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = ExpenseTracker/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		9A6D2CB37FDA3E4AAFB4CCBB /* Pods-ExpenseTracker.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ExpenseTracker.release.xcconfig"; path = "Target Support Files/Pods-ExpenseTracker/Pods-ExpenseTracker.release.xcconfig"; sourceTree = "<group>"; };
 		9F34226E77735FA803F277E0 /* libPods-ExpenseTracker.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-ExpenseTracker.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		A39D31AC6B92DFE89CFBCE7B /* ShareSlip.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareSlip.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = ExpenseTracker/SplashScreen.storyboard; sourceTree = "<group>"; };
+		B99E159A8F1C7A4C44CA58B0 /* ExpenseAPI.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ExpenseAPI.swift; sourceTree = "<group>"; };
+		BAC8B7F8E7C56FAFBEFDFE5A /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
+		C58B3FACAD9822353761C17E /* SharedKeychain.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SharedKeychain.swift; sourceTree = "<group>"; };
+		CA82229A81C7F7DAA22EAC81 /* AuthSession.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = AuthSession.swift; sourceTree = "<group>"; };
 		E7776BC7A49CBBF79238155F /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-ExpenseTracker/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = ExpenseTracker/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* ExpenseTracker-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "ExpenseTracker-Bridging-Header.h"; path = "ExpenseTracker/ExpenseTracker-Bridging-Header.h"; sourceTree = "<group>"; };
+		F3ABCF448F60A80543E3901E /* ShareSlip.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; path = ShareSlip.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -38,6 +116,22 @@
 			buildActionMask = 2147483647;
 			files = (
 				9B3259B0BAEE345461582719 /* libPods-ExpenseTracker.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2E0656E243C91BBC871DF1F7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1E8EE764486C0263C904254A /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		81CA6151DB311085C2DF99FF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				040743AD37AFBE8A77AFD4C7 /* Foundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -54,6 +148,7 @@
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
 				87B82D7CF0F77A0E408EEFFB /* PrivacyInfo.xcprivacy */,
+				585EFC8308F6A152C8509AC8 /* Slip */,
 			);
 			name = ExpenseTracker;
 			sourceTree = "<group>";
@@ -63,8 +158,27 @@
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
 				9F34226E77735FA803F277E0 /* libPods-ExpenseTracker.a */,
+				5BD65B62C413AC22E4458968 /* iOS */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		585EFC8308F6A152C8509AC8 /* Slip */ = {
+			isa = PBXGroup;
+			children = (
+				3C86BE018153FC7FA6B5CC09 /* SlipInbox.swift */,
+				5890CFE32E971AAEDEA5553E /* CheckLatestSlipIntent.swift */,
+			);
+			name = Slip;
+			path = ExpenseTracker/Slip;
+			sourceTree = "<group>";
+		};
+		5BD65B62C413AC22E4458968 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				520F4F0EB3D0664BDDAF3DDB /* Foundation.framework */,
+			);
+			name = iOS;
 			sourceTree = "<group>";
 		};
 		6AD63AAB58C0BDCFBFB37182 /* ExpenseTracker */ = {
@@ -73,6 +187,18 @@
 				E7776BC7A49CBBF79238155F /* ExpoModulesProvider.swift */,
 			);
 			name = ExpenseTracker;
+			sourceTree = "<group>";
+		};
+		76CCCC981460A3A47576294F /* ShareSlip */ = {
+			isa = PBXGroup;
+			children = (
+				BAC8B7F8E7C56FAFBEFDFE5A /* Info.plist */,
+				F3ABCF448F60A80543E3901E /* ShareSlip.entitlements */,
+				19E91D9F9252499CCEAEC6B1 /* ShareViewController.swift */,
+				25DF46BC9220E3A2B5BE9DC8 /* ShareSlipView.swift */,
+			);
+			name = ShareSlip;
+			path = ShareSlip;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -91,6 +217,9 @@
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				E234233C4BE0A336081860FF /* Pods */,
 				B4353A350ABFABAD48E09EA0 /* ExpoModulesProviders */,
+				C2BA2939F647F6A1D884D13C /* SlipKit */,
+				B285B7C35C9B1CE2DEE606E5 /* SlipWidget */,
+				76CCCC981460A3A47576294F /* ShareSlip */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -101,8 +230,21 @@
 			isa = PBXGroup;
 			children = (
 				13B07F961A680F5B00A75B9A /* ExpenseTracker.app */,
+				3AD21BC5096937A51C1EFB42 /* SlipWidget.appex */,
+				A39D31AC6B92DFE89CFBCE7B /* ShareSlip.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		B285B7C35C9B1CE2DEE606E5 /* SlipWidget */ = {
+			isa = PBXGroup;
+			children = (
+				31F18DCFFF2BEA39B21787DE /* Info.plist */,
+				264E1A594DB81D4FCD357972 /* SlipWidget.entitlements */,
+				6CF1B83EE97C439935CCC75B /* SlipLiveActivity.swift */,
+			);
+			name = SlipWidget;
+			path = SlipWidget;
 			sourceTree = "<group>";
 		};
 		B4353A350ABFABAD48E09EA0 /* ExpoModulesProviders */ = {
@@ -120,6 +262,21 @@
 			);
 			name = Supporting;
 			path = ExpenseTracker/Supporting;
+			sourceTree = "<group>";
+		};
+		C2BA2939F647F6A1D884D13C /* SlipKit */ = {
+			isa = PBXGroup;
+			children = (
+				C58B3FACAD9822353761C17E /* SharedKeychain.swift */,
+				3A259DD1E3190B717D934E4D /* SlipKitModels.swift */,
+				CA82229A81C7F7DAA22EAC81 /* AuthSession.swift */,
+				B99E159A8F1C7A4C44CA58B0 /* ExpenseAPI.swift */,
+				1F93CC64D53E01CDD981610B /* SlipActivity.swift */,
+				37880EB9236D90C46AD9A29B /* SlipRecognizer.swift */,
+				3B604EAB74ED824627D0EAFD /* slip-analyzer.js */,
+			);
+			name = SlipKit;
+			path = SlipKit;
 			sourceTree = "<group>";
 		};
 		E234233C4BE0A336081860FF /* Pods */ = {
@@ -143,6 +300,7 @@
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
+				88C1161681CA95E9C0AFC415 /* Embed Foundation Extensions */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
 				5BEE49DC5391816A665FDD39 /* [CP] Embed Pods Frameworks */,
@@ -150,11 +308,47 @@
 			buildRules = (
 			);
 			dependencies = (
+				897EB91B686069B451E03112 /* PBXTargetDependency */,
+				CEDFE5D8D3579B49E716DD51 /* PBXTargetDependency */,
 			);
 			name = ExpenseTracker;
 			productName = ExpenseTracker;
 			productReference = 13B07F961A680F5B00A75B9A /* ExpenseTracker.app */;
 			productType = "com.apple.product-type.application";
+		};
+		410CB85894F0A557AC9A6836 /* SlipWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F74073833726375197121071 /* Build configuration list for PBXNativeTarget "SlipWidget" */;
+			buildPhases = (
+				CA11AC04B3B6ABC78AB3F8F3 /* Sources */,
+				2E0656E243C91BBC871DF1F7 /* Frameworks */,
+				F2EB07A1FF2BC9582D1B1F6B /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SlipWidget;
+			productName = SlipWidget;
+			productReference = 3AD21BC5096937A51C1EFB42 /* SlipWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		9B541B733A66B519C46D328F /* ShareSlip */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = ECE639A02F53AFAE4E64BBBB /* Build configuration list for PBXNativeTarget "ShareSlip" */;
+			buildPhases = (
+				47F7B1236A44F5F61E835AE8 /* Sources */,
+				81CA6151DB311085C2DF99FF /* Frameworks */,
+				7D646A4D9D6AD9F27E68B190 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ShareSlip;
+			productName = ShareSlip;
+			productReference = A39D31AC6B92DFE89CFBCE7B /* ShareSlip.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -184,6 +378,8 @@
 			projectRoot = "";
 			targets = (
 				13B07F861A680F5B00A75B9A /* ExpenseTracker */,
+				410CB85894F0A557AC9A6836 /* SlipWidget */,
+				9B541B733A66B519C46D328F /* ShareSlip */,
 			);
 		};
 /* End PBXProject section */
@@ -197,6 +393,22 @@
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
 				C620C65AFDEFAFEDF00100E1 /* PrivacyInfo.xcprivacy in Resources */,
+				DA9DD4D2E5586B9AF901BA7A /* slip-analyzer.js in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7D646A4D9D6AD9F27E68B190 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A65C589C94C970BC1755CE88 /* slip-analyzer.js in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		F2EB07A1FF2BC9582D1B1F6B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -343,12 +555,90 @@
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
 				EED95B880C46F5336F12AEC6 /* ExpoModulesProvider.swift in Sources */,
+				ECE872ABC9CE2F74E318262C /* SharedKeychain.swift in Sources */,
+				941922CFA9D3B8CC8BB7E5D1 /* SlipKitModels.swift in Sources */,
+				BB84BE5E85F4C534A7D9F2AF /* AuthSession.swift in Sources */,
+				905C398682407802E228693B /* ExpenseAPI.swift in Sources */,
+				1FC67834708753E753A4049F /* SlipActivity.swift in Sources */,
+				6CC24E839461DA7A3D8E6261 /* SlipRecognizer.swift in Sources */,
+				EC6D199B7A23A011F7668C9C /* SlipInbox.swift in Sources */,
+				59B026058905C74F25789E1E /* CheckLatestSlipIntent.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		47F7B1236A44F5F61E835AE8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EF40A212F509A61E42628E19 /* ShareViewController.swift in Sources */,
+				4DCF8BF44DA37ACB9DAF5614 /* ShareSlipView.swift in Sources */,
+				A152B6C4C908241FEF635D71 /* SharedKeychain.swift in Sources */,
+				38DF3CA578E3540E358EEE85 /* SlipKitModels.swift in Sources */,
+				D6BBFBF3B5DCE2F2D6FBF171 /* AuthSession.swift in Sources */,
+				B3486191DF184BF2B5072B93 /* ExpenseAPI.swift in Sources */,
+				BA0CA0E8F3DF9700D0B3BB4A /* SlipRecognizer.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CA11AC04B3B6ABC78AB3F8F3 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C4D83A1F174E80D6DEEF8E57 /* SlipLiveActivity.swift in Sources */,
+				822C3E03032D7B98943C89CC /* SharedKeychain.swift in Sources */,
+				78A68AA92827074376D89B1E /* SlipKitModels.swift in Sources */,
+				2940CEED5E8F203117140DFE /* AuthSession.swift in Sources */,
+				1C28622E33B7CC86F297753E /* ExpenseAPI.swift in Sources */,
+				9B51CEAA8EA3C938D1288D5E /* SlipActivity.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		897EB91B686069B451E03112 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = SlipWidget;
+			target = 410CB85894F0A557AC9A6836 /* SlipWidget */;
+			targetProxy = DAB8E463CC2CF30947535487 /* PBXContainerItemProxy */;
+		};
+		CEDFE5D8D3579B49E716DD51 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = ShareSlip;
+			target = 9B541B733A66B519C46D328F /* ShareSlip */;
+			targetProxy = 1A1C325E27BFDCE996FF9972 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		044D1465279C010302305F27 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = ShareSlip/ShareSlip.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = P6XC92CLWH;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ShareSlip/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.pond.expensetracker.ShareSlip;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 095BC9EF2A044C9B6851F7F0 /* Pods-ExpenseTracker.debug.xcconfig */;
@@ -365,7 +655,7 @@
 					"FB_SONARKIT_ENABLED=1",
 				);
 				INFOPLIST_FILE = ExpenseTracker/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -399,7 +689,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = P6XC92CLWH;
 				INFOPLIST_FILE = ExpenseTracker/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -420,6 +710,33 @@
 				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Release;
+		};
+		531A8BD2D7D3F6B2B9D2C522 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = ShareSlip/ShareSlip.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = P6XC92CLWH;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = ShareSlip/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.pond.expensetracker.ShareSlip;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
 		};
 		83CBBA201A601CBA00E9B192 /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -557,6 +874,61 @@
 			};
 			name = Release;
 		};
+		9ACF7BBF2B44932795C696AB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = SlipWidget/SlipWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = P6XC92CLWH;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = SlipWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.pond.expensetracker.SlipWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		B7AFD83A473C3EC430FDC303 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = SlipWidget/SlipWidget.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = P6XC92CLWH;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = SlipWidget/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.pond.expensetracker.SlipWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -574,6 +946,24 @@
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,
 				83CBBA211A601CBA00E9B192 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		ECE639A02F53AFAE4E64BBBB /* Build configuration list for PBXNativeTarget "ShareSlip" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				044D1465279C010302305F27 /* Release */,
+				531A8BD2D7D3F6B2B9D2C522 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F74073833726375197121071 /* Build configuration list for PBXNativeTarget "SlipWidget" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B7AFD83A473C3EC430FDC303 /* Release */,
+				9ACF7BBF2B44932795C696AB /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

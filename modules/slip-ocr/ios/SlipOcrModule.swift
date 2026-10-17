@@ -1,10 +1,31 @@
 import ExpoModulesCore
 import UIKit
+import UserNotifications
 import Vision
+
+// Same UserDefaults key/limit as HandledSlipAssets in ios/ExpenseTracker/Slip/SlipInbox.swift,
+// so slips already announced by the Shortcuts automation are not offered twice.
+private let handledAssetIdsKey = "slip.handledAssetIds"
+private let handledAssetIdsLimit = 50
 
 public class SlipOcrModule: Module {
   public func definition() -> ModuleDefinition {
     Name("SlipOcr")
+
+    Function("getHandledAssetIds") { () -> [String] in
+      UserDefaults.standard.stringArray(forKey: handledAssetIdsKey) ?? []
+    }
+
+    Function("markAssetHandled") { (id: String) in
+      let current = UserDefaults.standard.stringArray(forKey: handledAssetIdsKey) ?? []
+      let next = Array((current.filter { $0 != id } + [id]).suffix(handledAssetIdsLimit))
+      UserDefaults.standard.set(next, forKey: handledAssetIdsKey)
+    }
+
+    // Needed for the fallback banner when Live Activities are turned off.
+    AsyncFunction("requestAlertPermissionAsync") { () async -> Bool in
+      (try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])) ?? false
+    }
 
     // Recognizes Thai + English text in a local image file and returns the lines top-to-bottom.
     AsyncFunction("recognizeTextAsync") { (uri: String, promise: Promise) in
