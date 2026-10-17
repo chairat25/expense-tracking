@@ -1,0 +1,10 @@
+{
+  "name": "slip-ocr",
+  "version": "1.0.0",
+  "description": "On-device text recognition for payment slips using Apple Vision",
+  "main": "index.ts",
+  "license": "MIT",
+  "author": "chairat srikeaw",
+  "homepage": "https://github.com/chairat25/expense-tracking",
+  "private": true
+}

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { shiftDate, todayKey, type Tx } from "../../lib/shared";
+import { bkkDateKey, shiftDate, todayKey, type Tx } from "../../lib/shared";
 import { BatchAddSheet } from "../components/BatchAddSheet";
 import { DatePickerSheet } from "../components/DatePickerSheet";
 import { HistorySheet } from "../components/HistorySheet";
@@ -12,12 +12,20 @@ import { SummaryCard } from "../components/SummaryCard";
 import { TransactionList } from "../components/TransactionList";
 import { AutoReceiptModal } from "../components/AutoReceiptModal";
 import { useDayData } from "../hooks/useDayData";
-import { useRecentReceiptSniffer, type DetectedReceipt } from "../hooks/useRecentReceiptSniffer";
-import { parseSlipImage } from "../lib/slipParser";
+import { useRecentReceiptSniffer } from "../hooks/useRecentReceiptSniffer";
+import { scanSlipAsset } from "../lib/slipScanner";
 import type { CategorySlug } from "../lib/shared";
 import { useUserMeta } from "../hooks/useUserMeta";
 import { supabase } from "../lib/supabase";
 import { colors, MAX_CONTENT_WIDTH } from "../theme";
+
+interface PendingSlip {
+  amount: number;
+  note: string;
+  category: CategorySlug;
+  date: string;
+  imageUri: string;
+}
 
 /** หน้าหลักเหมือน HomeView ของเว็บ PWA */
 export function HomeScreen() {
@@ -34,27 +42,27 @@ export function HomeScreen() {
   const dailyBudget = day.dailyBudget ?? budgets?.daily ?? 0;
 
   // Zero-click ingestion: สลิปใหม่ในอัลบั้ม → เสนอบันทึกอัตโนมัติ
-  const [pendingReceipt, setPendingReceipt] = useState<DetectedReceipt | null>(null);
-  const [parsedSlip, setParsedSlip] = useState<{ amount: number; note: string; category: CategorySlug }>({
-    amount: 0,
-    note: "",
-    category: "food",
-  });
+  const [pendingSlip, setPendingSlip] = useState<PendingSlip | null>(null);
 
   useRecentReceiptSniffer(async (receipt) => {
-    const parsed = await parseSlipImage(receipt.uri);
-    setParsedSlip({
-      amount: parsed.amount ?? 0,
-      note: parsed.receiver ?? "สแกนสลิปโอนเงิน",
-      category: parsed.category,
+    const scanned = await scanSlipAsset(receipt.id);
+    if (!scanned) return;
+    setPendingSlip({
+      amount: scanned.parsed.amount,
+      note: scanned.parsed.receiver ?? "สแกนสลิปโอนเงิน",
+      category: scanned.parsed.category,
+      // สลิปเพิ่งถ่าย (≤15 นาที) จึงใช้เวลาสร้างรูป แม่นกว่าปี พ.ศ. ย่อที่ OCR อ่านได้
+      date: receipt.creationTime ? bkkDateKey(new Date(receipt.creationTime)) : todayKey(),
+      imageUri: scanned.imageUri,
     });
-    setPendingReceipt(receipt);
   });
 
-  async function acceptReceipt() {
-    setPendingReceipt(null);
+  async function acceptReceipt(note: string) {
+    if (!pendingSlip) return;
+    const { amount, category, date } = pendingSlip;
+    setPendingSlip(null);
     try {
-      await day.addTransaction({ type: "expense", ...parsedSlip }, todayKey());
+      await day.addTransaction({ type: "expense", amount, category, note: note.trim() }, date);
     } catch {
       Alert.alert("บันทึกสลิปไม่สำเร็จ", "กรุณาลองใหม่อีกครั้ง");
     }
@@ -143,13 +151,14 @@ export function HomeScreen() {
         onClose={() => setProfileOpen(false)}
       />
       <AutoReceiptModal
-        visible={pendingReceipt !== null}
-        receiptUri={pendingReceipt?.uri ?? null}
-        amount={parsedSlip.amount}
-        note={parsedSlip.note}
-        category={parsedSlip.category}
+        key={pendingSlip?.imageUri ?? "none"}
+        visible={pendingSlip !== null}
+        receiptUri={pendingSlip?.imageUri ?? null}
+        amount={pendingSlip?.amount ?? 0}
+        initialNote={pendingSlip?.note ?? ""}
+        category={pendingSlip?.category}
         onAccept={acceptReceipt}
-        onReject={() => setPendingReceipt(null)}
+        onReject={() => setPendingSlip(null)}
       />
       <BatchAddSheet
         visible={batchOpen}

@@ -1,15 +1,28 @@
-import React from "react";
-import { View, Text, Modal, Image, TouchableOpacity, StyleSheet } from "react-native";
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  Modal,
+  Image,
+  TextInput,
+  TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+} from "react-native";
 import { Check, X, ScanText, Tag } from "lucide-react-native";
 import { formatBaht, CategorySlug, CATEGORIES } from "../lib/shared";
+
+const NOTE_MAX_LENGTH = 100;
 
 interface Props {
   visible: boolean;
   receiptUri: string | null;
   amount: number;
-  note: string;
+  /** หมายเหตุเริ่มต้นจาก OCR (ชื่อผู้รับ) ผู้ใช้แก้ได้ก่อนบันทึก */
+  initialNote: string;
   category?: CategorySlug;
-  onAccept: () => void;
+  onAccept: (note: string) => void;
   onReject: () => void;
 }
 
@@ -17,16 +30,20 @@ export const AutoReceiptModal: React.FC<Props> = ({
   visible,
   receiptUri,
   amount,
-  note,
+  initialNote,
   category = "food",
   onAccept,
   onReject,
 }) => {
+  const [note, setNote] = useState(initialNote);
   const catItem = CATEGORIES.find((c) => c.slug === category);
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View style={styles.overlay}>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onReject}>
+      <KeyboardAvoidingView
+        style={styles.overlay}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
         <View style={styles.modalContent}>
           <View style={styles.header}>
             <ScanText size={20} color="#10b981" />
@@ -39,7 +56,16 @@ export const AutoReceiptModal: React.FC<Props> = ({
 
           <View style={styles.infoBox}>
             <Text style={styles.amountText}>{formatBaht(amount)} ฿</Text>
-            {note ? <Text style={styles.noteText}>{note}</Text> : null}
+            <TextInput
+              style={styles.noteInput}
+              value={note}
+              onChangeText={setNote}
+              placeholder="หมายเหตุ (เช่น ค่ากาแฟ)"
+              placeholderTextColor="#64748b"
+              maxLength={NOTE_MAX_LENGTH}
+              returnKeyType="done"
+              selectTextOnFocus
+            />
             <View style={styles.catBadge}>
               <Tag size={12} color="#10b981" />
               <Text style={styles.catBadgeText}>{catItem ? catItem.name : "ทั่วไป"}</Text>
@@ -52,13 +78,13 @@ export const AutoReceiptModal: React.FC<Props> = ({
               <Text style={styles.rejectText}>ข้าม</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.acceptBtn} onPress={onAccept}>
+            <TouchableOpacity style={styles.acceptBtn} onPress={() => onAccept(note)}>
               <Check size={18} color="#ffffff" />
               <Text style={styles.acceptText}>บันทึกรายการ</Text>
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };
@@ -97,16 +123,25 @@ const styles = StyleSheet.create({
   infoBox: {
     alignItems: "center",
     marginBottom: 20,
+    width: "100%",
+  },
+  noteInput: {
+    width: "100%",
+    marginTop: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: "#0f172a",
+    borderWidth: 1,
+    borderColor: "#334155",
+    color: "#e2e8f0",
+    fontSize: 15,
+    textAlign: "center",
   },
   amountText: {
     color: "#10b981",
     fontSize: 28,
     fontWeight: "800",
-  },
-  noteText: {
-    color: "#cbd5e1",
-    fontSize: 14,
-    marginTop: 4,
   },
   catBadge: {
     flexDirection: "row",

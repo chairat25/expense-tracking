@@ -90,9 +90,14 @@ const bkkTime = new Intl.DateTimeFormat("en-GB", {
   hour12: false,
 });
 
+/** 'YYYY-MM-DD' ของเวลาที่ระบุ ตามเวลาไทย */
+export function bkkDateKey(date: Date): string {
+  return bkkDate.format(date);
+}
+
 /** 'YYYY-MM-DD' ของ "ตอนนี้" ตามเวลาไทย */
 export function todayKey(): string {
-  return bkkDate.format(new Date());
+  return bkkDateKey(new Date());
 }
 
 export function thisMonthKey(): string {

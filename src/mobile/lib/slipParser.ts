@@ -86,39 +86,25 @@ export function parseSlipText(text: string): ParsedSlipResult {
   };
 }
 
-/**
- * ถอดรหัสรูปภาพสลิปจาก Image URI ในเครื่อง
- */
-export async function parseSlipImage(imageUri: string): Promise<ParsedSlipResult> {
-  if (!imageUri) {
-    return {
-      success: false,
-      amount: null,
-      date: null,
-      receiver: null,
-      category: "food",
-      error: "ไม่พบ Image URI",
-    };
-  }
+// Phrases that appear on Thai bank / e-wallet transfer slips but rarely elsewhere.
+const SLIP_MARKERS = [
+  /(?:โอนเงิน|ทำรายการ|ชำระเงิน|จ่ายบิล|เติมเงิน)\s*สำเร็จ/,
+  /เลขที่รายการ|รหัสอ้างอิง|เลขอ้างอิง|หมายเลขอ้างอิง/,
+  /พร้อมเพย์|promptpay/i,
+  /(?:transfer|payment|transaction)\s+(?:successful|completed)/i,
+  /ref(?:erence)?\.?\s*(?:no|id|code)|transaction\s*id/i,
+  /กสิกร|ไทยพาณิชย์|กรุงเทพ|กรุงไทย|กรุงศรี|ทหารไทยธนชาต|ออมสิน|ธ\.ก\.ส\.|ยูโอบี|ซีไอเอ็มบี|เกียรตินาคิน/,
+  /\b(?:k\s?plus|kbank|scb|ktb|krungthai|bualuang|krungsri|ttb|gsb|uob|truemoney)\b/i,
+];
 
-  try {
-    // ในอนาคตสามารถต่อ Tesseract worker หรือ Gemini Vision API ได้โดยตรง
-    // สำหรับ client-side: จำลองการอ่านหรือดึงจาก OCR parser
-    return {
-      success: true,
-      amount: 150.0,
-      date: new Date().toISOString().split("T")[0],
-      receiver: "Café Amazon",
-      category: "drink",
-    };
-  } catch (err: any) {
-    return {
-      success: false,
-      amount: null,
-      date: null,
-      receiver: null,
-      category: "food",
-      error: err?.message || "ไม่สามารถอ่านข้อมูลสลิปได้",
-    };
-  }
+/**
+ * Decide whether OCR text comes from a payment slip: it must contain an
+ * amount and at least one slip-specific marker, so selfies and chat
+ * screenshots that merely mention a price are ignored.
+ */
+export function isLikelySlip(text: string): boolean {
+  if (!text.trim()) return false;
+  const hasMarker = SLIP_MARKERS.some((re) => re.test(text));
+  if (!hasMarker) return false;
+  return parseReceiptText(text).amount !== null;
 }
