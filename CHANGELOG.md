@@ -53,13 +53,33 @@
 
 ---
 
+---
+
+## [2026-10-17] — Branch: `feat/react-native-mobile`
+
+### ✨ สิ่งที่ทำเสร็จแล้ว (Completed Features)
+1. **Dynamic Island & Live Activity Redesign**:
+   - วิเคราะห์ปัญหาจาก UI ปัจจุบัน (การใช้ Emoji ละเมิด Zero-Emoji standard, ปุ่มแอคชันหนาเทอะทะ, และตัวเลขยอดเงินไม่เด่นชัด)
+   - เชื่อมต่อสั่งการ Gemini Web ผ่านโมเดล **4 Argon** (โมเดลงานซับซ้อนและการออกแบบเชิงลึก) เพื่อสังเคราะห์โครงสร้าง SwiftUI ระดับ Apple Design Award
+   - ออกแบบ UI ครบทั้ง 3 สถานะ:
+     - **แบบย่อ (Compact Island)**: ไอคอนสลิปมินิมอลสีเขียวมรกตเรืองแสง + ยอดเงินตัวเลข Monospaced Rounded ชัดเจน
+     - **แบบขยายเมื่อกดค้าง (Expanded Island)**: ยอดเงินเด่นชัด (Hero Amount), แท็กหมวดหมู่เวกเตอร์ SF Symbols, ชิปผู้รับเงิน Monogram อักษรย่อ (`[M]` Mom, `[A]` Apart) ปลอดอิโมจิ 100%, และปุ่มแคปซูลแก้ว (Glassmorphic Buttons) สบายตาและพอดีนิ้วโป้ง
+     - **หน้าจอล็อค (Lock Screen Live Activity Banner)**: การ์ดกระจกมนโค้งมน (Frosted Glass) แยกสัดส่วนเวลาตรวจพบ ยอดเงิน และปุ่มยืนยันผ่าน AppIntents
+2. **เอกสารสเปกและ Mockup Previews**:
+   - สร้างเอกสารเปรียบเทียบสเปกและดีไซน์: `dynamic_island_options.md`
+   - สร้าง Interactive HTML Simulators: `dynamic_island_preview.html`, `argon_single_preview.html`
+   - เรนเดอร์รูปภาพตัวอย่างเสมือนจริง: `argon_design_mockup.png`, `dynamic_island_live_activity_mockup_1792232510248.jpg`, `dynamic_island_preview.png`
+
+---
+
 ### 📋 Handoff Block (สำหรับการส่งต่องานข้าม Session)
 ```markdown
-[KEYWORD: expense-tracking-react-native-mobile-installed]
-- สถานะปัจจุบัน: Native Prebuild สำเร็จ (React Native 0.86.3 + Expo SDK 52) คอมไพล์ผ่าน 100% และ Unit Tests 47 tests ผ่านครบ
-- งานถัดไป: ทดสอบรันและทดลองถ่าย/อ่านสลิปธนาคารบน iPhone 15 Plus
-- คำสั่งรันโปรเจกต์: `yarn start` (เปิด Expo Server) หรือ `open ios/ExpenseTracker.xcworkspace` (เปิด Xcode)
-- คำสั่งทดสอบ: `yarn test`
+[KEYWORD: expense-tracking-dynamic-island-redesign-ready]
+- สถานะปัจจุบัน: ออกแบบ Dynamic Island & Live Activity (3 สถานะ: ย่อ, ขยาย, ล็อคสกรีน) เสร็จสมบูรณ์ตามมาตรฐาน Zero-Emoji และบันทึกลง dynamic_island_options.md พร้อมภาพ mockup
+- งานถัดไป: อัปเดตโค้ด Swift ใน `ios/SlipWidget/SlipLiveActivity.swift` ตามดีไซน์ 4 Argon Masterpiece
+- ไฟล์อ้างอิงดีไซน์: `dynamic_island_options.md` และภาพ `argon_design_mockup.png`
+- คำสั่งทดสอบ: `yarn test` และ `xcodebuild -workspace ios/ExpenseTracker.xcworkspace -scheme ExpenseTracker`
 - Prompt สำหรับเริ่ม Session ถัดไป:
-  "ทดสอบการใช้งาน Receipt Ingestion บน iPhone 15 Plus และปรับปรุงฟีเจอร์เพิ่มเติม"
+  "นำดีไซน์ Dynamic Island แบบ 4 Argon Masterpiece จาก dynamic_island_options.md ไป implement ลงใน ios/SlipWidget/SlipLiveActivity.swift และทดสอบการทำงาน"
 ```
+

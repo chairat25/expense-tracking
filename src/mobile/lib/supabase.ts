@@ -1,3 +1,4 @@
+import { AppState } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import { createClient } from "@supabase/supabase-js";
 
@@ -48,4 +49,14 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     persistSession: true,
     detectSessionInUrl: false,
   },
+});
+
+// RN has no tab-visibility events, so supabase-js can't pause/resume its refresh timer
+// itself. Without this, the token can be expired when returning from the Lock Screen.
+AppState.addEventListener("change", (state) => {
+  if (state === "active") {
+    void supabase.auth.startAutoRefresh();
+  } else {
+    void supabase.auth.stopAutoRefresh();
+  }
 });

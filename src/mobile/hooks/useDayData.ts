@@ -107,5 +107,18 @@ export function useDayData(selectedDate: string) {
     [day],
   );
 
-  return { ...day, loading, addTransaction, addCreated, removeTransaction, reload };
+  /** แก้รายการ แล้วปรับยอดรวมของวันตามค่าใหม่ที่ server ตอบกลับ */
+  const updateTransaction = useCallback(async (tx: Tx, patch: NewTransaction): Promise<Tx> => {
+    const updated = await apiFetch<Tx>(`/api/transactions/${tx.id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ ...patch, note: patch.note.trim() }),
+    });
+    setDay((prev) => ({
+      ...applyDelta(applyDelta(prev, tx, -1), updated, 1),
+      transactions: prev.transactions.map((t) => (t.id === tx.id ? updated : t)),
+    }));
+    return updated;
+  }, []);
+
+  return { ...day, loading, addTransaction, addCreated, removeTransaction, updateTransaction, reload };
 }

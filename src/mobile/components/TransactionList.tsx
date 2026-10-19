@@ -10,17 +10,18 @@ interface Props {
   loading: boolean;
   transactions: Tx[];
   categories: CategoryOption[];
+  onEdit: (tx: Tx) => void;
   onDelete: (tx: Tx) => void;
 }
 
-export function TransactionList({ selectedDate, loading, transactions, categories, onDelete }: Props) {
+export function TransactionList({ selectedDate, loading, transactions, categories, onEdit, onDelete }: Props) {
   return (
     <View style={styles.section}>
       <View style={styles.titleRow}>
         <Text style={styles.title}>
           รายการวันที่ {formatDayTH(selectedDate)} ({transactions.length})
         </Text>
-        {transactions.length > 0 && <Text style={styles.hint}>เรียงตามเวลาล่าสุด</Text>}
+        {transactions.length > 0 && <Text style={styles.hint}>แตะรายการเพื่อแก้ไข</Text>}
       </View>
 
       {loading ? (
@@ -44,7 +45,12 @@ export function TransactionList({ selectedDate, loading, transactions, categorie
             const icon = cat?.icon || CATEGORY_ICON[tx.category as Category] || "📦";
             const catName = cat?.name || CATEGORY_LABEL[tx.category as Category] || tx.category;
             return (
-              <View key={tx.id} style={[styles.row, index > 0 && styles.rowDivider]}>
+              <TouchableOpacity
+                key={tx.id}
+                style={[styles.row, index > 0 && styles.rowDivider]}
+                onPress={() => onEdit(tx)}
+                activeOpacity={0.6}
+              >
                 <View style={styles.left}>
                   <View style={styles.iconBox}>
                     <Text style={styles.iconText}>{icon}</Text>
@@ -67,7 +73,7 @@ export function TransactionList({ selectedDate, loading, transactions, categorie
                     <Trash2 size={15} color={colors.slate500} />
                   </TouchableOpacity>
                 </View>
-              </View>
+              </TouchableOpacity>
             );
           })}
         </View>

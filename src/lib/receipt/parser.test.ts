@@ -63,4 +63,28 @@ describe("parseReceiptText", () => {
     // 1995 is outside currentYear - 3..+1, should be ignored/null
     expect(res.date).toBeNull();
   });
+
+  it("reads the paid amount from a Pao Tang co-payment receipt with whole-baht values", () => {
+    const sample = [
+      "ทำรายการสำเร็จ",
+      "19 ต.ค. 2569 09:13 น.",
+      "ค่าสินค้า/บริการ",
+      "60 บาท",
+      "สิทธิไทยช่วยไทยพลัส",
+      "-36 บาท",
+      "24 บาท",
+      "จำนวนเงินที่ชำระ",
+    ].join("\n");
+
+    const res = parseReceiptText(sample);
+
+    expect(res.amount).toBe(24);
+    expect(res.date).toBe("2026-10-19");
+  });
+
+  it("accepts a whole-baht amount when no decimal amount exists", () => {
+    const res = parseReceiptText("ชำระเงินสำเร็จ\nยอดเงิน\n1,250 บาท");
+
+    expect(res.amount).toBe(1250);
+  });
 });

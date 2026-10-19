@@ -5,7 +5,11 @@ import { ShieldCheck, Lock, Fingerprint } from "lucide-react-native";
 
 interface SecurityContextType {
   isLocked: boolean;
+  /** Unlocked, no Face ID prompt showing, and the app is in the foreground. */
+  isReady: boolean;
   authenticate: () => Promise<boolean>;
+  /** Lock now and ask for Face ID once the app is in the foreground, even if it was unlocked. */
+  requireUnlock: () => void;
 }
 
 const SecurityContext = createContext<SecurityContextType | null>(null);
@@ -15,9 +19,26 @@ const AUTO_LOCK_TIMEOUT_MS = 60 * 1000; // ล็อกอัตโนมัต�
 export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isLocked, setIsLocked] = useState(true);
   const [hasBiometrics, setHasBiometrics] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [isAppActive, setIsAppActive] = useState(AppState.currentState === "active");
   const backgroundTime = useRef<number | null>(null);
+  const authInFlight = useRef<Promise<boolean> | null>(null);
+  // Face ID can only be shown while the app is active; defer the prompt until then.
+  const shouldAuthOnActive = useRef(false);
 
-  const authenticate = async (): Promise<boolean> => {
+  // Share one prompt between the launch check and the foreground re-lock.
+  const authenticate = (): Promise<boolean> => {
+    if (!authInFlight.current) {
+      setIsAuthenticating(true);
+      authInFlight.current = runAuthentication().finally(() => {
+        authInFlight.current = null;
+        setIsAuthenticating(false);
+      });
+    }
+    return authInFlight.current;
+  };
+
+  const runAuthentication = async (): Promise<boolean> => {
     try {
       const compatible = await LocalAuthentication.hasHardwareAsync();
       const enrolled = await LocalAuthentication.isEnrolledAsync();
@@ -47,19 +68,34 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const requireUnlock = () => {
+    setIsLocked(true);
+    // A prompt already on screen (e.g. the launch check) will unlock it.
+    if (authInFlight.current) return;
+    if (AppState.currentState === "active") authenticate();
+    else shouldAuthOnActive.current = true;
+  };
+
   useEffect(() => {
     authenticate();
   }, []);
 
   useEffect(() => {
     const handleAppStateChange = (nextState: AppStateStatus) => {
-      if (nextState === "background" || nextState === "inactive") {
+      setIsAppActive(nextState === "active");
+      // The Face ID sheet itself makes the app "inactive"; don't count that as leaving.
+      if (nextState === "background" || (nextState === "inactive" && !authInFlight.current)) {
         backgroundTime.current = Date.now();
       }
 
       if (nextState === "active") {
+        if (shouldAuthOnActive.current) {
+          shouldAuthOnActive.current = false;
+          authenticate();
+        }
         if (backgroundTime.current) {
           const elapsed = Date.now() - backgroundTime.current;
+          backgroundTime.current = null;
           if (elapsed > AUTO_LOCK_TIMEOUT_MS) {
             setIsLocked(true);
             authenticate();
@@ -73,7 +109,9 @@ export const SecurityProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   }, []);
 
   return (
-    <SecurityContext.Provider value={{ isLocked, authenticate }}>
+    <SecurityContext.Provider
+      value={{ isLocked, isReady: !isLocked && !isAuthenticating && isAppActive, authenticate, requireUnlock }}
+    >
       {children}
       {isLocked && (
         <View style={styles.lockOverlay}>

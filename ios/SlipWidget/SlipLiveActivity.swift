@@ -178,7 +178,8 @@ private struct SlipActionRow: View {
             .overlay(RoundedRectangle(cornerRadius: 13).stroke(.white.opacity(0.15), lineWidth: 1))
         }
 
-        Button(intent: SaveSlipIntent(assetId: context.attributes.assetId)) {
+        // A Link (not an App Intent) so saving always passes the app's Face ID lock.
+        Link(destination: context.attributes.saveURL ?? URL(string: "com.expensetracker.mobile://")!) {
           Label(saveTitle, systemImage: "checkmark")
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)

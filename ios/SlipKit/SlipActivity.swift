@@ -20,18 +20,23 @@ struct SlipActivityAttributes: ActivityAttributes {
   let detectedAt: Date
 
   /// Opens the RN app's edit popup for this slip.
-  var editURL: URL? {
+  var editURL: URL? { slipURL(action: nil) }
+
+  /// Opens the app, which asks for Face ID and then saves the slip as read.
+  /// Saving goes through the app (not an App Intent) so its biometric lock always applies.
+  var saveURL: URL? { slipURL(action: "save") }
+
+  private func slipURL(action: String?) -> URL? {
     var components = URLComponents()
     components.scheme = "com.expensetracker.mobile"
     components.host = "slip"
     components.queryItems = [URLQueryItem(name: "asset", value: assetId)]
+      + (action.map { [URLQueryItem(name: "action", value: $0)] } ?? [])
     return components.url
   }
 }
 
 enum SlipActivities {
-  private static let savedLinger: TimeInterval = 4
-
   static func find(assetId: String) -> Activity<SlipActivityAttributes>? {
     Activity<SlipActivityAttributes>.activities.first { $0.attributes.assetId == assetId }
   }
@@ -40,43 +45,6 @@ enum SlipActivities {
     for activity in Activity<SlipActivityAttributes>.activities {
       await activity.end(nil, dismissalPolicy: .immediate)
     }
-  }
-
-  static func save(assetId: String) async {
-    guard let activity = find(assetId: assetId) else { return }
-    await activity.update(ActivityContent(state: .init(phase: .saving), staleDate: nil))
-    do {
-      try await ExpenseAPI.addExpense(activity.attributes.draft)
-      await activity.end(
-        ActivityContent(state: .init(phase: .saved), staleDate: nil),
-        dismissalPolicy: .after(Date().addingTimeInterval(savedLinger))
-      )
-    } catch {
-      let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-      await activity.update(ActivityContent(state: .init(phase: .failed, message: message), staleDate: nil))
-    }
-  }
-}
-
-/// "บันทึก" button on the Live Activity. LiveActivityIntent runs in the app's process.
-struct SaveSlipIntent: LiveActivityIntent {
-  static var title: LocalizedStringResource = "บันทึกสลิป"
-  static var isDiscoverable = false
-  /// Saving spends from the user's account, so a locked phone must unlock (Face ID) first.
-  static var authenticationPolicy: IntentAuthenticationPolicy = .requiresAuthentication
-
-  @Parameter(title: "Asset ID")
-  var assetId: String
-
-  init() {}
-
-  init(assetId: String) {
-    self.assetId = assetId
-  }
-
-  func perform() async throws -> some IntentResult {
-    await SlipActivities.save(assetId: assetId)
-    return .result()
   }
 }
 

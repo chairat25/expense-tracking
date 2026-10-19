@@ -12,6 +12,14 @@ export interface ParsedSlipResult {
   error?: string;
 }
 
+/** Pao Tang / G-Wallet receipts print the shop name on the line after the payer's wallet id. */
+function walletMerchant(text: string): string | null {
+  const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+  const idIndex = lines.findIndex((line) => /g-?wallet\s*id/i.test(line));
+  const name = idIndex >= 0 ? lines[idIndex + 1] : undefined;
+  return name && !/[0-9*]{4}|บาท/.test(name) ? name : null;
+}
+
 /**
  * สกัดข้อมูลสลิปจากข้อความ OCR (หรือ mock / vision text)
  * พัฒนาร่วมกับคำแนะนำจาก Google Gemini Web
@@ -31,7 +39,7 @@ export function parseSlipText(text: string): ParsedSlipResult {
   const receipt = parseReceiptText(text);
 
   // สกัดชื่อผู้รับ / ร้านค้า เพิ่มเติมตามคำแนะนำจาก Gemini Web
-  let receiver = receipt.merchant;
+  let receiver = receipt.merchant ?? walletMerchant(text);
   if (!receiver) {
     const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
     const targetKeywords = ["ไปยัง", "ถึง", "ผู้รับเงิน", "to:", "to", "receiver"];
@@ -65,7 +73,7 @@ export function parseSlipText(text: string): ParsedSlipResult {
       category = pattern.category as CategorySlug;
     } else if (/บิล|ค่าไฟ|ค่าน้ำ|การประปา|การไฟ/i.test(receiver)) {
       category = "bill";
-    } else if (/กาแฟ|amazon|cafe|tea|ชา/i.test(receiver)) {
+    } else if (/กาแฟ|amazon|cafe|coffee|tea|ชา/i.test(receiver)) {
       category = "drink";
     } else if (/bts|mrt|grab|bolt|taxi|เติมเงิน|ทางด่วน/i.test(receiver)) {
       category = "transport";
@@ -93,7 +101,7 @@ const SLIP_MARKERS = [
   /พร้อมเพย์|promptpay/i,
   /(?:transfer|payment|transaction)\s+(?:successful|completed)/i,
   /ref(?:erence)?\.?\s*(?:no|id|code)|transaction\s*id/i,
-  /กสิกร|ไทยพาณิชย์|กรุงเทพ|กรุงไทย|กรุงศรี|ทหารไทยธนชาต|ออมสิน|ธ\.ก\.ส\.|ยูโอบี|ซีไอเอ็มบี|เกียรตินาคิน/,
+  /กสิกร|ไทยพาณิชย์|กรุงเทพ|กรุงไทย|กรุงศรี|ทหารไทยธนชาต|ออมสิน|ธ\.ก\.ส\.|ยูโอบี|ซีไอเอ็มบี|เกียรตินาคิน|เป๋าตัง|คนละครึ่ง|ไทยช่วยไทย/,
   /\b(?:k\s?plus|kbank|scb|ktb|krungthai|bualuang|krungsri|ttb|gsb|uob|truemoney)\b/i,
 ];
 

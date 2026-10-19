@@ -68,6 +68,11 @@ var SlipAnalyzer = (() => {
     nov: "11",
     dec: "12"
   };
+  var PAID_LABEL = /จำนวนเงินที่ชำระ|ยอดที่ชำระ|ยอดชำระ|ชำระทั้งสิ้น/;
+  var BAHT_AMOUNT = /(-?)\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?|[0-9]+(?:\.[0-9]{2})?)\s*(?:บาท|THB)/gi;
+  function bahtAmounts(text) {
+    return Array.from(text.matchAll(BAHT_AMOUNT)).filter((m) => m[1] !== "-").map((m) => parseFloat(m[2].replace(/,/g, ""))).filter((v) => !isNaN(v) && v > 0);
+  }
   function parseReceiptText(rawText) {
     let amount = null;
     let date = null;
@@ -90,6 +95,9 @@ var SlipAnalyzer = (() => {
         }
       }
     }
+    if (amount === null && PAID_LABEL.test(cleaned)) {
+      amount = bahtAmounts(cleaned).at(-1) ?? null;
+    }
     if (amount === null) {
       const currencySuffixMatch = cleaned.match(/([0-9,]+\.[0-9]{2})\s*(?:บาท|THB)/i);
       if (currencySuffixMatch && currencySuffixMatch[1]) {
@@ -104,6 +112,9 @@ var SlipAnalyzer = (() => {
       if (allDecimals.length > 0) {
         amount = allDecimals[0];
       }
+    }
+    if (amount === null) {
+      amount = bahtAmounts(cleaned)[0] ?? null;
     }
     const currentYear = (/* @__PURE__ */ new Date()).getFullYear();
     const thaiDateRegex = /(\d{1,2})\s*(ม\.ค\.|ก\.พ\.|มี\.ค\.|เม\.ย\.|พ\.ค\.|มิ\.ย\.|ก\.ค\.|ส\.ค\.|ก\.ย\.|ต\.ค\.|พ\.ย\.|ธ\.ค\.|มกราคม|กุมภาพันธ์|มีนาคม|เมษายน|พฤษภาคม|มิถุนายน|กรกฎาคม|สิงหาคม|กันยายน|ตุลาคม|พฤศจิกายน|ธันวาคม)\s*(\d{2,4})/;
@@ -248,6 +259,12 @@ var SlipAnalyzer = (() => {
   }
 
   // src/mobile/lib/slipParser.ts
+  function walletMerchant(text) {
+    const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+    const idIndex = lines.findIndex((line) => /g-?wallet\s*id/i.test(line));
+    const name = idIndex >= 0 ? lines[idIndex + 1] : void 0;
+    return name && !/[0-9*]{4}|บาท/.test(name) ? name : null;
+  }
   function parseSlipText(text) {
     if (!text || text.trim().length === 0) {
       return {
@@ -260,7 +277,7 @@ var SlipAnalyzer = (() => {
       };
     }
     const receipt = parseReceiptText(text);
-    let receiver = receipt.merchant;
+    let receiver = receipt.merchant ?? walletMerchant(text);
     if (!receiver) {
       const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
       const targetKeywords = ["\u0E44\u0E1B\u0E22\u0E31\u0E07", "\u0E16\u0E36\u0E07", "\u0E1C\u0E39\u0E49\u0E23\u0E31\u0E1A\u0E40\u0E07\u0E34\u0E19", "to:", "to", "receiver"];
@@ -293,7 +310,7 @@ var SlipAnalyzer = (() => {
         category = pattern.category;
       } else if (/บิล|ค่าไฟ|ค่าน้ำ|การประปา|การไฟ/i.test(receiver)) {
         category = "bill";
-      } else if (/กาแฟ|amazon|cafe|tea|ชา/i.test(receiver)) {
+      } else if (/กาแฟ|amazon|cafe|coffee|tea|ชา/i.test(receiver)) {
         category = "drink";
       } else if (/bts|mrt|grab|bolt|taxi|เติมเงิน|ทางด่วน/i.test(receiver)) {
         category = "transport";
@@ -317,7 +334,7 @@ var SlipAnalyzer = (() => {
     /พร้อมเพย์|promptpay/i,
     /(?:transfer|payment|transaction)\s+(?:successful|completed)/i,
     /ref(?:erence)?\.?\s*(?:no|id|code)|transaction\s*id/i,
-    /กสิกร|ไทยพาณิชย์|กรุงเทพ|กรุงไทย|กรุงศรี|ทหารไทยธนชาต|ออมสิน|ธ\.ก\.ส\.|ยูโอบี|ซีไอเอ็มบี|เกียรตินาคิน/,
+    /กสิกร|ไทยพาณิชย์|กรุงเทพ|กรุงไทย|กรุงศรี|ทหารไทยธนชาต|ออมสิน|ธ\.ก\.ส\.|ยูโอบี|ซีไอเอ็มบี|เกียรตินาคิน|เป๋าตัง|คนละครึ่ง|ไทยช่วยไทย/,
     /\b(?:k\s?plus|kbank|scb|ktb|krungthai|bualuang|krungsri|ttb|gsb|uob|truemoney)\b/i
   ];
   function isLikelySlip(text) {

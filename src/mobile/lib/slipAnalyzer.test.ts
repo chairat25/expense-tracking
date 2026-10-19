@@ -10,6 +10,29 @@ describe("analyzeSlip", () => {
     expect(result).toEqual({ isSlip: true, amount: 85, note: "Café Amazon", category: "drink" });
   });
 
+  it("reads a Pao Tang co-payment receipt: paid amount, shop name and drink category", () => {
+    const text = [
+      "เป๋าตัง",
+      "ทำรายการสำเร็จ",
+      "รหัสอ้างอิง 5233b8e7d30a4816b37dd0344e5ad271",
+      "19 ต.ค. 2569 09:13 น.",
+      "ชัยรัชต์ ศ***",
+      "G-Wallet ID: **** ******* 9662",
+      "Coffee Talk",
+      "อาหาร ของหวาน เครื่องดื่ม",
+      "ค่าสินค้า/บริการ",
+      "60 บาท",
+      "สิทธิไทยช่วยไทยพลัส",
+      "-36 บาท",
+      "จำนวนเงินที่ชำระ",
+      "24 บาท",
+    ].join("\n");
+
+    const result = analyzeSlip(text);
+
+    expect(result).toEqual({ isSlip: true, amount: 24, note: "Coffee Talk", category: "drink" });
+  });
+
   it("falls back to a default note when the receiver cannot be read", () => {
     const text = ["โอนเงินสำเร็จ", "จำนวนเงิน 120.00 บาท"].join("\n");
 

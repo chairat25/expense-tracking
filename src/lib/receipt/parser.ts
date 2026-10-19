@@ -37,6 +37,19 @@ const ENGLISH_MONTHS: Record<string, string> = {
   jul: "07", aug: "08", sep: "09", oct: "10", nov: "11", dec: "12",
 };
 
+// Label for the amount actually paid after subsidies (e.g. Pao Tang co-payment receipts).
+const PAID_LABEL = /จำนวนเงินที่ชำระ|ยอดที่ชำระ|ยอดชำระ|ชำระทั้งสิ้น/;
+// "24 บาท", "1,250.00 บาท", "-36 บาท" — sign kept so subsidies can be skipped.
+const BAHT_AMOUNT = /(-?)\s*([0-9]{1,3}(?:,[0-9]{3})*(?:\.[0-9]{2})?|[0-9]+(?:\.[0-9]{2})?)\s*(?:บาท|THB)/gi;
+
+/** Positive amounts written with a baht suffix, in text order (negative discounts dropped). */
+function bahtAmounts(text: string): number[] {
+  return Array.from(text.matchAll(BAHT_AMOUNT))
+    .filter((m) => m[1] !== "-")
+    .map((m) => parseFloat(m[2].replace(/,/g, "")))
+    .filter((v) => !isNaN(v) && v > 0);
+}
+
 export function parseReceiptText(rawText: string): ParsedReceipt {
   let amount: number | null = null;
   let date: string | null = null;
@@ -66,6 +79,11 @@ export function parseReceiptText(rawText: string): ParsedReceipt {
     }
   }
 
+  // Receipts with a "paid" row list it last; OCR may put its label before or after the value.
+  if (amount === null && PAID_LABEL.test(cleaned)) {
+    amount = bahtAmounts(cleaned).at(-1) ?? null;
+  }
+
   if (amount === null) {
     const currencySuffixMatch = cleaned.match(/([0-9,]+\.[0-9]{2})\s*(?:บาท|THB)/i);
     if (currencySuffixMatch && currencySuffixMatch[1]) {
@@ -84,6 +102,10 @@ export function parseReceiptText(rawText: string): ParsedReceipt {
     if (allDecimals.length > 0) {
       amount = allDecimals[0];
     }
+  }
+
+  if (amount === null) {
+    amount = bahtAmounts(cleaned)[0] ?? null;
   }
 
   // 2. Date Extraction

@@ -6,6 +6,7 @@ import {
   Image,
   TextInput,
   TouchableOpacity,
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
@@ -15,6 +16,8 @@ import { formatBaht, CategorySlug, CATEGORIES } from "../lib/shared";
 
 const NOTE_MAX_LENGTH = 100;
 
+export type ReceiptSaveStatus = "idle" | "saving" | "saved";
+
 interface Props {
   visible: boolean;
   receiptUri: string | null;
@@ -22,6 +25,7 @@ interface Props {
   /** หมายเหตุเริ่มต้นจาก OCR (ชื่อผู้รับ) ผู้ใช้แก้ได้ก่อนบันทึก */
   initialNote: string;
   category?: CategorySlug;
+  status: ReceiptSaveStatus;
   onAccept: (note: string) => void;
   onReject: () => void;
 }
@@ -32,14 +36,21 @@ export const AutoReceiptModal: React.FC<Props> = ({
   amount,
   initialNote,
   category = "food",
+  status,
   onAccept,
   onReject,
 }) => {
   const [note, setNote] = useState(initialNote);
   const catItem = CATEGORIES.find((c) => c.slug === category);
+  const isBusy = status !== "idle";
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onReject}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={isBusy ? undefined : onReject}
+    >
       <KeyboardAvoidingView
         style={styles.overlay}
         behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -63,6 +74,7 @@ export const AutoReceiptModal: React.FC<Props> = ({
               placeholder="หมายเหตุ (เช่น ค่ากาแฟ)"
               placeholderTextColor="#64748b"
               maxLength={NOTE_MAX_LENGTH}
+              editable={!isBusy}
               returnKeyType="done"
               selectTextOnFocus
             />
@@ -72,17 +84,38 @@ export const AutoReceiptModal: React.FC<Props> = ({
             </View>
           </View>
 
-          <View style={styles.actions}>
-            <TouchableOpacity style={styles.rejectBtn} onPress={onReject}>
-              <X size={18} color="#94a3b8" />
-              <Text style={styles.rejectText}>ข้าม</Text>
-            </TouchableOpacity>
+          {status === "saved" ? (
+            <View style={styles.savedBanner}>
+              <Check size={20} color="#ffffff" />
+              <Text style={styles.acceptText}>บันทึกแล้ว</Text>
+            </View>
+          ) : (
+            <View style={styles.actions}>
+              <TouchableOpacity
+                style={[styles.rejectBtn, isBusy && styles.disabled]}
+                onPress={onReject}
+                disabled={isBusy}
+              >
+                <X size={18} color="#94a3b8" />
+                <Text style={styles.rejectText}>ข้าม</Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity style={styles.acceptBtn} onPress={() => onAccept(note)}>
-              <Check size={18} color="#ffffff" />
-              <Text style={styles.acceptText}>บันทึกรายการ</Text>
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity
+                style={styles.acceptBtn}
+                onPress={() => onAccept(note)}
+                disabled={isBusy}
+              >
+                {status === "saving" ? (
+                  <ActivityIndicator size="small" color="#ffffff" />
+                ) : (
+                  <Check size={18} color="#ffffff" />
+                )}
+                <Text style={styles.acceptText}>
+                  {status === "saving" ? "กำลังบันทึก..." : "บันทึกรายการ"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -187,6 +220,19 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 10,
     backgroundColor: "#10b981",
+  },
+  savedBanner: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: "#059669",
+  },
+  disabled: {
+    opacity: 0.5,
   },
   acceptText: {
     color: "#ffffff",
