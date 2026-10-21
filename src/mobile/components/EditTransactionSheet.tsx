@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -56,7 +54,7 @@ export function EditTransactionSheet({ tx, categories, onSave, onClose }: Props)
 
   return (
     <BottomSheet visible={tx !== null} onClose={close}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <View>
         <SheetHeader
           icon={
             <View style={styles.headerIcon}>
@@ -138,7 +136,7 @@ export function EditTransactionSheet({ tx, categories, onSave, onClose }: Props)
             <Text style={styles.submitText}>{submitting ? "กำลังบันทึก..." : "บันทึกการแก้ไข"}</Text>
           </TouchableOpacity>
         </ScrollView>
-      </KeyboardAvoidingView>
+      </View>
     </BottomSheet>
   );
 }

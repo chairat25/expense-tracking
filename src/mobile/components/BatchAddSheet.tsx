@@ -1,8 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -94,7 +92,7 @@ export function BatchAddSheet({ visible, currentDate, categories, onSave, onClos
 
   return (
     <BottomSheet visible={visible} onClose={submitting ? () => undefined : onClose} style={styles.sheet}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.flex}>
+      <View style={styles.flex}>
         <SheetHeader
           icon={
             <View style={styles.headerIcon}>
@@ -210,7 +208,7 @@ export function BatchAddSheet({ visible, currentDate, categories, onSave, onClos
             </Text>
           </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </BottomSheet>
   );
 }

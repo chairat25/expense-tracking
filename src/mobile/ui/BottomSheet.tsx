@@ -1,5 +1,5 @@
 import React from "react";
-import { Modal, Pressable, StyleSheet, View, type ViewStyle } from "react-native";
+import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, type ViewStyle } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors, radius, tints } from "../theme";
 
@@ -14,12 +14,13 @@ interface Props {
 export function BottomSheet({ visible, onClose, children, style }: Props) {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.root}>
+      {/* Wrap the whole sheet so the keyboard pushes it up, not just its contents. */}
+      <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         <SafeAreaView edges={["bottom"]} style={[styles.sheet, style]}>
           {children}
         </SafeAreaView>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

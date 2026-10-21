@@ -88,7 +88,7 @@
 		37880EB9236D90C46AD9A29B /* SlipRecognizer.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SlipRecognizer.swift; sourceTree = "<group>"; };
 		3A259DD1E3190B717D934E4D /* SlipKitModels.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SlipKitModels.swift; sourceTree = "<group>"; };
 		3AD21BC5096937A51C1EFB42 /* SlipWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = SlipWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		3B604EAB74ED824627D0EAFD /* slip-analyzer.js */ = {isa = PBXFileReference; includeInIndex = 1; path = "slip-analyzer.js"; sourceTree = "<group>"; };
+		3B604EAB74ED824627D0EAFD /* slip-analyzer.js */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.javascript; path = "slip-analyzer.js"; sourceTree = "<group>"; };
 		3C86BE018153FC7FA6B5CC09 /* SlipInbox.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SlipInbox.swift; sourceTree = "<group>"; };
 		520F4F0EB3D0664BDDAF3DDB /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		5890CFE32E971AAEDEA5553E /* CheckLatestSlipIntent.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = CheckLatestSlipIntent.swift; sourceTree = "<group>"; };
@@ -197,7 +197,6 @@
 				19E91D9F9252499CCEAEC6B1 /* ShareViewController.swift */,
 				25DF46BC9220E3A2B5BE9DC8 /* ShareSlipView.swift */,
 			);
-			name = ShareSlip;
 			path = ShareSlip;
 			sourceTree = "<group>";
 		};
@@ -243,7 +242,6 @@
 				264E1A594DB81D4FCD357972 /* SlipWidget.entitlements */,
 				6CF1B83EE97C439935CCC75B /* SlipLiveActivity.swift */,
 			);
-			name = SlipWidget;
 			path = SlipWidget;
 			sourceTree = "<group>";
 		};
@@ -275,7 +273,6 @@
 				37880EB9236D90C46AD9A29B /* SlipRecognizer.swift */,
 				3B604EAB74ED824627D0EAFD /* slip-analyzer.js */,
 			);
-			name = SlipKit;
 			path = SlipKit;
 			sourceTree = "<group>";
 		};
