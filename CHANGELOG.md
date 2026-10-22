@@ -72,14 +72,43 @@
 
 ---
 
+---
+
+## [2026-10-22] — Branch: `feat/react-native-mobile`
+
+### ✨ สิ่งที่ทำเสร็จแล้ว (Completed Features)
+1. **Center FAB Bottom Navigation (`src/mobile/components/BottomNavBar.tsx`)**:
+   - พัฒนาแถบเมนูด้านล่างสไตล์ 06 Center FAB ตามภาพอ้างอิงของผู้ใช้
+   - โค้งเว้า Notch รองรับปุ่มกลางด้วย SVG Cubic Bezier Path คมชัด ละมุนตา ไม่ใช่เทมเพลตสำเร็จรูป
+   - **ปุ่มตรงกลาง (Center FAB)**: ยกระดับเป็นวงกลมลอยสีมรกต (`#10b981`) ทำหน้าที่เป็น Anchor หลักของแอป ("ตรงกลาง default เลยนะ ห้ามเปลี่ยน เป็นหน้าที่ใช้ปัจจุบัน") แตะแล้วกลับมาหน้าหลักเสมอ
+   - **เมนูขนาบข้าง (Second Priority)**:
+     - ฝั่งซ้าย: `ปฏิทิน` (`CalendarDays` icon)
+     - ฝั่งขวา: `โปรไฟล์` (`User` icon)
+   - ปลอด Emoji 100% ตาม Zero-Emoji Standard และรองรับ Safe Area Insets สำหรับ iPhone 15 Plus
+2. **Calendar Card View พร้อม Total ยอดเงินรายวัน และดูรายการธุรกรรมย่อย (`src/mobile/components/CalendarCardView.tsx`)**:
+   - หน้าปฏิทินแสดงตารางเดือน โดยในการ์ดแต่ละวันแสดง **ยอดรวมเงินที่ใช้งาน (Total Daily Spend)** เช่น `-฿350`
+   - **เจาะลึกดูรายการของแต่ละวัน (Day Transaction Inspector)**: เมื่อแตะการ์ดวันใดๆ จะแสดงรายการธุรกรรมทั้งหมดที่ทำไปในวันนั้นทันที พร้อมหมวดหมู่, โน้ต, เวลา, ยอดเงิน, และปุ่มแก้ไข/ลบ
+   - ตรวจจับวันที่ใช้เงินเกินงบ (Daily Budget Warning) ไฮไลต์ด้วยสีอย่างชัดเจน
+   - มีปุ่ม `[บันทึกเพิ่ม]` สำหรับกระโดดไปยังหน้าหลักเพื่อลงรายการของวันดังกล่าวได้ทันที
+3. **รวมสแกนสลิป + บันทึกเป็นชุดไว้ในหน้าหลัก (`HomeScreen.tsx` & `QuickAddCard.tsx`)**:
+   - นำปุ่ม **สแกนสลิป (Scan Slip)** และ **บันทึกหลายรายการ (Batch Add)** มารวมไว้ด้วยกันในฟอร์มของหน้าหลักเรียบร้อยแล้ว
+   - รองรับการเลือกรูปสลิปจากอัลบั้มเพื่อถอดรหัส OCR แบบ On-Device ทันทีผ่าน `scanSlipUri`
+4. **Backend API Extension (`src/app/api/transactions/route.ts`)**:
+   - ขยาย endpoint ให้รองรับ query `?month=YYYY-MM` สำหรับดึงข้อมูลสรุปยอดรายวันทั้งเดือนแบบรวดเร็วและแม่นยำ
+5. **Unit Tests & Type Safety**:
+   - เพิ่มชุดทดสอบ `useMonthlyCalendar.test.ts`
+   - ผลการทดสอบ `yarn test` ผ่านครบ 75/75 tests จาก 12 test suites
+   - `yarn tsc --noEmit` ผ่านสมบูรณ์ 0 errors
+
+---
+
 ### 📋 Handoff Block (สำหรับการส่งต่องานข้าม Session)
 ```markdown
-[KEYWORD: expense-tracking-dynamic-island-redesign-ready]
-- สถานะปัจจุบัน: ออกแบบ Dynamic Island & Live Activity (3 สถานะ: ย่อ, ขยาย, ล็อคสกรีน) เสร็จสมบูรณ์ตามมาตรฐาน Zero-Emoji และบันทึกลง dynamic_island_options.md พร้อมภาพ mockup
-- งานถัดไป: อัปเดตโค้ด Swift ใน `ios/SlipWidget/SlipLiveActivity.swift` ตามดีไซน์ 4 Argon Masterpiece
-- ไฟล์อ้างอิงดีไซน์: `dynamic_island_options.md` และภาพ `argon_design_mockup.png`
-- คำสั่งทดสอบ: `yarn test` และ `xcodebuild -workspace ios/ExpenseTracker.xcworkspace -scheme ExpenseTracker`
+[KEYWORD: expense-tracking-center-fab-bottom-nav-ready]
+- สถานะปัจจุบัน: ติดตั้ง Center FAB Bottom Bar, Calendar Card View แสดง Total รายวัน, และรวมสแกนสลิป/บันทึกชุดไว้ในหน้าหลักเรียบร้อย ทดสอบผ่าน 75/75 tests
+- ส่วนที่ปรับปรุง: `BottomNavBar.tsx`, `CalendarCardView.tsx`, `useMonthlyCalendar.ts`, `HomeScreen.tsx`, `QuickAddCard.tsx`, `slipScanner.ts`, `route.ts`
+- คำสั่งทดสอบ: `yarn test` และ `yarn tsc --noEmit`
 - Prompt สำหรับเริ่ม Session ถัดไป:
-  "นำดีไซน์ Dynamic Island แบบ 4 Argon Masterpiece จาก dynamic_island_options.md ไป implement ลงใน ios/SlipWidget/SlipLiveActivity.swift และทดสอบการทำงาน"
+  "ทดสอบการใช้งาน BottomNavBar และ CalendarCardView บน iPhone 15 Plus"
 ```
 

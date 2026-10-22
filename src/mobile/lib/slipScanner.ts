@@ -14,27 +14,38 @@ export interface ScannedSlip {
 }
 
 /**
- * OCR a photo-library asset and parse it as a payment slip.
- * Returns null when the photo is not a slip (selfie, chat screenshot, ...)
- * or when on-device OCR is unavailable, so callers can silently skip it.
+ * OCR an image file URI directly and parse it as a payment slip.
  */
-export async function scanSlipAsset(assetId: string): Promise<ScannedSlip | null> {
+export async function scanSlipUri(uri: string, creationTime = Date.now()): Promise<ScannedSlip | null> {
   if (!isSlipOcrAvailable) return null;
 
   try {
-    const info = await MediaLibrary.getAssetInfoAsync(assetId, { shouldDownloadFromNetwork: false });
-    if (!info.localUri) return null;
-
-    const analysis = analyzeSlip(await recognizeText(info.localUri));
+    const analysis = analyzeSlip(await recognizeText(uri));
     if (!analysis.isSlip) return null;
 
     return {
       amount: analysis.amount,
       note: analysis.note,
       category: analysis.category,
-      creationTime: info.creationTime,
-      imageUri: info.localUri,
+      creationTime,
+      imageUri: uri,
     };
+  } catch (err) {
+    console.warn("[SlipScanner] failed to scan uri", uri, err);
+    return null;
+  }
+}
+
+/**
+ * OCR a photo-library asset and parse it as a payment slip.
+ * Returns null when the photo is not a slip (selfie, chat screenshot, ...)
+ * or when on-device OCR is unavailable, so callers can silently skip it.
+ */
+export async function scanSlipAsset(assetId: string): Promise<ScannedSlip | null> {
+  try {
+    const info = await MediaLibrary.getAssetInfoAsync(assetId, { shouldDownloadFromNetwork: false });
+    if (!info.localUri) return null;
+    return await scanSlipUri(info.localUri, info.creationTime);
   } catch (err) {
     console.warn("[SlipScanner] failed to scan asset", assetId, err);
     return null;

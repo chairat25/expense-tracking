@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { CalendarSearch, ListPlus, Plus, TrendingDown, TrendingUp } from "lucide-react-native";
+import { CalendarSearch, ListPlus, Plus, ScanLine, TrendingDown, TrendingUp } from "lucide-react-native";
 import { formatDayTH } from "../../lib/shared";
 import { DEFAULT_NOTE_SUGGESTIONS } from "../../lib/receipt/patterns";
 import type { NewTransaction } from "../hooks/useDayData";
@@ -22,6 +22,7 @@ interface Props {
   onSubmit: (input: NewTransaction) => Promise<void>;
   onOpenDatePicker: () => void;
   onOpenBatchAdd: () => void;
+  onScanSlip?: () => void;
 }
 
 const SUGGESTION_COUNT = 6;
@@ -34,6 +35,7 @@ export function QuickAddCard({
   onSubmit,
   onOpenDatePicker,
   onOpenBatchAdd,
+  onScanSlip,
 }: Props) {
   const [type, setType] = useState<"expense" | "income">("expense");
   const [amount, setAmount] = useState("");
@@ -73,11 +75,17 @@ export function QuickAddCard({
           </Text>
         </Text>
         <View style={styles.metaActions}>
-          <TouchableOpacity style={[styles.smallBtn, styles.batchBtn]} onPress={onOpenBatchAdd}>
-            <ListPlus size={13} color={colors.emerald400} />
-            <Text style={[styles.smallBtnText, { color: colors.emerald300 }]}>หลายรายการ</Text>
+          {onScanSlip && (
+            <TouchableOpacity style={[styles.smallBtn, styles.scanBtn]} onPress={onScanSlip} activeOpacity={0.75}>
+              <ScanLine size={13} color={colors.emerald400} />
+              <Text style={[styles.smallBtnText, { color: colors.emerald300 }]}>สแกนสลิป</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity style={[styles.smallBtn, styles.batchBtn]} onPress={onOpenBatchAdd} activeOpacity={0.75}>
+            <ListPlus size={13} color={colors.indigo400} />
+            <Text style={[styles.smallBtnText, { color: colors.indigo300 }]}>หลายรายการ</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.smallBtn} onPress={onOpenDatePicker}>
+          <TouchableOpacity style={styles.smallBtn} onPress={onOpenDatePicker} activeOpacity={0.75}>
             <CalendarSearch size={13} color={colors.slate400} />
             <Text style={styles.smallBtnText}>เปลี่ยนวัน</Text>
           </TouchableOpacity>
@@ -201,7 +209,8 @@ const styles = StyleSheet.create({
     borderColor: colors.slate800,
     backgroundColor: colors.slate950,
   },
-  batchBtn: { borderColor: tints.emerald40, backgroundColor: "rgba(2,44,34,0.7)" },
+  scanBtn: { borderColor: tints.emerald40, backgroundColor: "rgba(2,44,34,0.7)" },
+  batchBtn: { borderColor: "rgba(99,102,241,0.4)", backgroundColor: "rgba(49,46,129,0.4)" },
   smallBtnText: { color: colors.slate400, fontSize: 11, fontWeight: "600" },
   error: {
     color: colors.rose300,

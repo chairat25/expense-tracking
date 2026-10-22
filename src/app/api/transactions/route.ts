@@ -10,7 +10,53 @@ export async function GET(req: Request) {
 
   const { searchParams } = new URL(req.url);
   const isHistory = searchParams.get("history") === "true";
+  const monthParam = searchParams.get("month");
   const date = searchParams.get("date") || todayKey();
+
+  if (monthParam && /^\d{4}-\d{2}$/.test(monthParam)) {
+    const [yStr, mStr] = monthParam.split("-");
+    const year = parseInt(yStr, 10);
+    const month = parseInt(mStr, 10);
+    const daysInMonth = new Date(year, month, 0).getDate();
+    const fromDate = `${monthParam}-01`;
+    const toDate = `${monthParam}-${String(daysInMonth).padStart(2, "0")}`;
+
+    const rows = await db
+      .select()
+      .from(transactions)
+      .where(
+        and(
+          eq(transactions.userId, userId),
+          gte(transactions.date, fromDate),
+          lte(transactions.date, toDate)
+        )
+      )
+      .orderBy(desc(transactions.date), desc(transactions.spentAt));
+
+    const dailySummaryMap: Record<string, { date: string; expense: number; income: number; count: number }> = {};
+    for (let i = 1; i <= daysInMonth; i++) {
+      const d = `${monthParam}-${String(i).padStart(2, "0")}`;
+      dailySummaryMap[d] = { date: d, expense: 0, income: 0, count: 0 };
+    }
+
+    for (const r of rows) {
+      const amt = Number(r.amount);
+      if (dailySummaryMap[r.date]) {
+        dailySummaryMap[r.date].count += 1;
+        if (r.type === "expense") dailySummaryMap[r.date].expense += amt;
+        else dailySummaryMap[r.date].income += amt;
+      }
+    }
+
+    const history = Object.values(dailySummaryMap).sort((a, b) => a.date.localeCompare(b.date));
+
+    return Response.json({
+      history,
+      month: monthParam,
+      fromDate,
+      toDate,
+    });
+  }
 
   if (isHistory) {
     const days = Math.min(30, Math.max(7, parseInt(searchParams.get("days") || "14", 10)));

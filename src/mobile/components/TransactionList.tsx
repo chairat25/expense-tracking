@@ -1,7 +1,7 @@
 import React from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Sparkles, Trash2 } from "lucide-react-native";
-import { CATEGORY_ICON, CATEGORY_LABEL, formatBaht, formatDayTH, formatTimeTH, type Category, type Tx } from "../../lib/shared";
+import { CATEGORY_LABEL, formatBaht, formatDayTH, formatTimeTH, type Category, type Tx } from "../../lib/shared";
 import { colors, radius, tints } from "../theme";
 import type { CategoryOption } from "../types";
 
@@ -35,15 +35,15 @@ export function TransactionList({ selectedDate, loading, transactions, categorie
             <Sparkles size={20} color={colors.emerald400} />
           </View>
           <Text style={styles.emptyTitle}>ยังไม่มีรายการในวันที่ {formatDayTH(selectedDate)}</Text>
-          <Text style={styles.stateText}>ระบุจำนวนเงินด้านบนแล้วกดบันทึกได้เลย ✨</Text>
+          <Text style={styles.stateText}>ระบุจำนวนเงินด้านบนแล้วกดบันทึกได้เลย</Text>
         </View>
       ) : (
         <View style={styles.list}>
           {transactions.map((tx, index) => {
             const isExpense = tx.type === "expense";
             const cat = categories.find((c) => c.slug === tx.category);
-            const icon = cat?.icon || CATEGORY_ICON[tx.category as Category] || "📦";
             const catName = cat?.name || CATEGORY_LABEL[tx.category as Category] || tx.category;
+            const initial = (catName || "T").trim().slice(0, 1).toUpperCase();
             return (
               <TouchableOpacity
                 key={tx.id}
@@ -53,7 +53,13 @@ export function TransactionList({ selectedDate, loading, transactions, categorie
               >
                 <View style={styles.left}>
                   <View style={styles.iconBox}>
-                    <Text style={styles.iconText}>{icon}</Text>
+                    <Text style={styles.iconInitial}>{initial}</Text>
+                    <View
+                      style={[
+                        styles.dotIndicator,
+                        { backgroundColor: isExpense ? colors.rose400 : colors.emerald400 },
+                      ]}
+                    />
                   </View>
                   <View style={styles.texts}>
                     <Text style={styles.note} numberOfLines={1}>
@@ -136,8 +142,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.slate800,
     backgroundColor: colors.slate950,
+    position: "relative",
   },
-  iconText: { fontSize: 18 },
+  iconInitial: { fontSize: 14, fontWeight: "700", color: colors.slate300 },
+  dotIndicator: {
+    position: "absolute",
+    bottom: 3,
+    right: 3,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
   texts: { flex: 1, minWidth: 0 },
   note: { color: colors.slate200, fontSize: 14, fontWeight: "500" },
   meta: { color: colors.slate400, fontSize: 11, marginTop: 2 },
