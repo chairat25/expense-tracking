@@ -14,15 +14,15 @@ interface Props {
   hasUnsavedProfile?: boolean;
 }
 
-const BAR_HEIGHT = 62;
-const FAB_SIZE = 54;
-const NOTCH_WIDTH = 84;
-const NOTCH_DEPTH = 26;
+const BAR_HEIGHT = 50;
+const FAB_SIZE = 46;
+const NOTCH_WIDTH = 72;
+const NOTCH_DEPTH = 20;
 
 export function BottomNavBar({ activeTab, onTabChange }: Props) {
   const insets = useSafeAreaInsets();
   const screenWidth = Dimensions.get("window").width;
-  const bottomPadding = Math.max(insets.bottom, 12);
+  const bottomPadding = Math.max(insets.bottom, 8);
   const totalHeight = BAR_HEIGHT + bottomPadding;
 
   // Generate smooth cubic bezier SVG path for the center notch cutout
@@ -34,9 +34,9 @@ export function BottomNavBar({ activeTab, onTabChange }: Props) {
   // Smooth curved dip around the center circular button
   const d = `
     M 0,0
-    L ${notchLeft - 12},0
-    C ${notchLeft + 2},0 ${cx - 28},${NOTCH_DEPTH} ${cx},${NOTCH_DEPTH}
-    C ${cx + 28},${NOTCH_DEPTH} ${notchRight - 2},0 ${notchRight + 12},0
+    L ${notchLeft - 10},0
+    C ${notchLeft + 2},0 ${cx - 24},${NOTCH_DEPTH} ${cx},${NOTCH_DEPTH}
+    C ${cx + 24},${NOTCH_DEPTH} ${notchRight - 2},0 ${notchRight + 10},0
     L ${screenWidth},0
     L ${screenWidth},${totalHeight}
     L 0,${totalHeight}
@@ -69,9 +69,9 @@ export function BottomNavBar({ activeTab, onTabChange }: Props) {
         >
           <View style={[styles.iconWrapper, activeTab === "calendar" && styles.iconWrapperActive]}>
             <CalendarDays
-              size={20}
+              size={18}
               color={activeTab === "calendar" ? colors.emerald400 : colors.slate400}
-              strokeWidth={activeTab === "calendar" ? 2.4 : 1.8}
+              strokeWidth={activeTab === "calendar" ? 2.2 : 1.8}
             />
           </View>
           <Text style={[styles.tabLabel, activeTab === "calendar" && styles.tabLabelActive]}>
@@ -93,9 +93,9 @@ export function BottomNavBar({ activeTab, onTabChange }: Props) {
         >
           <View style={[styles.iconWrapper, activeTab === "profile" && styles.iconWrapperActive]}>
             <User
-              size={20}
+              size={18}
               color={activeTab === "profile" ? colors.emerald400 : colors.slate400}
-              strokeWidth={activeTab === "profile" ? 2.4 : 1.8}
+              strokeWidth={activeTab === "profile" ? 2.2 : 1.8}
             />
           </View>
           <Text style={[styles.tabLabel, activeTab === "profile" && styles.tabLabelActive]}>
@@ -114,7 +114,7 @@ export function BottomNavBar({ activeTab, onTabChange }: Props) {
           accessibilityLabel="หน้าหลัก บันทึกรายรับรายจ่าย"
         >
           <View style={styles.fabInner}>
-            <Plus size={26} color="#ffffff" strokeWidth={2.8} />
+            <Plus size={22} color="#ffffff" strokeWidth={2.8} />
           </View>
         </TouchableOpacity>
       </View>
@@ -133,28 +133,28 @@ const styles = StyleSheet.create({
   },
   svgContainer: {
     shadowColor: "#000000",
-    shadowOffset: { width: 0, height: -6 },
-    shadowOpacity: 0.45,
-    shadowRadius: 12,
-    elevation: 16,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 12,
   },
   barContent: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 24,
+    paddingHorizontal: 28,
   },
   sideTab: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    gap: 3,
-    paddingVertical: 6,
+    gap: 2,
+    paddingVertical: 2,
   },
   iconWrapper: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 28,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     backgroundColor: tints.emerald20,
   },
   tabLabel: {
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: "600",
     color: colors.slate400,
     letterSpacing: 0.2,
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   },
   fabContainer: {
     position: "absolute",
-    top: -16,
+    top: -12,
     left: 0,
     right: 0,
     alignItems: "center",
@@ -187,20 +187,20 @@ const styles = StyleSheet.create({
     height: FAB_SIZE,
     borderRadius: FAB_SIZE / 2,
     backgroundColor: colors.emerald600,
-    borderWidth: 3,
+    borderWidth: 2.5,
     borderColor: "#090d16",
     alignItems: "center",
     justifyContent: "center",
     shadowColor: colors.emerald500,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 8,
   },
   fabButtonActive: {
     backgroundColor: colors.emerald500,
-    shadowOpacity: 0.65,
-    shadowRadius: 14,
+    shadowOpacity: 0.6,
+    shadowRadius: 12,
   },
   fabInner: {
     width: "100%",

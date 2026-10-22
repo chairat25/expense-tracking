@@ -374,7 +374,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 110, // เว้นพื้นที่สำหรับ BottomNavBar
+    paddingBottom: 80, // เว้นพื้นที่สำหรับ BottomNavBar ขนาดกะทัดรัด
   },
   content: {
     width: "100%",

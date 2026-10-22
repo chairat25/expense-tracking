@@ -330,6 +330,6 @@ export function HomeScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.slate950 },
   flex: { flex: 1 },
-  scroll: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 96 }, // เว้นพื้นที่สำหรับ BottomNavBar
+  scroll: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 72 }, // เว้นพื้นที่สำหรับ BottomNavBar ขนาดกะทัดรัด
   content: { width: "100%", maxWidth: MAX_CONTENT_WIDTH, alignSelf: "center", gap: 16 },
 });
