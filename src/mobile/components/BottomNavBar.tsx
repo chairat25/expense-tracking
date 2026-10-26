@@ -1,9 +1,8 @@
 import React from "react";
-import { Dimensions, Platform, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Svg, { Path } from "react-native-svg";
 import { CalendarDays, Plus, User } from "lucide-react-native";
-import { colors, radius, tints } from "../theme";
+import { colors, tints } from "../theme";
 
 export type NavTab = "calendar" | "main" | "profile";
 
@@ -14,50 +13,23 @@ interface Props {
   hasUnsavedProfile?: boolean;
 }
 
-const BAR_HEIGHT = 50;
-const FAB_SIZE = 46;
-const NOTCH_WIDTH = 72;
-const NOTCH_DEPTH = 20;
+const BAR_HEIGHT = 52;
+const BAR_SIDE_INSET = 32;
+const FAB_SIZE = 40;
+const MIN_BOTTOM_GAP = 12;
+// Sits the pill inside the home-indicator zone so its curve follows the screen corners
+const HOME_INDICATOR_OVERLAP = 14;
+
+/** Bottom padding a scrollable screen needs so its last item clears the floating bar */
+export const NAV_BAR_CLEARANCE = 88;
 
 export function BottomNavBar({ activeTab, onTabChange }: Props) {
   const insets = useSafeAreaInsets();
-  const screenWidth = Dimensions.get("window").width;
-  const bottomPadding = Math.max(insets.bottom, 8);
-  const totalHeight = BAR_HEIGHT + bottomPadding;
-
-  // Generate smooth cubic bezier SVG path for the center notch cutout
-  const cx = screenWidth / 2;
-  const nw2 = NOTCH_WIDTH / 2;
-  const notchLeft = cx - nw2;
-  const notchRight = cx + nw2;
-
-  // Smooth curved dip around the center circular button
-  const d = `
-    M 0,0
-    L ${notchLeft - 10},0
-    C ${notchLeft + 2},0 ${cx - 24},${NOTCH_DEPTH} ${cx},${NOTCH_DEPTH}
-    C ${cx + 24},${NOTCH_DEPTH} ${notchRight - 2},0 ${notchRight + 10},0
-    L ${screenWidth},0
-    L ${screenWidth},${totalHeight}
-    L 0,${totalHeight}
-    Z
-  `;
+  const bottomGap = Math.max(insets.bottom - HOME_INDICATOR_OVERLAP, MIN_BOTTOM_GAP);
 
   return (
-    <View style={[styles.wrapper, { height: totalHeight }]} pointerEvents="box-none">
-      {/* Background with precision curved SVG notch */}
-      <View style={[StyleSheet.absoluteFill, styles.svgContainer]} pointerEvents="none">
-        <Svg width={screenWidth} height={totalHeight} style={StyleSheet.absoluteFill}>
-          <Path
-            d={d}
-            fill="#090d16"
-            stroke="rgba(255, 255, 255, 0.08)"
-            strokeWidth={1}
-          />
-        </Svg>
-      </View>
-
-      <View style={[styles.barContent, { height: BAR_HEIGHT }]}>
+    <View style={[styles.wrapper, { bottom: bottomGap }]} pointerEvents="box-none">
+      <View style={styles.pill}>
         {/* Left Tab: Calendar (Second Priority) */}
         <TouchableOpacity
           style={styles.sideTab}
@@ -79,8 +51,16 @@ export function BottomNavBar({ activeTab, onTabChange }: Props) {
           </Text>
         </TouchableOpacity>
 
-        {/* Center Space for FAB */}
-        <View style={styles.centerSpace} pointerEvents="none" />
+        {/* Center FAB - Primary Action & Default Home Anchor */}
+        <TouchableOpacity
+          style={[styles.fabButton, activeTab === "main" && styles.fabButtonActive]}
+          activeOpacity={0.85}
+          onPress={() => onTabChange("main")}
+          accessibilityRole="button"
+          accessibilityLabel="หน้าหลัก บันทึกรายรับรายจ่าย"
+        >
+          <Plus size={20} color={colors.white} strokeWidth={2.6} />
+        </TouchableOpacity>
 
         {/* Right Tab: Profile (Second Priority) */}
         <TouchableOpacity
@@ -103,21 +83,6 @@ export function BottomNavBar({ activeTab, onTabChange }: Props) {
           </Text>
         </TouchableOpacity>
       </View>
-
-      {/* Center FAB - Primary Action & Default Home Anchor */}
-      <View style={styles.fabContainer} pointerEvents="box-none">
-        <TouchableOpacity
-          style={[styles.fabButton, activeTab === "main" && styles.fabButtonActive]}
-          activeOpacity={0.85}
-          onPress={() => onTabChange("main")}
-          accessibilityRole="button"
-          accessibilityLabel="หน้าหลัก บันทึกรายรับรายจ่าย"
-        >
-          <View style={styles.fabInner}>
-            <Plus size={22} color="#ffffff" strokeWidth={2.8} />
-          </View>
-        </TouchableOpacity>
-      </View>
     </View>
   );
 }
@@ -125,36 +90,35 @@ export function BottomNavBar({ activeTab, onTabChange }: Props) {
 const styles = StyleSheet.create({
   wrapper: {
     position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    justifyContent: "flex-end",
+    left: BAR_SIDE_INSET,
+    right: BAR_SIDE_INSET,
     zIndex: 99,
   },
-  svgContainer: {
-    shadowColor: "#000000",
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 12,
-  },
-  barContent: {
+  pill: {
+    height: BAR_HEIGHT,
+    borderRadius: BAR_HEIGHT / 2,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 28,
+    paddingHorizontal: 8,
+    backgroundColor: "rgba(15, 23, 42, 0.92)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.08)",
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.35,
+    shadowRadius: 12,
+    elevation: 10,
   },
   sideTab: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     gap: 2,
-    paddingVertical: 2,
   },
   iconWrapper: {
-    width: 32,
-    height: 28,
-    borderRadius: 14,
+    width: 40,
+    height: 24,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -162,7 +126,7 @@ const styles = StyleSheet.create({
     backgroundColor: tints.emerald20,
   },
   tabLabel: {
-    fontSize: 9.5,
+    fontSize: 10,
     fontWeight: "600",
     color: colors.slate400,
     letterSpacing: 0.2,
@@ -171,41 +135,23 @@ const styles = StyleSheet.create({
     color: colors.emerald400,
     fontWeight: "700",
   },
-  centerSpace: {
-    width: NOTCH_WIDTH,
-  },
-  fabContainer: {
-    position: "absolute",
-    top: -12,
-    left: 0,
-    right: 0,
-    alignItems: "center",
-    justifyContent: "center",
-  },
   fabButton: {
     width: FAB_SIZE,
     height: FAB_SIZE,
     borderRadius: FAB_SIZE / 2,
+    marginHorizontal: 12,
     backgroundColor: colors.emerald600,
-    borderWidth: 2.5,
-    borderColor: "#090d16",
     alignItems: "center",
     justifyContent: "center",
     shadowColor: colors.emerald500,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowRadius: 6,
+    elevation: 4,
   },
   fabButtonActive: {
     backgroundColor: colors.emerald500,
     shadowOpacity: 0.6,
-    shadowRadius: 12,
-  },
-  fabInner: {
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
+    shadowRadius: 10,
   },
 });

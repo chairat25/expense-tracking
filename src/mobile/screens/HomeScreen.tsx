@@ -4,7 +4,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import * as ImagePicker from "expo-image-picker";
 import { bkkDateKey, shiftDate, todayKey, type Tx } from "../../lib/shared";
 import { BatchAddSheet } from "../components/BatchAddSheet";
-import { BottomNavBar, type NavTab } from "../components/BottomNavBar";
+import { BottomNavBar, NAV_BAR_CLEARANCE, type NavTab } from "../components/BottomNavBar";
 import { CalendarCardView } from "../components/CalendarCardView";
 import { DatePickerSheet } from "../components/DatePickerSheet";
 import { EditTransactionSheet } from "../components/EditTransactionSheet";
@@ -330,6 +330,6 @@ export function HomeScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.slate950 },
   flex: { flex: 1 },
-  scroll: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: 72 }, // เว้นพื้นที่สำหรับ BottomNavBar ขนาดกะทัดรัด
+  scroll: { paddingHorizontal: 16, paddingTop: 12, paddingBottom: NAV_BAR_CLEARANCE },
   content: { width: "100%", maxWidth: MAX_CONTENT_WIDTH, alignSelf: "center", gap: 16 },
 });

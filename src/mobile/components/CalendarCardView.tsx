@@ -28,6 +28,7 @@ import {
   type Tx,
 } from "../../lib/shared";
 import { useMonthlyCalendar } from "../hooks/useMonthlyCalendar";
+import { NAV_BAR_CLEARANCE } from "./BottomNavBar";
 import { colors, MAX_CONTENT_WIDTH, radius, tints } from "../theme";
 import type { CategoryOption } from "../types";
 
@@ -374,7 +375,7 @@ const styles = StyleSheet.create({
   contentContainer: {
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 80, // เว้นพื้นที่สำหรับ BottomNavBar ขนาดกะทัดรัด
+    paddingBottom: NAV_BAR_CLEARANCE,
   },
   content: {
     width: "100%",
