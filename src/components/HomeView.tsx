@@ -14,6 +14,8 @@ import {
   Wallet,
   Calendar,
   Sun,
+  Moon,
+  Smartphone,
   Loader2,
   ChevronLeft,
   ChevronRight,
@@ -47,6 +49,7 @@ import { parseReceiptText } from "@/lib/receipt/parser";
 import { getSavedPattern, savePattern, getQuickNoteSuggestions } from "@/lib/receipt/patterns";
 import ReceiptBatchModal from "@/components/ReceiptBatchModal";
 import BatchAddModal from "@/components/BatchAddModal";
+import { useWebTheme } from "@/lib/useWebTheme";
 
 interface CategoryOption {
   slug: string;
@@ -73,6 +76,7 @@ const DEFAULT_CATEGORIES: CategoryOption[] = [
 ];
 
 export default function HomeView() {
+  const { mode: webThemeMode, setMode: setWebThemeMode } = useWebTheme();
   const today = todayKey();
   const yesterday = shiftDate(today, -1);
 
@@ -1181,8 +1185,43 @@ export default function HomeView() {
                   </div>
                 </div>
                 <p className="mt-1.5 text-[11px] text-slate-500">
-                  💡 กำหนดและปรับเปลี่ยนตัวเลขงบประมาณได้ที่ระบบ Expense Dashboard หลังบ้าน
+                  กำหนดและปรับเปลี่ยนตัวเลขงบประมาณได้ที่ระบบ Expense Dashboard หลังบ้าน
                 </p>
+              </div>
+
+              {/* Theme Selector */}
+              <div className="border-t border-slate-800/80 pt-4">
+                <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                  ธีมการแสดงผล
+                </label>
+                <div className="grid grid-cols-3 gap-2 rounded-xl border border-slate-800 bg-slate-950 p-1">
+                  {(
+                    [
+                      { id: "system", label: "ตามระบบ", icon: Smartphone },
+                      { id: "light", label: "สว่าง", icon: Sun },
+                      { id: "dark", label: "มืด", icon: Moon },
+                    ] as const
+                  ).map((opt) => {
+                    const active = webThemeMode === opt.id;
+                    const IconComp = opt.icon;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => setWebThemeMode(opt.id)}
+                        className={clsx(
+                          "flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition-all",
+                          active
+                            ? "bg-emerald-500/15 border border-emerald-500/35 text-emerald-400 font-semibold shadow-sm"
+                            : "text-slate-400 hover:text-slate-200 border border-transparent"
+                        )}
+                      >
+                        <IconComp size={14} />
+                        <span>{opt.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               {/* Edit Display Name */}

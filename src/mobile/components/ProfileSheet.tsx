@@ -8,9 +8,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { Calendar, LogOut, Sun, User, Wallet } from "lucide-react-native";
+import { Calendar, LogOut, Moon, Smartphone, Sun, User, Wallet } from "lucide-react-native";
 import { formatBaht } from "../../lib/shared";
-import { colors, radius, tints } from "../theme";
+import { colors, radius, tints, useTheme, type ThemeMode } from "../theme";
 import type { Budgets, UserProfile } from "../types";
 import { BottomSheet } from "../ui/BottomSheet";
 import { SheetHeader } from "../ui/SheetHeader";
@@ -27,6 +27,7 @@ interface Props {
 export function ProfileSheet({ visible, profile, budgets, onSaveName, onLogout, onClose }: Props) {
   const [name, setName] = useState(profile?.displayName ?? "");
   const [saving, setSaving] = useState(false);
+  const { mode, setMode } = useTheme();
 
   useEffect(() => {
     setName(profile?.displayName ?? "");
@@ -79,8 +80,45 @@ export function ProfileSheet({ visible, profile, budgets, onSaveName, onLogout, 
           ))}
         </View>
         <Text style={styles.quotaHint}>
-          💡 กำหนดและปรับเปลี่ยนตัวเลขงบประมาณได้ที่ระบบ Expense Dashboard หลังบ้าน
+          กำหนดและปรับเปลี่ยนตัวเลขงบประมาณได้ที่ระบบ Expense Dashboard หลังบ้าน
         </Text>
+
+        <View style={styles.section}>
+          <Text style={styles.fieldLabel}>ธีมการแสดงผล</Text>
+          <View style={styles.themeSelector}>
+            {(
+              [
+                { id: "system" as ThemeMode, label: "ตามระบบ", icon: Smartphone },
+                { id: "light" as ThemeMode, label: "สว่าง", icon: Sun },
+                { id: "dark" as ThemeMode, label: "มืด", icon: Moon },
+              ] as const
+            ).map((opt) => {
+              const active = mode === opt.id;
+              const IconComp = opt.icon;
+              return (
+                <TouchableOpacity
+                  key={opt.id}
+                  style={[styles.themeOption, active && styles.themeOptionActive]}
+                  onPress={() => setMode(opt.id)}
+                  activeOpacity={0.7}
+                >
+                  <IconComp
+                    size={14}
+                    color={active ? colors.emerald400 : colors.slate400}
+                  />
+                  <Text
+                    style={[
+                      styles.themeOptionText,
+                      active && styles.themeOptionTextActive,
+                    ]}
+                  >
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
 
         <View style={styles.section}>
           <Text style={styles.fieldLabel}>ชื่อที่แสดง</Text>
@@ -178,4 +216,36 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(76,5,25,0.2)",
   },
   logoutText: { color: colors.rose400, fontSize: 12, fontWeight: "700" },
+  themeSelector: {
+    flexDirection: "row",
+    gap: 8,
+    backgroundColor: colors.slate950,
+    borderRadius: radius.md,
+    padding: 4,
+    borderWidth: 1,
+    borderColor: colors.slate800,
+  },
+  themeOption: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 9,
+    borderRadius: radius.sm,
+  },
+  themeOptionActive: {
+    backgroundColor: "rgba(16,185,129,0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(16,185,129,0.35)",
+  },
+  themeOptionText: {
+    color: colors.slate400,
+    fontSize: 12,
+    fontWeight: "500",
+  },
+  themeOptionTextActive: {
+    color: colors.emerald400,
+    fontWeight: "600",
+  },
 });

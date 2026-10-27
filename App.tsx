@@ -7,9 +7,31 @@ import { PrivacyShield } from "./src/mobile/components/PrivacyShield";
 import { supabase } from "./src/mobile/lib/supabase";
 import { HomeScreen } from "./src/mobile/screens/HomeScreen";
 import { LoginScreen } from "./src/mobile/screens/LoginScreen";
-import { colors } from "./src/mobile/theme";
+import { ThemeProvider, useTheme, colors } from "./src/mobile/theme";
 
 type AuthState = { status: "loading" } | { status: "ready"; session: Session | null };
+
+function AppShell({ auth }: { auth: AuthState }) {
+  const { theme, isDark } = useTheme();
+
+  return (
+    <View style={[styles.root, { backgroundColor: theme.bg }]}>
+      <StatusBar
+        barStyle={isDark ? "light-content" : "dark-content"}
+        backgroundColor={theme.bg}
+      />
+      {auth.status === "loading" ? (
+        <View style={[styles.loading, { backgroundColor: theme.bg }]}>
+          <ActivityIndicator color={theme.accent} />
+        </View>
+      ) : auth.session ? (
+        <HomeScreen />
+      ) : (
+        <LoginScreen />
+      )}
+    </View>
+  );
+}
 
 export default function App() {
   const [auth, setAuth] = useState<AuthState>({ status: "loading" });
@@ -28,24 +50,18 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <SecurityProvider>
-        <PrivacyShield>
-          <StatusBar barStyle="light-content" backgroundColor={colors.slate950} />
-          {auth.status === "loading" ? (
-            <View style={styles.loading}>
-              <ActivityIndicator color={colors.emerald500} />
-            </View>
-          ) : auth.session ? (
-            <HomeScreen />
-          ) : (
-            <LoginScreen />
-          )}
-        </PrivacyShield>
-      </SecurityProvider>
+      <ThemeProvider>
+        <SecurityProvider>
+          <PrivacyShield>
+            <AppShell auth={auth} />
+          </PrivacyShield>
+        </SecurityProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
-  loading: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.slate950 },
+  root: { flex: 1 },
+  loading: { flex: 1, alignItems: "center", justifyContent: "center" },
 });
