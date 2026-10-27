@@ -1,3 +1,73 @@
+import React, { createContext, useContext, useMemo, useState } from "react";
+import { useColorScheme } from "react-native";
+import {
+  type ColorTheme,
+  type ThemeMode,
+  darkTheme,
+  lightTheme,
+  resolveTheme,
+} from "../lib/themeTokens";
+
+export { darkTheme, lightTheme, resolveTheme, type ColorTheme, type ThemeMode };
+
+interface ThemeContextValue {
+  theme: ColorTheme;
+  mode: ThemeMode;
+  setMode: (mode: ThemeMode) => void;
+  isDark: boolean;
+}
+
+const ThemeContext = createContext<ThemeContextValue | null>(null);
+
+export function ThemeProvider({
+  initialMode = "system",
+  children,
+}: {
+  initialMode?: ThemeMode;
+  children: React.ReactNode;
+}) {
+  const [mode, setMode] = useState<ThemeMode>(initialMode);
+  const systemScheme = useColorScheme();
+
+  const theme = useMemo(() => {
+    return resolveTheme(mode, systemScheme);
+  }, [mode, systemScheme]);
+
+  const value = useMemo(
+    () => ({
+      theme,
+      mode,
+      setMode,
+      isDark: theme.mode === "dark",
+    }),
+    [theme, mode]
+  );
+
+  return React.createElement(ThemeContext.Provider, { value }, children);
+}
+
+/**
+ * Hook to access current active theme, theme mode, and switcher.
+ * Works both inside and outside ThemeProvider (falls back to system scheme).
+ */
+export function useTheme(): ThemeContextValue {
+  const context = useContext(ThemeContext);
+  const systemScheme = useColorScheme();
+
+  if (context) {
+    return context;
+  }
+
+  // Graceful fallback when outside ThemeProvider
+  const fallbackTheme = resolveTheme("system", systemScheme);
+  return {
+    theme: fallbackTheme,
+    mode: "system",
+    setMode: () => {},
+    isDark: fallbackTheme.mode === "dark",
+  };
+}
+
 /** Tailwind slate/emerald/rose/indigo/amber palette ที่เว็บ PWA ใช้ */
 export const colors = {
   slate950: "#020617",
