@@ -498,7 +498,7 @@ export default function HomeView() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 antialiased selection:bg-emerald-500/30">
       {/* 1. Header Bar */}
-      <header className="sticky top-0 z-30 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-md">
+      <header className="sticky top-0 z-30 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-md pt-[env(safe-area-inset-top,0px)]">
         <div className="mx-auto flex max-w-md items-center justify-between px-4 py-3">
           {/* Logo & App Title */}
           <div className="flex items-center gap-2">

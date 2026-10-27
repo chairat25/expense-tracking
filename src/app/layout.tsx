@@ -14,11 +14,16 @@ export const metadata: Metadata = {
   title: "Expense Tracking - บันทึกรายรับรายจ่าย",
   description: "เว็บบันทึกรายรับรายจ่ายรายวัน รวดเร็ว เรียบง่าย",
   manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Expense Tracking",
+  },
 };
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#020617" },
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
     { media: "(prefers-color-scheme: dark)", color: "#020617" },
   ],
   width: "device-width",
@@ -37,7 +42,7 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var m=localStorage.getItem('expense_theme_mode')||'system';var d=m==='dark'||(m==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);var r=document.documentElement;r.setAttribute('data-theme',d?'dark':'light');if(d){r.classList.add('dark')}else{r.classList.remove('dark')}}catch(e){}})()`,
+            __html: `(function(){try{var m=localStorage.getItem('expense_theme_mode')||'system';var d=m==='dark'||(m==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);var r=document.documentElement;r.setAttribute('data-theme',d?'dark':'light');if(d){r.classList.add('dark')}else{r.classList.remove('dark')}var c=d?'#020617':'#ffffff';var metas=document.querySelectorAll('meta[name="theme-color"]');for(var i=0;i<metas.length;i++){metas[i].setAttribute('content',c)}}catch(e){}})()`,
           }}
         />
       </head>

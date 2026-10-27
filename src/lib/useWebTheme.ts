@@ -14,6 +14,28 @@ export function applyThemeToDOM(resolvedMode: "light" | "dark") {
   } else {
     root.classList.remove("dark");
   }
+
+  // Update meta theme-color for mobile top notch / status bar
+  const color = resolvedMode === "dark" ? "#020617" : "#ffffff";
+  if (typeof document.querySelectorAll === "function") {
+    const metas = document.querySelectorAll('meta[name="theme-color"]');
+    if (metas.length > 0) {
+      metas.forEach((m) => m.setAttribute("content", color));
+    } else if (document.head && typeof document.createElement === "function") {
+      const meta = document.createElement("meta");
+      meta.name = "theme-color";
+      meta.content = color;
+      document.head.appendChild(meta);
+    }
+  }
+
+  // Update apple-mobile-web-app-status-bar-style
+  if (typeof document.querySelector === "function") {
+    const appleMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+    if (appleMeta) {
+      appleMeta.setAttribute("content", resolvedMode === "dark" ? "black" : "default");
+    }
+  }
 }
 
 export function useWebTheme() {

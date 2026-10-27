@@ -34,6 +34,7 @@ describe("useWebTheme & applyThemeToDOM", () => {
   it("applies theme to DOM correctly", () => {
     const classList = new Set<string>();
     const attributes: Record<string, string> = {};
+    const metaAttrs: Record<string, string> = {};
 
     vi.stubGlobal("document", {
       documentElement: {
@@ -46,14 +47,29 @@ describe("useWebTheme & applyThemeToDOM", () => {
           contains: (cls: string) => classList.has(cls),
         },
       },
+      querySelectorAll: (selector: string) => {
+        if (selector === 'meta[name="theme-color"]') {
+          return [
+            {
+              setAttribute: (k: string, v: string) => {
+                metaAttrs[k] = v;
+              },
+            },
+          ];
+        }
+        return [];
+      },
+      querySelector: vi.fn(),
     });
 
     applyThemeToDOM("light");
     expect(attributes["data-theme"]).toBe("light");
     expect(classList.has("dark")).toBe(false);
+    expect(metaAttrs["content"]).toBe("#ffffff");
 
     applyThemeToDOM("dark");
     expect(attributes["data-theme"]).toBe("dark");
     expect(classList.has("dark")).toBe(true);
+    expect(metaAttrs["content"]).toBe("#020617");
   });
 });
