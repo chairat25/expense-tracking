@@ -146,6 +146,10 @@ html[data-theme="dark"],
   color: #ffffff !important;
 }
 
+html {
+  background-color: var(--color-slate-950);
+}
+
 body {
   background: var(--bg);
   background-image: 

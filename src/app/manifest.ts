@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "จดรายรับรายจ่ายรายวัน สรุปยอดสิ้นเดือน",
     start_url: "/",
     display: "standalone",
-    background_color: "#0c0e12",
-    theme_color: "#2563eb",
+    background_color: "#020617",
+    theme_color: "#020617",
     icons: [
       {
         src: "/icon-192.png",

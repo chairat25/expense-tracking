@@ -35,6 +35,7 @@ describe("useWebTheme & applyThemeToDOM", () => {
     const classList = new Set<string>();
     const attributes: Record<string, string> = {};
     const metaAttrs: Record<string, string> = {};
+    const appleMetaAttrs: Record<string, string> = {};
 
     vi.stubGlobal("document", {
       documentElement: {
@@ -51,6 +52,7 @@ describe("useWebTheme & applyThemeToDOM", () => {
         if (selector === 'meta[name="theme-color"]') {
           return [
             {
+              removeAttribute: vi.fn(),
               setAttribute: (k: string, v: string) => {
                 metaAttrs[k] = v;
               },
@@ -59,17 +61,28 @@ describe("useWebTheme & applyThemeToDOM", () => {
         }
         return [];
       },
-      querySelector: vi.fn(),
+      querySelector: (selector: string) => {
+        if (selector === 'meta[name="apple-mobile-web-app-status-bar-style"]') {
+          return {
+            setAttribute: (k: string, v: string) => {
+              appleMetaAttrs[k] = v;
+            },
+          };
+        }
+        return null;
+      },
     });
 
     applyThemeToDOM("light");
     expect(attributes["data-theme"]).toBe("light");
     expect(classList.has("dark")).toBe(false);
     expect(metaAttrs["content"]).toBe("#ffffff");
+    expect(appleMetaAttrs["content"]).toBe("default");
 
     applyThemeToDOM("dark");
     expect(attributes["data-theme"]).toBe("dark");
     expect(classList.has("dark")).toBe(true);
     expect(metaAttrs["content"]).toBe("#020617");
+    expect(appleMetaAttrs["content"]).toBe("black-translucent");
   });
 });

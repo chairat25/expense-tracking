@@ -16,11 +16,19 @@ export function applyThemeToDOM(resolvedMode: "light" | "dark") {
   }
 
   // Update meta theme-color for mobile top notch / status bar
-  const color = resolvedMode === "dark" ? "#020617" : "#ffffff";
+  const isDark = resolvedMode === "dark";
+  const color = isDark ? "#020617" : "#ffffff";
+  const barStyle = isDark ? "black-translucent" : "default";
+
   if (typeof document.querySelectorAll === "function") {
     const metas = document.querySelectorAll('meta[name="theme-color"]');
     if (metas.length > 0) {
-      metas.forEach((m) => m.setAttribute("content", color));
+      metas.forEach((m) => {
+        if (typeof m.removeAttribute === "function") {
+          m.removeAttribute("media");
+        }
+        m.setAttribute("content", color);
+      });
     } else if (document.head && typeof document.createElement === "function") {
       const meta = document.createElement("meta");
       meta.name = "theme-color";
@@ -31,9 +39,14 @@ export function applyThemeToDOM(resolvedMode: "light" | "dark") {
 
   // Update apple-mobile-web-app-status-bar-style
   if (typeof document.querySelector === "function") {
-    const appleMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+    let appleMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+    if (!appleMeta && document.head && typeof document.createElement === "function") {
+      appleMeta = document.createElement("meta");
+      appleMeta.setAttribute("name", "apple-mobile-web-app-status-bar-style");
+      document.head.appendChild(appleMeta);
+    }
     if (appleMeta) {
-      appleMeta.setAttribute("content", resolvedMode === "dark" ? "black" : "default");
+      appleMeta.setAttribute("content", barStyle);
     }
   }
 }
