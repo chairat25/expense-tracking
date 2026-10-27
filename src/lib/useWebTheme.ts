@@ -37,17 +37,14 @@ export function applyThemeToDOM(resolvedMode: "light" | "dark") {
     }
   }
 
-  // Update apple-mobile-web-app-status-bar-style
-  if (typeof document.querySelector === "function") {
-    let appleMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
-    if (!appleMeta && document.head && typeof document.createElement === "function") {
-      appleMeta = document.createElement("meta");
-      appleMeta.setAttribute("name", "apple-mobile-web-app-status-bar-style");
-      document.head.appendChild(appleMeta);
-    }
-    if (appleMeta) {
-      appleMeta.setAttribute("content", barStyle);
-    }
+  // Remove legacy apple-mobile-web-app-status-bar-style so iOS 15+ follows theme-color dynamically
+  if (typeof document.querySelectorAll === "function") {
+    const appleMetas = document.querySelectorAll('meta[name="apple-mobile-web-app-status-bar-style"]');
+    appleMetas.forEach((m) => {
+      if (typeof m.remove === "function") {
+        m.remove();
+      }
+    });
   }
 }
 

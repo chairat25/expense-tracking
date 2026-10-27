@@ -14,10 +14,6 @@ export const metadata: Metadata = {
   title: "Expense Tracking - บันทึกรายรับรายจ่าย",
   description: "เว็บบันทึกรายรับรายจ่ายรายวัน รวดเร็ว เรียบง่าย",
   manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    title: "Expense Tracking",
-  },
 };
 
 export const viewport: Viewport = {
@@ -38,7 +34,7 @@ export default function RootLayout({
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var m=localStorage.getItem('expense_theme_mode')||'system';var d=m==='dark'||(m==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);var r=document.documentElement;r.setAttribute('data-theme',d?'dark':'light');if(d){r.classList.add('dark')}else{r.classList.remove('dark')}var c=d?'#020617':'#ffffff';var s=d?'black-translucent':'default';var metas=document.querySelectorAll('meta[name="theme-color"]');for(var i=0;i<metas.length;i++){metas[i].removeAttribute('media');metas[i].setAttribute('content',c)}var appleMeta=document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');if(!appleMeta){appleMeta=document.createElement('meta');appleMeta.name='apple-mobile-web-app-status-bar-style';document.head.appendChild(appleMeta)}appleMeta.setAttribute('content',s)}catch(e){}})()`,
+            __html: `(function(){try{var m=localStorage.getItem('expense_theme_mode')||'system';var d=m==='dark'||(m==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);var r=document.documentElement;r.setAttribute('data-theme',d?'dark':'light');if(d){r.classList.add('dark')}else{r.classList.remove('dark')}var color=d?'#020617':'#ffffff';var metas=document.querySelectorAll('meta[name="theme-color"]');for(var i=0;i<metas.length;i++){metas[i].remove()}var meta=document.createElement('meta');meta.name='theme-color';meta.content=color;document.head.appendChild(meta);var appleMeta=document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');if(appleMeta){appleMeta.remove()}}catch(e){}})()`,
           }}
         />
       </head>
