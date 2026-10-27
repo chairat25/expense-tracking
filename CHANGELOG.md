@@ -4,6 +4,24 @@
 
 ---
 
+## [2026-10-27] — Native iOS Minimal BottomBar & Full Dynamic Theming (Light/Dark)
+
+### สิ่งที่ทำเสร็จแล้ว (Completed Features)
+1. **Native iOS Minimal BottomBar (`src/mobile/components/BottomNavBar.tsx`)**:
+   - ปรับลดความสูงเหลือ 50px พร้อมมุมโค้งมน `CORNER_RADIUS = 24px` ตามมาตรฐาน Apple HIG (44pt touch target)
+   - ปรับรอยเว้า Center FAB เป็น Organic S-Curve แบบ $C^1$ Continuous
+   - เพิ่ม Soft Pill Active Tab Indicator สำหรับแท็บปฏิทินและโปรไฟล์
+2. **Shared Theme Tokens & In-App Theme Switcher (`src/lib/themeTokens.ts`, `src/mobile/theme.ts`, `src/lib/useWebTheme.ts`)**:
+   - ออกแบบชุดโทเคนเดี่ยว (Single Source of Truth) รองรับ 3 โหมด: `System` (ตามระบบ), `Light` (สว่าง), `Dark` (มืด)
+   - เพิ่มตัวเลือกสลับธีม Segmented Control ในเมนู Profile ทั้งบน Mobile และ Web PWA
+   - จดจำค่าธีมถาวรผ่าน `AsyncStorage` (Mobile) และ `localStorage` (Web PWA)
+3. **Full Dynamic Theming Across Mobile & Web PWA**:
+   - **Web PWA**: เชื่อมคลาสสี Tailwind v4 ผ่าน CSS Variables ให้สลับเป็น Light Theme สว่างสดใสคมชัดทันที
+   - **React Native Mobile**: ผูก `useTheme()` เข้ากับ `HomeScreen`, `SummaryCard`, `QuickAddCard`, `TransactionList`, `HomeHeader`, `BottomNavBar`, `BottomSheet`, `ProfileSheet`, และ `CalendarCardView`
+   - ทดสอบผ่าน Unit Test ทั้ง 15 ชุด 83 รายการสำเร็จ 100%
+
+---
+
 ## [2026-10-15] — Branch: `feat/react-native-mobile`
 
 ### ✨ สิ่งที่ทำเสร็จแล้ว (Completed Features)
