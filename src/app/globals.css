@@ -1,12 +1,25 @@
 @import "tailwindcss";
 
-:root,
+:root {
+  --slate-950: #020617;
+  --slate-900: #0f172a;
+  --slate-800: #1e293b;
+  --slate-700: #334155;
+  --slate-600: #475569;
+  --slate-500: #64748b;
+  --slate-400: #94a3b8;
+  --slate-300: #cbd5e1;
+  --slate-200: #e2e8f0;
+  --slate-100: #f8fafc;
+}
+
 [data-theme="light"],
+html[data-theme="light"],
 .light {
   color-scheme: light;
-  --bg: #f1f5f9;
+  --bg: #f8fafc;
   --surface: #ffffff;
-  --surface-2: #f8fafc;
+  --surface-2: #f1f5f9;
   --border: #e2e8f0;
   --text: #0f172a;
   --muted: #64748b;
@@ -17,10 +30,22 @@
   --expense: #e11d48;
   --expense-soft: #ffe4e6;
   --shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+
+  /* Light theme mapping for Tailwind slate classes */
+  --slate-950: #f8fafc;
+  --slate-900: #ffffff;
+  --slate-800: #e2e8f0;
+  --slate-700: #cbd5e1;
+  --slate-600: #94a3b8;
+  --slate-500: #64748b;
+  --slate-400: #64748b;
+  --slate-300: #334155;
+  --slate-200: #1e293b;
+  --slate-100: #0f172a;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     color-scheme: dark;
     --bg: #090d16;
     --surface: #121827;
@@ -35,10 +60,22 @@
     --expense: #f43f5e;
     --expense-soft: #4c0519;
     --shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.6), 0 4px 12px -2px rgba(0, 0, 0, 0.4);
+
+    --slate-950: #020617;
+    --slate-900: #0f172a;
+    --slate-800: #1e293b;
+    --slate-700: #334155;
+    --slate-600: #475569;
+    --slate-500: #64748b;
+    --slate-400: #94a3b8;
+    --slate-300: #cbd5e1;
+    --slate-200: #e2e8f0;
+    --slate-100: #f8fafc;
   }
 }
 
 [data-theme="dark"],
+html[data-theme="dark"],
 .dark {
   color-scheme: dark;
   --bg: #090d16;
@@ -54,9 +91,31 @@
   --expense: #f43f5e;
   --expense-soft: #4c0519;
   --shadow: 0 8px 30px -4px rgba(0, 0, 0, 0.6), 0 4px 12px -2px rgba(0, 0, 0, 0.4);
+
+  --slate-950: #020617;
+  --slate-900: #0f172a;
+  --slate-800: #1e293b;
+  --slate-700: #334155;
+  --slate-600: #475569;
+  --slate-500: #64748b;
+  --slate-400: #94a3b8;
+  --slate-300: #cbd5e1;
+  --slate-200: #e2e8f0;
+  --slate-100: #f8fafc;
 }
 
 @theme inline {
+  --color-slate-950: var(--slate-950);
+  --color-slate-900: var(--slate-900);
+  --color-slate-800: var(--slate-800);
+  --color-slate-700: var(--slate-700);
+  --color-slate-600: var(--slate-600);
+  --color-slate-500: var(--slate-500);
+  --color-slate-400: var(--slate-400);
+  --color-slate-300: var(--slate-300);
+  --color-slate-200: var(--slate-200);
+  --color-slate-100: var(--slate-100);
+
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
@@ -68,6 +127,23 @@
   --color-income-soft: var(--income-soft);
   --color-expense: var(--expense);
   --color-expense-soft: var(--expense-soft);
+}
+
+/* Light mode text readability adjustments */
+[data-theme="light"] .text-white {
+  color: #0f172a;
+}
+[data-theme="light"] .bg-emerald-500 .text-white,
+[data-theme="light"] .bg-emerald-600 .text-white,
+[data-theme="light"] .bg-indigo-600 .text-white,
+[data-theme="light"] .bg-rose-500 .text-white,
+[data-theme="light"] button[class*="bg-emerald"] *,
+[data-theme="light"] button[class*="bg-indigo"] *,
+[data-theme="light"] button[class*="bg-rose"] *,
+[data-theme="light"] button[class*="bg-emerald"],
+[data-theme="light"] button[class*="bg-indigo"],
+[data-theme="light"] button[class*="bg-rose"] {
+  color: #ffffff !important;
 }
 
 body {

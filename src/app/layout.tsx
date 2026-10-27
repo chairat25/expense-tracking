@@ -33,9 +33,16 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="th" className={`${notoThai.variable} h-full antialiased dark`} suppressHydrationWarning>
+    <html lang="th" className={`${notoThai.variable} h-full antialiased`} suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var m=localStorage.getItem('expense_theme_mode')||'system';var d=m==='dark'||(m==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);var r=document.documentElement;r.setAttribute('data-theme',d?'dark':'light');if(d){r.classList.add('dark')}else{r.classList.remove('dark')}}catch(e){}})()`,
+          }}
+        />
+      </head>
       <body
-        className="min-h-full flex flex-col relative bg-slate-950 text-slate-100"
+        className="min-h-full flex flex-col relative bg-slate-950 text-slate-100 transition-colors duration-150"
         style={{ fontFamily: "var(--font-thai), system-ui, sans-serif" }}
         suppressHydrationWarning
       >

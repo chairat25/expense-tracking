@@ -26,7 +26,7 @@ import type { SlipLink } from "../lib/slipLink";
 import type { CategorySlug } from "../lib/shared";
 import { useUserMeta } from "../hooks/useUserMeta";
 import { supabase } from "../lib/supabase";
-import { colors, MAX_CONTENT_WIDTH } from "../theme";
+import { colors, MAX_CONTENT_WIDTH, useTheme } from "../theme";
 
 interface PendingSlip {
   amount: number;
@@ -45,6 +45,7 @@ const SAVED_LINGER_MS = 900;
 
 /** หน้าหลักเหมือน HomeView ของเว็บ PWA พร้อมระบบ Bottom Bar Center-Default */
 export function HomeScreen() {
+  const { theme, isDark } = useTheme();
   const today = todayKey();
   const [selectedDate, setSelectedDate] = useState(today);
   const [activeTab, setActiveTab] = useState<NavTab>("main"); // ตรงกลางเป็น default เสมอ
@@ -194,7 +195,7 @@ export function HomeScreen() {
   }, []);
 
   return (
-    <SafeAreaView style={styles.safe} edges={["top"]}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]} edges={["top"]}>
       {/* Tab 1: Calendar View (ฝั่งซ้าย) */}
       {activeTab === "calendar" ? (
         <CalendarCardView

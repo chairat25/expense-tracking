@@ -3,7 +3,7 @@ import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Svg, { Path } from "react-native-svg";
 import { CalendarDays, Plus, User } from "lucide-react-native";
-import { colors, tints } from "../theme";
+import { colors, tints, useTheme } from "../theme";
 
 export type NavTab = "calendar" | "main" | "profile";
 
@@ -25,6 +25,7 @@ const NOTCH_DEPTH = 20;
 export const NAV_BAR_CLEARANCE = 80;
 
 export function BottomNavBar({ activeTab, onTabChange }: Props) {
+  const { theme, isDark } = useTheme();
   const insets = useSafeAreaInsets();
   const screenWidth = Dimensions.get("window").width;
   const bottomPadding = Math.max(insets.bottom, 8);
@@ -61,8 +62,8 @@ export function BottomNavBar({ activeTab, onTabChange }: Props) {
         <Svg width={screenWidth} height={totalHeight} style={StyleSheet.absoluteFill}>
           <Path
             d={d}
-            fill="#080c15"
-            stroke="rgba(255, 255, 255, 0.09)"
+            fill={theme.navBg}
+            stroke={theme.navBorder}
             strokeWidth={1}
           />
         </Svg>
@@ -81,11 +82,11 @@ export function BottomNavBar({ activeTab, onTabChange }: Props) {
           <View style={[styles.iconWrapper, activeTab === "calendar" && styles.iconWrapperActive]}>
             <CalendarDays
               size={18}
-              color={activeTab === "calendar" ? colors.emerald400 : colors.slate400}
+              color={activeTab === "calendar" ? colors.emerald400 : theme.textMuted}
               strokeWidth={activeTab === "calendar" ? 2.2 : 1.8}
             />
           </View>
-          <Text style={[styles.tabLabel, activeTab === "calendar" && styles.tabLabelActive]}>
+          <Text style={[styles.tabLabel, { color: theme.textMuted }, activeTab === "calendar" && styles.tabLabelActive]}>
             ปฏิทิน
           </Text>
         </TouchableOpacity>
@@ -105,11 +106,11 @@ export function BottomNavBar({ activeTab, onTabChange }: Props) {
           <View style={[styles.iconWrapper, activeTab === "profile" && styles.iconWrapperActive]}>
             <User
               size={18}
-              color={activeTab === "profile" ? colors.emerald400 : colors.slate400}
+              color={activeTab === "profile" ? colors.emerald400 : theme.textMuted}
               strokeWidth={activeTab === "profile" ? 2.2 : 1.8}
             />
           </View>
-          <Text style={[styles.tabLabel, activeTab === "profile" && styles.tabLabelActive]}>
+          <Text style={[styles.tabLabel, { color: theme.textMuted }, activeTab === "profile" && styles.tabLabelActive]}>
             โปรไฟล์
           </Text>
         </TouchableOpacity>

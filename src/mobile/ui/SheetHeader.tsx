@@ -1,7 +1,7 @@
 import React from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { X } from "lucide-react-native";
-import { colors } from "../theme";
+import { colors, useTheme } from "../theme";
 
 interface Props {
   icon: React.ReactNode;
@@ -11,17 +11,19 @@ interface Props {
 }
 
 export function SheetHeader({ icon, title, subtitle, onClose }: Props) {
+  const { theme } = useTheme();
+
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, { borderBottomColor: theme.border }]}>
       <View style={styles.left}>
         {icon}
         <View style={styles.texts}>
-          <Text style={styles.title}>{title}</Text>
-          {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+          <Text style={[styles.title, { color: theme.text }]}>{title}</Text>
+          {subtitle ? <Text style={[styles.subtitle, { color: theme.textMuted }]}>{subtitle}</Text> : null}
         </View>
       </View>
       <TouchableOpacity onPress={onClose} style={styles.close} hitSlop={8}>
-        <X size={18} color={colors.slate400} />
+        <X size={18} color={theme.textMuted} />
       </TouchableOpacity>
     </View>
   );

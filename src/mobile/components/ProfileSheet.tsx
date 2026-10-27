@@ -27,7 +27,7 @@ interface Props {
 export function ProfileSheet({ visible, profile, budgets, onSaveName, onLogout, onClose }: Props) {
   const [name, setName] = useState(profile?.displayName ?? "");
   const [saving, setSaving] = useState(false);
-  const { mode, setMode } = useTheme();
+  const { mode, setMode, theme, isDark } = useTheme();
 
   useEffect(() => {
     setName(profile?.displayName ?? "");
@@ -72,20 +72,20 @@ export function ProfileSheet({ visible, profile, budgets, onSaveName, onLogout, 
         <Text style={styles.quotaTitle}>โควต้างบประมาณ (กำหนดจากหลังบ้าน)</Text>
         <View style={styles.quotaRow}>
           {quotas.map((q) => (
-            <View key={q.label} style={styles.quota}>
+            <View key={q.label} style={[styles.quota, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]}>
               {q.icon}
-              <Text style={styles.quotaLabel}>{q.label}</Text>
-              <Text style={styles.quotaValue}>฿{formatBaht(q.value || 0)}</Text>
+              <Text style={[styles.quotaLabel, { color: theme.textMuted }]}>{q.label}</Text>
+              <Text style={[styles.quotaValue, { color: theme.text }]}>฿{formatBaht(q.value || 0)}</Text>
             </View>
           ))}
         </View>
-        <Text style={styles.quotaHint}>
+        <Text style={[styles.quotaHint, { color: theme.textMuted }]}>
           กำหนดและปรับเปลี่ยนตัวเลขงบประมาณได้ที่ระบบ Expense Dashboard หลังบ้าน
         </Text>
 
-        <View style={styles.section}>
-          <Text style={styles.fieldLabel}>ธีมการแสดงผล</Text>
-          <View style={styles.themeSelector}>
+        <View style={[styles.section, { borderTopColor: theme.borderSubtle }]}>
+          <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>ธีมการแสดงผล</Text>
+          <View style={[styles.themeSelector, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]}>
             {(
               [
                 { id: "system" as ThemeMode, label: "ตามระบบ", icon: Smartphone },
@@ -104,11 +104,12 @@ export function ProfileSheet({ visible, profile, budgets, onSaveName, onLogout, 
                 >
                   <IconComp
                     size={14}
-                    color={active ? colors.emerald400 : colors.slate400}
+                    color={active ? colors.emerald400 : theme.textMuted}
                   />
                   <Text
                     style={[
                       styles.themeOptionText,
+                      { color: active ? colors.emerald400 : theme.textSecondary },
                       active && styles.themeOptionTextActive,
                     ]}
                   >
@@ -120,26 +121,26 @@ export function ProfileSheet({ visible, profile, budgets, onSaveName, onLogout, 
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.fieldLabel}>ชื่อที่แสดง</Text>
+        <View style={[styles.section, { borderTopColor: theme.borderSubtle }]}>
+          <Text style={[styles.fieldLabel, { color: theme.textSecondary }]}>ชื่อที่แสดง</Text>
           <View style={styles.nameRow}>
             <TextInput
-              style={styles.nameInput}
+              style={[styles.nameInput, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border, color: theme.text }]}
               value={name}
               onChangeText={setName}
-              placeholderTextColor={colors.slate600}
+              placeholderTextColor={theme.textMuted}
             />
-            <TouchableOpacity style={[styles.saveBtn, saving && styles.disabled]} onPress={save} disabled={saving}>
+            <TouchableOpacity style={[styles.saveBtn, { backgroundColor: isDark ? colors.slate800 : theme.border }, saving && styles.disabled]} onPress={save} disabled={saving}>
               {saving ? (
                 <ActivityIndicator size="small" color={colors.slate200} />
               ) : (
-                <Text style={styles.saveText}>บันทึกชื่อ</Text>
+                <Text style={[styles.saveText, { color: theme.text }]}>บันทึกชื่อ</Text>
               )}
             </TouchableOpacity>
           </View>
         </View>
 
-        <View style={styles.section}>
+        <View style={[styles.section, { borderTopColor: theme.borderSubtle }]}>
           <TouchableOpacity style={styles.logout} onPress={onLogout} activeOpacity={0.8}>
             <LogOut size={16} color={colors.rose400} />
             <Text style={styles.logoutText}>ออกจากระบบ</Text>

@@ -29,7 +29,7 @@ import {
 } from "../../lib/shared";
 import { useMonthlyCalendar } from "../hooks/useMonthlyCalendar";
 import { NAV_BAR_CLEARANCE } from "./BottomNavBar";
-import { colors, MAX_CONTENT_WIDTH, radius, tints } from "../theme";
+import { colors, MAX_CONTENT_WIDTH, radius, tints, useTheme } from "../theme";
 import type { CategoryOption } from "../types";
 
 interface Props {
@@ -118,57 +118,58 @@ export function CalendarCardView({
   }, [currentMonth]);
 
   const selectedItem = dailyData[selectedDate];
+  const { theme, isDark } = useTheme();
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.bg }]}
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.content}>
         {/* Month Navigation & Stats Header */}
-        <View style={styles.headerCard}>
+        <View style={[styles.headerCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <View style={styles.monthNavRow}>
             <TouchableOpacity
-              style={styles.navButton}
+              style={[styles.navButton, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]}
               onPress={() => shiftMonth(-1)}
               activeOpacity={0.7}
               accessibilityLabel="เดือนก่อนหน้า"
             >
-              <ChevronLeft size={20} color={colors.slate300} />
+              <ChevronLeft size={20} color={theme.textSecondary} />
             </TouchableOpacity>
 
             <View style={styles.monthTitleBox}>
               <CalendarDays size={16} color={colors.emerald400} />
-              <Text style={styles.monthTitle}>{formatMonthTH(currentMonth)}</Text>
+              <Text style={[styles.monthTitle, { color: theme.text }]}>{formatMonthTH(currentMonth)}</Text>
             </View>
 
             <TouchableOpacity
-              style={styles.navButton}
+              style={[styles.navButton, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]}
               onPress={() => shiftMonth(1)}
               activeOpacity={0.7}
               accessibilityLabel="เดือนถัดไป"
             >
-              <ChevronRight size={20} color={colors.slate300} />
+              <ChevronRight size={20} color={theme.textSecondary} />
             </TouchableOpacity>
           </View>
 
           {/* Monthly Financial Health Bar */}
-          <View style={styles.monthlyStatsBar}>
+          <View style={[styles.monthlyStatsBar, { backgroundColor: theme.surfaceSubtle }]}>
             <View style={styles.statBox}>
               <View style={styles.statLabelRow}>
                 <TrendingDown size={13} color={colors.rose400} />
-                <Text style={styles.statLabel}>รายจ่ายรวม</Text>
+                <Text style={[styles.statLabel, { color: theme.textMuted }]}>รายจ่ายรวม</Text>
               </View>
               <Text style={styles.statExpense}>฿{formatBaht(totalExpense)}</Text>
             </View>
 
-            <View style={styles.statDivider} />
+            <View style={[styles.statDivider, { backgroundColor: theme.border }]} />
 
             <View style={styles.statBox}>
               <View style={styles.statLabelRow}>
                 <TrendingUp size={13} color={colors.emerald400} />
-                <Text style={styles.statLabel}>รายรับรวม</Text>
+                <Text style={[styles.statLabel, { color: theme.textMuted }]}>รายรับรวม</Text>
               </View>
               <Text style={styles.statIncome}>฿{formatBaht(totalIncome)}</Text>
             </View>
@@ -176,7 +177,7 @@ export function CalendarCardView({
         </View>
 
         {/* Calendar Card Grid */}
-        <View style={styles.calendarCard}>
+        <View style={[styles.calendarCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           {/* Weekday Labels */}
           <View style={styles.weekdayRow}>
             {WEEKDAYS.map((w, idx) => (

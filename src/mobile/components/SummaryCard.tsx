@@ -2,7 +2,7 @@ import React from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { TrendingUp } from "lucide-react-native";
 import { formatBaht, formatDayTH } from "../../lib/shared";
-import { colors, radius, tints } from "../theme";
+import { colors, radius, tints, useTheme } from "../theme";
 
 interface Props {
   isToday: boolean;
@@ -14,17 +14,18 @@ interface Props {
 }
 
 export function SummaryCard({ isToday, selectedDate, loading, spent, income, dailyBudget }: Props) {
+  const { theme, isDark } = useTheme();
   const remaining = dailyBudget > 0 ? dailyBudget - spent : null;
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
       <View style={styles.glow} />
       <View style={styles.titleRow}>
-        <Text style={styles.title}>
+        <Text style={[styles.title, { color: theme.textMuted }]}>
           {isToday ? "ยอดใช้จ่ายวันนี้" : `ยอดใช้จ่าย (${formatDayTH(selectedDate)})`}
         </Text>
         {!loading && income > 0 && (
-          <View style={styles.incomeBadge}>
+          <View style={[styles.incomeBadge, { backgroundColor: theme.incomeSoft }]}>
             <TrendingUp size={12} color={colors.emerald400} />
             <Text style={styles.incomeText}>+฿{formatBaht(income)}</Text>
           </View>
@@ -32,19 +33,19 @@ export function SummaryCard({ isToday, selectedDate, loading, spent, income, dai
       </View>
 
       <View style={styles.amountRow}>
-        <Text style={styles.currency}>฿</Text>
+        <Text style={[styles.currency, { color: theme.text }]}>฿</Text>
         {loading ? (
           <ActivityIndicator color={colors.emerald500} style={styles.loader} />
         ) : (
-          <Text style={styles.amount}>{formatBaht(spent)}</Text>
+          <Text style={[styles.amount, { color: theme.text }]}>{formatBaht(spent)}</Text>
         )}
       </View>
 
       <View style={styles.budgetRow}>
         {loading ? null : dailyBudget > 0 ? (
           <>
-            <Text style={styles.budgetLabel}>
-              งบรายวัน: <Text style={styles.budgetStrong}>฿{formatBaht(dailyBudget)}</Text>
+            <Text style={[styles.budgetLabel, { color: theme.textSecondary }]}>
+              งบรายวัน: <Text style={[styles.budgetStrong, { color: theme.text }]}>฿{formatBaht(dailyBudget)}</Text>
             </Text>
             {remaining !== null && (
               <Text
@@ -58,7 +59,7 @@ export function SummaryCard({ isToday, selectedDate, loading, spent, income, dai
           </>
         ) : (
           <>
-            <Text style={styles.noBudget}>ยังไม่ได้ตั้งงบรายวัน</Text>
+            <Text style={[styles.noBudget, { color: theme.textMuted }]}>ยังไม่ได้ตั้งงบรายวัน</Text>
             <Text style={styles.noBudgetHint}>กำหนดได้ใน Dashboard</Text>
           </>
         )}

@@ -2,7 +2,7 @@ import React from "react";
 import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { CalendarDays, ChevronLeft, ChevronRight, History, RotateCcw, User } from "lucide-react-native";
 import { formatDayTH, shiftDate } from "../../lib/shared";
-import { colors, MAX_CONTENT_WIDTH, radius, tints } from "../theme";
+import { colors, MAX_CONTENT_WIDTH, radius, tints, useTheme } from "../theme";
 
 interface Props {
   selectedDate: string;
@@ -23,6 +23,7 @@ export function HomeHeader({
   onOpenHistory,
   onOpenProfile,
 }: Props) {
+  const { theme, isDark } = useTheme();
   const isToday = selectedDate === today;
   const isYesterday = selectedDate === shiftDate(today, -1);
   const canGoNext = selectedDate < today;
@@ -30,22 +31,22 @@ export function HomeHeader({
   const label = isToday ? "วันนี้" : isYesterday ? "เมื่อวาน" : "ย้อนหลัง";
 
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
       <View style={styles.topRow}>
         <View style={styles.brand}>
           <View style={styles.brandDot} />
-          <Text style={styles.brandText}>EXPENSE TRACKING</Text>
+          <Text style={[styles.brandText, { color: theme.text }]}>EXPENSE TRACKING</Text>
         </View>
         <View style={styles.actions}>
-          <TouchableOpacity style={styles.historyBtn} onPress={onOpenHistory} activeOpacity={0.7}>
+          <TouchableOpacity style={[styles.historyBtn, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]} onPress={onOpenHistory} activeOpacity={0.7}>
             <History size={15} color={colors.emerald400} />
-            <Text style={styles.historyText}>ประวัติ</Text>
+            <Text style={[styles.historyText, { color: theme.textSecondary }]}>ประวัติ</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.avatarBtn} onPress={onOpenProfile} activeOpacity={0.7}>
+          <TouchableOpacity style={[styles.avatarBtn, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]} onPress={onOpenProfile} activeOpacity={0.7}>
             {avatarUrl ? (
               <Image source={{ uri: avatarUrl }} style={styles.avatarImg} />
             ) : (
-              <User size={18} color={colors.slate300} />
+              <User size={18} color={theme.textSecondary} />
             )}
           </TouchableOpacity>
         </View>
@@ -53,25 +54,25 @@ export function HomeHeader({
 
       <View style={styles.dateRow}>
         <TouchableOpacity
-          style={styles.arrowBtn}
+          style={[styles.arrowBtn, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]}
           onPress={() => onSelectDate(shiftDate(selectedDate, -1))}
         >
-          <ChevronLeft size={18} color={colors.slate400} />
+          <ChevronLeft size={18} color={theme.textMuted} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.capsule} onPress={onOpenDatePicker} activeOpacity={0.8}>
+        <TouchableOpacity style={[styles.capsule, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]} onPress={onOpenDatePicker} activeOpacity={0.8}>
           <View style={[styles.dot, { backgroundColor: dotColor }]} />
-          <Text style={styles.capsuleLabel}>{label}:</Text>
-          <Text style={styles.capsuleDate}>{formatDayTH(selectedDate)}</Text>
+          <Text style={[styles.capsuleLabel, { color: theme.text }]}>{label}:</Text>
+          <Text style={[styles.capsuleDate, { color: theme.textSecondary }]}>{formatDayTH(selectedDate)}</Text>
           <CalendarDays size={14} color={colors.emerald400} />
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.arrowBtn, !canGoNext && styles.disabled]}
+          style={[styles.arrowBtn, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }, !canGoNext && styles.disabled]}
           disabled={!canGoNext}
           onPress={() => onSelectDate(shiftDate(selectedDate, 1))}
         >
-          <ChevronRight size={18} color={colors.slate400} />
+          <ChevronRight size={18} color={theme.textMuted} />
         </TouchableOpacity>
 
         {!isToday && (

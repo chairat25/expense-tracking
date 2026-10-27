@@ -2,7 +2,7 @@ import React from "react";
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Sparkles, Trash2 } from "lucide-react-native";
 import { CATEGORY_LABEL, formatBaht, formatDayTH, formatTimeTH, type Category, type Tx } from "../../lib/shared";
-import { colors, radius, tints } from "../theme";
+import { colors, radius, tints, useTheme } from "../theme";
 import type { CategoryOption } from "../types";
 
 interface Props {
@@ -15,30 +15,32 @@ interface Props {
 }
 
 export function TransactionList({ selectedDate, loading, transactions, categories, onEdit, onDelete }: Props) {
+  const { theme, isDark } = useTheme();
+
   return (
     <View style={styles.section}>
       <View style={styles.titleRow}>
-        <Text style={styles.title}>
+        <Text style={[styles.title, { color: theme.textSecondary }]}>
           รายการวันที่ {formatDayTH(selectedDate)} ({transactions.length})
         </Text>
-        {transactions.length > 0 && <Text style={styles.hint}>แตะรายการเพื่อแก้ไข</Text>}
+        {transactions.length > 0 && <Text style={[styles.hint, { color: theme.textMuted }]}>แตะรายการเพื่อแก้ไข</Text>}
       </View>
 
       {loading ? (
-        <View style={styles.stateBox}>
+        <View style={[styles.stateBox, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           <ActivityIndicator color={colors.emerald500} />
-          <Text style={styles.stateText}>กำลังโหลดข้อมูล...</Text>
+          <Text style={[styles.stateText, { color: theme.textMuted }]}>กำลังโหลดข้อมูล...</Text>
         </View>
       ) : transactions.length === 0 ? (
-        <View style={[styles.stateBox, styles.empty]}>
-          <View style={styles.emptyIcon}>
+        <View style={[styles.stateBox, styles.empty, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]}>
+          <View style={[styles.emptyIcon, { backgroundColor: theme.surface }]}>
             <Sparkles size={20} color={colors.emerald400} />
           </View>
-          <Text style={styles.emptyTitle}>ยังไม่มีรายการในวันที่ {formatDayTH(selectedDate)}</Text>
-          <Text style={styles.stateText}>ระบุจำนวนเงินด้านบนแล้วกดบันทึกได้เลย</Text>
+          <Text style={[styles.emptyTitle, { color: theme.text }]}>ยังไม่มีรายการในวันที่ {formatDayTH(selectedDate)}</Text>
+          <Text style={[styles.stateText, { color: theme.textMuted }]}>ระบุจำนวนเงินด้านบนแล้วกดบันทึกได้เลย</Text>
         </View>
       ) : (
-        <View style={styles.list}>
+        <View style={[styles.list, { backgroundColor: theme.surface, borderColor: theme.border }]}>
           {transactions.map((tx, index) => {
             const isExpense = tx.type === "expense";
             const cat = categories.find((c) => c.slug === tx.category);
@@ -47,13 +49,13 @@ export function TransactionList({ selectedDate, loading, transactions, categorie
             return (
               <TouchableOpacity
                 key={tx.id}
-                style={[styles.row, index > 0 && styles.rowDivider]}
+                style={[styles.row, index > 0 && [styles.rowDivider, { borderTopColor: theme.borderSubtle }]]}
                 onPress={() => onEdit(tx)}
                 activeOpacity={0.6}
               >
                 <View style={styles.left}>
-                  <View style={styles.iconBox}>
-                    <Text style={styles.iconInitial}>{initial}</Text>
+                  <View style={[styles.iconBox, { backgroundColor: theme.surfaceSubtle }]}>
+                    <Text style={[styles.iconInitial, { color: theme.text }]}>{initial}</Text>
                     <View
                       style={[
                         styles.dotIndicator,
@@ -62,10 +64,10 @@ export function TransactionList({ selectedDate, loading, transactions, categorie
                     />
                   </View>
                   <View style={styles.texts}>
-                    <Text style={styles.note} numberOfLines={1}>
+                    <Text style={[styles.note, { color: theme.text }]} numberOfLines={1}>
                       {tx.note || catName}
                     </Text>
-                    <Text style={styles.meta} numberOfLines={1}>
+                    <Text style={[styles.meta, { color: theme.textMuted }]} numberOfLines={1}>
                       {formatTimeTH(tx.spentAt)}
                       {tx.note ? `  •  ${catName}` : ""}
                     </Text>

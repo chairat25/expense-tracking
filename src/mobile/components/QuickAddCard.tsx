@@ -11,7 +11,7 @@ import { CalendarSearch, ListPlus, Plus, ScanLine, TrendingDown, TrendingUp } fr
 import { formatDayTH } from "../../lib/shared";
 import { DEFAULT_NOTE_SUGGESTIONS } from "../../lib/receipt/patterns";
 import type { NewTransaction } from "../hooks/useDayData";
-import { colors, radius, tints } from "../theme";
+import { colors, radius, tints, useTheme } from "../theme";
 import type { CategoryOption } from "../types";
 
 interface Props {
@@ -64,11 +64,12 @@ export function QuickAddCard({
   }
 
   const targetLabel = isToday ? "วันนี้" : isYesterday ? "เมื่อวาน" : formatDayTH(selectedDate);
+  const { theme, isDark } = useTheme();
 
   return (
-    <View style={styles.card}>
+    <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
       <View style={styles.metaRow}>
-        <Text style={styles.metaText}>
+        <Text style={[styles.metaText, { color: theme.textSecondary }]}>
           บันทึกลง:{" "}
           <Text style={{ color: isToday ? colors.emerald400 : colors.amber400, fontWeight: "700" }}>
             {targetLabel}
@@ -85,57 +86,57 @@ export function QuickAddCard({
             <ListPlus size={13} color={colors.indigo400} />
             <Text style={[styles.smallBtnText, { color: colors.indigo300 }]}>หลายรายการ</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.smallBtn} onPress={onOpenDatePicker} activeOpacity={0.75}>
-            <CalendarSearch size={13} color={colors.slate400} />
-            <Text style={styles.smallBtnText}>เปลี่ยนวัน</Text>
+          <TouchableOpacity style={[styles.smallBtn, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]} onPress={onOpenDatePicker} activeOpacity={0.75}>
+            <CalendarSearch size={13} color={theme.textMuted} />
+            <Text style={[styles.smallBtnText, { color: theme.textSecondary }]}>เปลี่ยนวัน</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       {error && <Text style={styles.error}>{error}</Text>}
 
-      <View style={styles.typeSwitch}>
+      <View style={[styles.typeSwitch, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }]}>
         <TouchableOpacity
           style={[styles.typeBtn, type === "expense" && styles.typeExpenseActive]}
           onPress={() => setType("expense")}
         >
-          <TrendingDown size={14} color={type === "expense" ? colors.white : colors.slate400} />
-          <Text style={[styles.typeText, type === "expense" && styles.typeTextActive]}>รายจ่าย</Text>
+          <TrendingDown size={14} color={type === "expense" ? colors.white : theme.textMuted} />
+          <Text style={[styles.typeText, { color: theme.textMuted }, type === "expense" && styles.typeTextActive]}>รายจ่าย</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.typeBtn, type === "income" && styles.typeIncomeActive]}
           onPress={() => setType("income")}
         >
-          <TrendingUp size={14} color={type === "income" ? colors.white : colors.slate400} />
-          <Text style={[styles.typeText, type === "income" && styles.typeTextActive]}>รายรับ</Text>
+          <TrendingUp size={14} color={type === "income" ? colors.white : theme.textMuted} />
+          <Text style={[styles.typeText, { color: theme.textMuted }, type === "income" && styles.typeTextActive]}>รายรับ</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.amountWrap}>
-        <Text style={styles.amountCurrency}>฿</Text>
+        <Text style={[styles.amountCurrency, { color: theme.text }]}>฿</Text>
         <TextInput
-          style={styles.amountInput}
+          style={[styles.amountInput, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border, color: theme.text }]}
           value={amount}
           onChangeText={setAmount}
           placeholder="0.00"
-          placeholderTextColor={colors.slate600}
+          placeholderTextColor={theme.textMuted}
           keyboardType="decimal-pad"
         />
       </View>
 
       <View>
-        <Text style={styles.sectionLabel}>หมวดหมู่</Text>
+        <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>หมวดหมู่</Text>
         <View style={styles.chipWrap}>
           {categories.map((cat) => {
             const selected = category === cat.slug;
             return (
               <TouchableOpacity
                 key={cat.slug}
-                style={[styles.chip, selected && styles.chipSelected]}
+                style={[styles.chip, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }, selected && styles.chipSelected]}
                 onPress={() => setCategory(cat.slug)}
               >
                 <Text style={styles.chipIcon}>{cat.icon || "📦"}</Text>
-                <Text style={[styles.chipText, selected && styles.chipTextSelected]}>{cat.name}</Text>
+                <Text style={[styles.chipText, { color: theme.textSecondary }, selected && styles.chipTextSelected]}>{cat.name}</Text>
               </TouchableOpacity>
             );
           })}
@@ -144,21 +145,21 @@ export function QuickAddCard({
 
       <View style={styles.noteBlock}>
         <TextInput
-          style={styles.noteInput}
+          style={[styles.noteInput, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border, color: theme.text }]}
           value={note}
           onChangeText={setNote}
           placeholder="หมายเหตุ (เช่น ข้าวกะเพรา, ค่าน้ำมัน)"
-          placeholderTextColor={colors.slate600}
+          placeholderTextColor={theme.textMuted}
         />
         <View style={styles.suggestRow}>
-          <Text style={styles.suggestLabel}>ตัวอย่าง:</Text>
+          <Text style={[styles.suggestLabel, { color: theme.textMuted }]}>ตัวอย่าง:</Text>
           {DEFAULT_NOTE_SUGGESTIONS.slice(0, SUGGESTION_COUNT).map((sug) => (
             <TouchableOpacity
               key={sug}
-              style={[styles.suggestChip, note === sug && styles.suggestChipActive]}
+              style={[styles.suggestChip, { backgroundColor: theme.surfaceSubtle, borderColor: theme.border }, note === sug && styles.suggestChipActive]}
               onPress={() => setNote(sug)}
             >
-              <Text style={[styles.suggestText, note === sug && styles.suggestTextActive]}>{sug}</Text>
+              <Text style={[styles.suggestText, { color: theme.textSecondary }, note === sug && styles.suggestTextActive]}>{sug}</Text>
             </TouchableOpacity>
           ))}
         </View>
