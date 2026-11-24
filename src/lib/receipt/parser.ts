@@ -63,12 +63,12 @@ export function parseReceiptText(rawText: string): ParsedReceipt {
   const lines = cleaned.split("\n").map((l) => l.trim()).filter(Boolean);
 
   for (const line of lines) {
-    if (/ค่าธรรมเนียม|fee/i.test(line) && !/จำนวนเงิน|ยอดเงิน|total|amount/i.test(line)) {
+    if (/ค่าธรรมเนียม|fee/i.test(line) && !/จำนวนเงิน|ยอดเงิน|ยอดชำระ|total|amount/i.test(line)) {
       continue;
     }
 
     const keywordMatch = line.match(
-      /(?:จำนวนเงิน|ยอดเงิน|โอนเงิน|ยอดรวม|Total|Amount|Grand Total)\s*[:\s]?\s*(?:THB|฿)?\s*([0-9,]+\.[0-9]{2})/i
+      /(?:จำนวนเงินที่ชำระ|จำนวนเงินสุทธิ|จำนวนเงิน|ยอดที่ชำระ|ยอดชำระ|ยอดเงิน|โอนเงิน|ยอดรวม|ชำระทั้งสิ้น|Total|Amount|Grand Total)\s*[:\s]?\s*(?:THB|฿)?\s*([0-9,]+\.[0-9]{2})/i
     );
     if (keywordMatch && keywordMatch[1]) {
       const val = parseFloat(keywordMatch[1].replace(/,/g, ""));
@@ -162,14 +162,49 @@ export function parseReceiptText(rawText: string): ParsedReceipt {
     }
   }
 
-  // 3. Merchant / Receiver Extraction
-  const targetMatch = cleaned.match(/(?:ไปยัง|โอนให้|โอนเงินให้|ผู้รับเงิน|\bTo\b|Receiver|Merchant|ร้านค้า)\s*[:\s]?\s*([^\n\r]+)/i);
-  if (targetMatch && targetMatch[1]) {
-    const rawName = targetMatch[1].trim();
-    if (!/total|amount|fee|baht|บาท/i.test(rawName)) {
-      const cleanName = rawName.replace(/[^\u0E00-\u0E7Fa-zA-Z0-9\s.-]/g, "").trim();
-      if (cleanName.length > 1) {
-        merchant = cleanName.split(/\s{2,}|\t/)[0];
+  // 3. Merchant / Receiver Extraction (supports Thai bank slips & Paotang / G-Wallet)
+  const receiverInline =
+    /(?:ไปยัง|โอนให้|โอนเงินให้|ชำระเงินให้|ผู้รับเงิน|ร้านค้าถุงเงิน|ผู้รับ|\bTo\b|Receiver|Merchant|ร้านค้า)\s*[:\s]+\s*([^\n\r]+)/i;
+  const receiverHeaderOnly =
+    /^(?:ไปยัง|โอนให้|โอนเงินให้|ชำระเงินให้|ผู้รับเงิน|ร้านค้าถุงเงิน|ผู้รับ|\bTo\b|Receiver|Merchant|ร้านค้า)\s*[:\s]*$/i;
+  const genericWalletNoise =
+    /^(?:เป๋าตัง|G-Wallet|ถุงเงิน|PromptPay|พร้อมเพย์|สแกนจ่ายสำเร็จ|ชำระเงินสำเร็จ|โอนเงินสำเร็จ)$/i;
+
+  const sanitizeCandidate = (raw: string): string | null => {
+    const trimmed = raw
+      .replace(/^(?:ถุงเงิน|เป๋าตัง|G-Wallet)\s*[:\s-]*/i, "")
+      .trim();
+    if (
+      !trimmed ||
+      genericWalletNoise.test(trimmed) ||
+      /total|amount|fee|baht|บาท/i.test(trimmed) ||
+      /^\d+(?:[.,:/-]\d+)*$/.test(trimmed)
+    ) {
+      return null;
+    }
+    const cleanName = trimmed
+      .replace(/[^\u0E00-\u0E7Fa-zA-Z0-9\s.-]/g, "")
+      .trim();
+    if (cleanName.length <= 1 || genericWalletNoise.test(cleanName)) {
+      return null;
+    }
+    return cleanName.split(/\s{2,}|\t/)[0] ?? null;
+  };
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const inlineMatch = line.match(receiverInline);
+    if (inlineMatch?.[1]) {
+      const candidate = sanitizeCandidate(inlineMatch[1]);
+      if (candidate) {
+        merchant = candidate;
+        break;
+      }
+    } else if (receiverHeaderOnly.test(line) && i + 1 < lines.length) {
+      const candidate = sanitizeCandidate(lines[i + 1]);
+      if (candidate) {
+        merchant = candidate;
+        break;
       }
     }
   }

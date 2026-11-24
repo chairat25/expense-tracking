@@ -87,4 +87,33 @@ describe("parseReceiptText", () => {
 
     expect(res.amount).toBe(1250);
   });
+
+  it("extracts amount, date, and shop name from Paotang G-Wallet slip", () => {
+    const sample = [
+      "เป๋าตัง",
+      "G-Wallet",
+      "ชำระเงินสำเร็จ",
+      "24 พ.ย. 2569 14:20 น.",
+      "ร้านค้าถุงเงิน: เจ๊แดงก๋วยเตี๋ยวเรือ",
+      "ยอดชำระ: ฿145.00",
+    ].join("\n");
+
+    const res = parseReceiptText(sample);
+    expect(res.amount).toBe(145);
+    expect(res.date).toBe("2026-11-24");
+    expect(res.merchant).toBe("เจ๊แดงก๋วยเตี๋ยวเรือ");
+  });
+
+  it("extracts shop name from Paotang multi-line receiver layout without capturing header noise", () => {
+    const sample = [
+      "G-Wallet",
+      "ชำระเงินให้",
+      "ร้านข้าวมันไก่นายโอ",
+      "ยอดชำระ 65.00 บาท",
+    ].join("\n");
+
+    const res = parseReceiptText(sample);
+    expect(res.amount).toBe(65);
+    expect(res.merchant).toBe("ร้านข้าวมันไก่นายโอ");
+  });
 });

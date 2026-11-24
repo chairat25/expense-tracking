@@ -29,6 +29,8 @@ import {
   FileImage,
   ClipboardPaste,
   ListPlus,
+  BarChart3,
+  List,
 } from "lucide-react";
 import {
   todayKey,
@@ -49,6 +51,7 @@ import { parseReceiptText } from "@/lib/receipt/parser";
 import { getSavedPattern, savePattern, getQuickNoteSuggestions } from "@/lib/receipt/patterns";
 import ReceiptBatchModal from "@/components/ReceiptBatchModal";
 import BatchAddModal from "@/components/BatchAddModal";
+import HistoryChartView, { type DailyHistoryItem } from "@/components/HistoryChartView";
 import { useWebTheme } from "@/lib/useWebTheme";
 
 interface CategoryOption {
@@ -56,13 +59,6 @@ interface CategoryOption {
   name: string;
   icon: string;
   type: string;
-}
-
-interface DailyHistoryItem {
-  date: string;
-  expense: number;
-  income: number;
-  count: number;
 }
 
 const DEFAULT_CATEGORIES: CategoryOption[] = [
@@ -104,9 +100,11 @@ export default function HomeView() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyList, setHistoryList] = useState<DailyHistoryItem[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [historyViewMode, setHistoryViewMode] = useState<"list" | "chart">("list");
 
-  // Profile Modal State
+  // Profile Popover State
   const [profileOpen, setProfileOpen] = useState(false);
+  const [avatarError, setAvatarError] = useState(false);
   const [profile, setProfile] = useState<{
     displayName: string;
     email: string;
@@ -120,6 +118,21 @@ export default function HomeView() {
   } | null>(null);
   const [savingProfile, setSavingProfile] = useState(false);
   const [editName, setEditName] = useState("");
+
+  useEffect(() => {
+    setAvatarError(false);
+  }, [profile?.avatarUrl]);
+
+  useEffect(() => {
+    if (!profileOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setProfileOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [profileOpen]);
 
   const amountInputRef = useRef<HTMLInputElement>(null);
   const activeDateRef = useRef<string>(today);
@@ -497,8 +510,22 @@ export default function HomeView() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 antialiased selection:bg-emerald-500/30">
+      {/* Click-outside backdrop rendered outside <header> so backdrop-blur-md does not trap fixed positioning */}
+      {profileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[1px]"
+          onClick={() => setProfileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       {/* 1. Header Bar */}
-      <header className="sticky top-0 z-30 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-md pt-[env(safe-area-inset-top,0px)]">
+      <header
+        className={clsx(
+          "sticky top-0 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-md pt-[env(safe-area-inset-top,0px)]",
+          profileOpen ? "z-50" : "z-30"
+        )}
+      >
         <div className="mx-auto flex max-w-md items-center justify-between px-4 py-3">
           {/* Logo & App Title */}
           <div className="flex items-center gap-2">
@@ -519,21 +546,182 @@ export default function HomeView() {
               <span>ประวัติ</span>
             </button>
 
-            <button
-              onClick={() => setProfileOpen(true)}
-              className="group flex h-9 w-9 items-center justify-center rounded-full border border-slate-800 bg-slate-900 text-slate-300 transition-all hover:border-emerald-500/50 hover:bg-slate-800 hover:text-white active:scale-95"
-              title="โปรไฟล์และงบประมาณ"
-            >
-              {profile?.avatarUrl ? (
-                <img
-                  src={profile.avatarUrl}
-                  alt="Avatar"
-                  className="h-full w-full rounded-full object-cover"
-                />
-              ) : (
-                <User size={18} className="transition-transform group-hover:scale-110" />
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setProfileOpen((prev) => !prev)}
+                aria-expanded={profileOpen}
+                aria-haspopup="dialog"
+                className={clsx(
+                  "group flex h-9 w-9 items-center justify-center rounded-full border bg-slate-900 text-slate-300 transition-all hover:border-emerald-500/50 hover:bg-slate-800 hover:text-white active:scale-95",
+                  profileOpen ? "border-emerald-500/60 ring-2 ring-emerald-500/20" : "border-slate-800"
+                )}
+                title="โปรไฟล์และงบประมาณ"
+              >
+                {profile?.avatarUrl && !avatarError ? (
+                  <img
+                    src={profile.avatarUrl}
+                    alt="Avatar"
+                    onError={() => setAvatarError(true)}
+                    className="h-full w-full rounded-full object-cover"
+                  />
+                ) : (
+                  <User size={18} className="transition-transform group-hover:scale-110" />
+                )}
+              </button>
+
+              {/* Profile & Budget Quotas Popover */}
+              {profileOpen && (
+                <div
+                  role="dialog"
+                  aria-label="โปรไฟล์และงบประมาณ"
+                  className="absolute right-0 top-full mt-2 z-50 w-[min(calc(100vw-2rem),22rem)] max-h-[calc(100vh-5rem)] overflow-y-auto rounded-2xl border border-slate-800 bg-slate-900 p-4 shadow-2xl ring-1 ring-white/5 origin-top-right animate-in fade-in zoom-in-95 duration-150"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Popover Header */}
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold overflow-hidden">
+                        {profile?.avatarUrl && !avatarError ? (
+                          <img
+                            src={profile.avatarUrl}
+                            alt="Avatar"
+                            onError={() => setAvatarError(true)}
+                            className="h-full w-full rounded-full object-cover"
+                          />
+                        ) : (
+                          profile?.displayName?.slice(0, 1).toUpperCase() || <User size={18} />
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="truncate text-sm font-bold text-white">
+                          {profile?.displayName || "โปรไฟล์ผู้ใช้"}
+                        </h3>
+                        <p className="truncate text-[11px] text-slate-400">
+                          {profile?.email || ""}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setProfileOpen(false)}
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-slate-400 hover:bg-slate-800 hover:text-white"
+                      title="ปิด"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+
+                  {/* Popover Body */}
+                  <div className="mt-3.5 space-y-3.5">
+                    {/* Budget Quota Summary */}
+                    <div>
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400">
+                        โควต้างบประมาณ (กำหนดจากหลังบ้าน)
+                      </span>
+                      <div className="mt-2 grid grid-cols-3 gap-2">
+                        <div className="rounded-xl border border-slate-800 bg-slate-950 p-2.5 text-center">
+                          <Sun size={15} className="mx-auto text-amber-400 mb-1" />
+                          <span className="block text-[10px] text-slate-400">งบรายวัน</span>
+                          <span className="mt-0.5 block text-xs font-bold text-white">
+                            ฿{formatBaht(budgets?.daily ?? 0)}
+                          </span>
+                        </div>
+
+                        <div className="rounded-xl border border-slate-800 bg-slate-950 p-2.5 text-center">
+                          <Calendar size={15} className="mx-auto text-indigo-400 mb-1" />
+                          <span className="block text-[10px] text-slate-400">งบรายสัปดาห์</span>
+                          <span className="mt-0.5 block text-xs font-bold text-white">
+                            ฿{formatBaht(budgets?.weekly ?? 0)}
+                          </span>
+                        </div>
+
+                        <div className="rounded-xl border border-slate-800 bg-slate-950 p-2.5 text-center">
+                          <Wallet size={15} className="mx-auto text-emerald-400 mb-1" />
+                          <span className="block text-[10px] text-slate-400">งบประจำเดือน</span>
+                          <span className="mt-0.5 block text-xs font-bold text-white">
+                            ฿{formatBaht(budgets?.monthly ?? 0)}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="mt-1.5 text-[10px] text-slate-500">
+                        กำหนดและปรับเปลี่ยนตัวเลขงบประมาณได้ที่ระบบ Expense Dashboard หลังบ้าน
+                      </p>
+                    </div>
+
+                    {/* Theme Selector */}
+                    <div className="border-t border-slate-800/80 pt-3.5">
+                      <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                        ธีมการแสดงผล
+                      </label>
+                      <div className="grid grid-cols-3 gap-1.5 rounded-xl border border-slate-800 bg-slate-950 p-1">
+                        {(
+                          [
+                            { id: "system", label: "ตามระบบ", icon: Smartphone },
+                            { id: "light", label: "สว่าง", icon: Sun },
+                            { id: "dark", label: "มืด", icon: Moon },
+                          ] as const
+                        ).map((opt) => {
+                          const active = webThemeMode === opt.id;
+                          const IconComp = opt.icon;
+                          return (
+                            <button
+                              key={opt.id}
+                              type="button"
+                              onClick={() => setWebThemeMode(opt.id)}
+                              className={clsx(
+                                "flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-medium transition-all",
+                                active
+                                  ? "bg-emerald-500/15 border border-emerald-500/35 text-emerald-400 font-semibold shadow-sm"
+                                  : "text-slate-400 hover:text-slate-200 border border-transparent"
+                              )}
+                            >
+                              <IconComp size={13} />
+                              <span>{opt.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Edit Display Name */}
+                    <div className="border-t border-slate-800/80 pt-3.5">
+                      <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                        ชื่อที่แสดง
+                      </label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={editName}
+                          onChange={(e) => setEditName(e.target.value)}
+                          className="flex-1 min-w-0 rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-200 outline-none focus:border-emerald-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleSaveProfile}
+                          disabled={savingProfile}
+                          className="shrink-0 rounded-xl bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-700 disabled:opacity-50"
+                        >
+                          {savingProfile ? "กำลังบันทึก..." : "บันทึกชื่อ"}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Logout Button */}
+                    <div className="border-t border-slate-800/80 pt-3.5">
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-500/30 bg-rose-950/20 py-2 text-xs font-bold text-rose-400 transition-colors hover:bg-rose-950/50 active:scale-[0.98]"
+                      >
+                        <LogOut size={15} />
+                        <span>ออกจากระบบ</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
               )}
-            </button>
+            </div>
           </div>
         </div>
 
@@ -565,7 +753,11 @@ export default function HomeView() {
                 {isToday ? "วันนี้" : isYesterday ? "เมื่อวาน" : "ย้อนหลัง"}:
               </span>
               <span className="text-slate-300">{formatDayTH(selectedDate)}</span>
-              <CalendarDays size={14} className="text-emerald-400 shrink-0 ml-0.5" />
+              {loading ? (
+                <Loader2 size={14} className="animate-spin text-emerald-400 shrink-0 ml-0.5" />
+              ) : (
+                <CalendarDays size={14} className="text-emerald-400 shrink-0 ml-0.5" />
+              )}
             </button>
 
             {/* Next Day Arrow */}
@@ -676,15 +868,68 @@ export default function HomeView() {
 
         {/* 5. Quick Add Form */}
         <section className="rounded-2xl border border-slate-800/80 bg-slate-900/60 p-4 shadow-lg backdrop-blur-sm">
+          {loading ? (
+            <div
+              className="space-y-3.5 select-none"
+              aria-busy="true"
+              aria-label="กำลังโหลดข้อมูล..."
+            >
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2 px-0.5">
+                  <Skeleton className="h-4 w-28 rounded-md bg-slate-800/80" />
+                  <Skeleton className="h-7 w-20 rounded-lg bg-slate-800/80" />
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Skeleton className="h-9 flex-1 rounded-xl bg-slate-800/80" />
+                  <Skeleton className="h-9 flex-1 rounded-xl bg-slate-800/80" />
+                  <Skeleton className="h-9 flex-1 rounded-xl bg-slate-800/80" />
+                </div>
+              </div>
+
+              <Skeleton className="h-10 w-full rounded-xl bg-slate-800/80" />
+              <Skeleton className="h-14 w-full rounded-xl bg-slate-800/80" />
+
+              <div>
+                <Skeleton className="mb-2 h-3 w-14 rounded-md bg-slate-800/80" />
+                <div className="flex flex-wrap gap-1.5">
+                  {["w-14", "w-20", "w-16", "w-20", "w-16", "w-16", "w-14"].map((widthClass, idx) => (
+                    <Skeleton key={idx} className={clsx("h-8 rounded-lg bg-slate-800/80", widthClass)} />
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Skeleton className="h-10 w-full rounded-xl bg-slate-800/80" />
+                <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                  {[0, 1, 2, 3, 4].map((idx) => (
+                    <Skeleton key={idx} className="h-6 w-14 rounded-lg bg-slate-800/80" />
+                  ))}
+                </div>
+              </div>
+
+              <Skeleton className="h-11 w-full rounded-xl bg-slate-800/80" />
+            </div>
+          ) : (
           <form onSubmit={handleSubmit} className="space-y-3.5">
-            {/* Target Date Pill Indicator in Form & Slip Scan Button */}
-            <div className="flex items-center justify-between text-xs px-1">
-              <span className="text-slate-400">
-                บันทึกลง:{" "}
-                <strong className={isToday ? "text-emerald-400" : "text-amber-400"}>
-                  {isToday ? "วันนี้" : isYesterday ? "เมื่อวาน" : formatDayTH(selectedDate)}
-                </strong>
-              </span>
+            {/* Target Date Row & Quick Action Toolbar (2 rows for clean mobile wrapping) */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between gap-2 text-xs px-0.5">
+                <span className="text-slate-400 whitespace-nowrap">
+                  บันทึกลง:{" "}
+                  <strong className={isToday ? "text-emerald-400" : "text-amber-400"}>
+                    {isToday ? "วันนี้" : isYesterday ? "เมื่อวาน" : formatDayTH(selectedDate)}
+                  </strong>
+                </span>
+
+                <button
+                  type="button"
+                  onClick={() => setDatePickerOpen(true)}
+                  className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1 text-[11px] font-semibold text-slate-400 hover:text-emerald-400 hover:border-slate-700 transition-colors"
+                >
+                  <CalendarSearch size={13} className="shrink-0" />
+                  <span>เปลี่ยนวัน</span>
+                </button>
+              </div>
 
               <div className="flex items-center gap-1.5">
                 <input
@@ -707,10 +952,10 @@ export default function HomeView() {
                   type="button"
                   onClick={handlePasteFromClipboard}
                   disabled={submitting}
-                  className="inline-flex items-center gap-1 rounded-lg border border-indigo-500/40 bg-indigo-950/70 px-2 py-1 text-[11px] font-semibold text-indigo-300 hover:border-indigo-400 hover:bg-indigo-900/60 transition-all active:scale-95 disabled:opacity-50 shadow-sm"
+                  className="flex-auto inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-indigo-500/40 bg-indigo-950/70 px-2.5 py-2 text-[11px] font-semibold text-indigo-300 hover:border-indigo-400 hover:bg-indigo-900/60 transition-all active:scale-95 disabled:opacity-50 shadow-sm"
                   title="วางสลิปจากคลิปบอร์ดทันที"
                 >
-                  <ClipboardPaste size={13} className="text-indigo-400" />
+                  <ClipboardPaste size={13} className="text-indigo-400 shrink-0" />
                   <span>วางสลิป</span>
                 </button>
 
@@ -718,10 +963,10 @@ export default function HomeView() {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={submitting}
-                  className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-950 px-2 py-1 text-[11px] font-semibold text-slate-400 hover:text-slate-200 hover:border-slate-700 transition-colors active:scale-95 disabled:opacity-50"
+                  className="flex-auto inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-slate-800 bg-slate-950 px-2.5 py-2 text-[11px] font-semibold text-slate-400 hover:text-slate-200 hover:border-slate-700 transition-colors active:scale-95 disabled:opacity-50"
                   title="เลือกรูปสลิปจากอัลบั้ม (เลือกได้หลายรูปพร้อมกัน)"
                 >
-                  <ScanText size={13} className="text-slate-400" />
+                  <ScanText size={13} className="text-slate-400 shrink-0" />
                   <span>เลือกสลิป</span>
                 </button>
 
@@ -729,20 +974,11 @@ export default function HomeView() {
                   type="button"
                   onClick={() => setBatchAddOpen(true)}
                   disabled={submitting}
-                  className="inline-flex items-center gap-1 rounded-lg border border-emerald-500/40 bg-emerald-950/70 px-2 py-1 text-[11px] font-semibold text-emerald-300 hover:border-emerald-400 hover:bg-emerald-900/60 transition-all active:scale-95 disabled:opacity-50 shadow-sm"
+                  className="flex-auto inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-emerald-500/40 bg-emerald-950/70 px-2.5 py-2 text-[11px] font-semibold text-emerald-300 hover:border-emerald-400 hover:bg-emerald-900/60 transition-all active:scale-95 disabled:opacity-50 shadow-sm"
                   title="เพิ่มหลายรายการพร้อมกัน (ไม่ต้องมีสลิป)"
                 >
-                  <ListPlus size={13} className="text-emerald-400" />
+                  <ListPlus size={13} className="text-emerald-400 shrink-0" />
                   <span>เพิ่มหลายรายการ</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setDatePickerOpen(true)}
-                  className="inline-flex items-center gap-1 rounded-lg border border-slate-800 bg-slate-950 px-2 py-1 text-[11px] font-semibold text-slate-400 hover:text-emerald-400 hover:border-slate-700 transition-colors"
-                >
-                  <CalendarSearch size={13} />
-                  <span>เปลี่ยนวัน</span>
                 </button>
               </div>
             </div>
@@ -922,6 +1158,7 @@ export default function HomeView() {
               )}
             </button>
           </form>
+          )}
         </section>
 
         {/* 6. Date Timeline */}
@@ -936,9 +1173,23 @@ export default function HomeView() {
           </div>
 
           {loading ? (
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-slate-800 bg-slate-900/40 py-12 text-slate-500">
-              <Loader2 size={24} className="animate-spin text-emerald-500 mb-2" />
-              <p className="text-xs">กำลังโหลดข้อมูล...</p>
+            <div
+              className="divide-y divide-slate-800/80 rounded-2xl border border-slate-800 bg-slate-900/60 overflow-hidden shadow-md select-none"
+              aria-busy="true"
+              aria-label="กำลังโหลดรายการ"
+            >
+              {[0, 1, 2].map((idx) => (
+                <div key={idx} className="flex items-center justify-between p-3.5">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                    <Skeleton className="h-10 w-10 shrink-0 rounded-xl bg-slate-800/80" />
+                    <div className="space-y-2 flex-1 max-w-[180px]">
+                      <Skeleton className="h-3.5 w-32 rounded-md bg-slate-800/80" />
+                      <Skeleton className="h-2.5 w-20 rounded-md bg-slate-800/80" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-4 w-16 shrink-0 rounded-md bg-slate-800/80 ml-3" />
+                </div>
+              ))}
             </div>
           ) : transactions.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-800 bg-slate-900/20 py-10 text-center text-slate-500">
@@ -1041,14 +1292,60 @@ export default function HomeView() {
               </button>
             </div>
 
-            {/* Modal Body: Daily Summary List */}
-            <div className="mt-4 flex-1 overflow-y-auto space-y-2 pr-1">
+            {/* Segmented View Toggle: List vs Chart */}
+            <div className="mt-3 grid grid-cols-2 gap-1 rounded-xl border border-slate-800 bg-slate-950 p-1">
+              <button
+                type="button"
+                onClick={() => setHistoryViewMode("list")}
+                className={clsx(
+                  "flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold transition-all",
+                  historyViewMode === "list"
+                    ? "bg-slate-800 text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                )}
+              >
+                <List size={14} />
+                <span>รายการ</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setHistoryViewMode("chart")}
+                className={clsx(
+                  "flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold transition-all",
+                  historyViewMode === "chart"
+                    ? "bg-emerald-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                )}
+              >
+                <BarChart3 size={14} />
+                <span>กราฟ</span>
+              </button>
+            </div>
+
+            {/* Modal Body: Daily Summary List / Chart */}
+            <div className="mt-3 flex-1 overflow-y-auto space-y-2 pr-1">
               {loadingHistory ? (
-                <div className="flex justify-center py-10">
-                  <Loader2 size={24} className="animate-spin text-emerald-500" />
+                <div className="space-y-2" aria-busy="true" aria-label="กำลังโหลดประวัติ">
+                  {[0, 1, 2, 3, 4].map((idx) => (
+                    <Skeleton
+                      key={idx}
+                      className="h-16 w-full rounded-xl bg-slate-800/70"
+                    />
+                  ))}
                 </div>
               ) : historyList.length === 0 ? (
                 <p className="text-center text-xs text-slate-500 py-8">ไม่พบประวัติรายการย้อนหลัง</p>
+              ) : historyViewMode === "chart" ? (
+                <HistoryChartView
+                  historyList={historyList}
+                  selectedDate={selectedDate}
+                  today={today}
+                  yesterday={yesterday}
+                  onSelectDate={(d) => {
+                    setSelectedDate(d);
+                    setHistoryOpen(false);
+                  }}
+                />
               ) : (
                 historyList.map((item) => {
                   const isCurrent = item.date === selectedDate;
@@ -1112,150 +1409,6 @@ export default function HomeView() {
                   );
                 })
               )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 9. Profile & Budget Quotas Modal */}
-      {profileOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4 animate-in fade-in duration-200">
-          <div
-            className="w-full max-w-md rounded-t-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl sm:rounded-3xl animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold">
-                  {profile?.avatarUrl ? (
-                    <img
-                      src={profile.avatarUrl}
-                      alt="Avatar"
-                      className="h-full w-full rounded-full object-cover"
-                    />
-                  ) : (
-                    profile?.displayName?.slice(0, 1).toUpperCase() || <User size={20} />
-                  )}
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-white">
-                    {profile?.displayName || "โปรไฟล์ผู้ใช้"}
-                  </h3>
-                  <p className="text-xs text-slate-400">{profile?.email || ""}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setProfileOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-800 hover:text-white"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Modal Body: Budget Quota Summary */}
-            <div className="mt-5 space-y-4">
-              <div>
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400">
-                  โควต้างบประมาณ (กำหนดจากหลังบ้าน)
-                </span>
-                <div className="mt-2 grid grid-cols-3 gap-2">
-                  <div className="rounded-xl border border-slate-800 bg-slate-950 p-3 text-center">
-                    <Sun size={16} className="mx-auto text-amber-400 mb-1" />
-                    <span className="block text-[10px] text-slate-400">งบรายวัน</span>
-                    <span className="mt-0.5 block text-xs font-bold text-white">
-                      ฿{formatBaht(budgets?.daily || 0)}
-                    </span>
-                  </div>
-
-                  <div className="rounded-xl border border-slate-800 bg-slate-950 p-3 text-center">
-                    <Calendar size={16} className="mx-auto text-indigo-400 mb-1" />
-                    <span className="block text-[10px] text-slate-400">งบรายสัปดาห์</span>
-                    <span className="mt-0.5 block text-xs font-bold text-white">
-                      ฿{formatBaht(budgets?.weekly || 0)}
-                    </span>
-                  </div>
-
-                  <div className="rounded-xl border border-slate-800 bg-slate-950 p-3 text-center">
-                    <Wallet size={16} className="mx-auto text-emerald-400 mb-1" />
-                    <span className="block text-[10px] text-slate-400">งบประจำเดือน</span>
-                    <span className="mt-0.5 block text-xs font-bold text-white">
-                      ฿{formatBaht(budgets?.monthly || 0)}
-                    </span>
-                  </div>
-                </div>
-                <p className="mt-1.5 text-[11px] text-slate-500">
-                  กำหนดและปรับเปลี่ยนตัวเลขงบประมาณได้ที่ระบบ Expense Dashboard หลังบ้าน
-                </p>
-              </div>
-
-              {/* Theme Selector */}
-              <div className="border-t border-slate-800/80 pt-4">
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                  ธีมการแสดงผล
-                </label>
-                <div className="grid grid-cols-3 gap-2 rounded-xl border border-slate-800 bg-slate-950 p-1">
-                  {(
-                    [
-                      { id: "system", label: "ตามระบบ", icon: Smartphone },
-                      { id: "light", label: "สว่าง", icon: Sun },
-                      { id: "dark", label: "มืด", icon: Moon },
-                    ] as const
-                  ).map((opt) => {
-                    const active = webThemeMode === opt.id;
-                    const IconComp = opt.icon;
-                    return (
-                      <button
-                        key={opt.id}
-                        type="button"
-                        onClick={() => setWebThemeMode(opt.id)}
-                        className={clsx(
-                          "flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-medium transition-all",
-                          active
-                            ? "bg-emerald-500/15 border border-emerald-500/35 text-emerald-400 font-semibold shadow-sm"
-                            : "text-slate-400 hover:text-slate-200 border border-transparent"
-                        )}
-                      >
-                        <IconComp size={14} />
-                        <span>{opt.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Edit Display Name */}
-              <div className="border-t border-slate-800/80 pt-4">
-                <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                  ชื่อที่แสดง
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    className="flex-1 rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-xs text-slate-200 outline-none focus:border-emerald-500"
-                  />
-                  <button
-                    onClick={handleSaveProfile}
-                    disabled={savingProfile}
-                    className="rounded-xl bg-slate-800 px-3.5 py-2 text-xs font-semibold text-slate-200 hover:bg-slate-700 disabled:opacity-50"
-                  >
-                    {savingProfile ? "กำลังบันทึก..." : "บันทึกชื่อ"}
-                  </button>
-                </div>
-              </div>
-
-              {/* Logout Button */}
-              <div className="border-t border-slate-800/80 pt-4">
-                <button
-                  onClick={handleLogout}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl border border-rose-500/30 bg-rose-950/20 py-2.5 text-xs font-bold text-rose-400 transition-colors hover:bg-rose-950/50 active:scale-[0.98]"
-                >
-                  <LogOut size={16} />
-                  <span>ออกจากระบบ</span>
-                </button>
-              </div>
             </div>
           </div>
         </div>

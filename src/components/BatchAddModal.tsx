@@ -78,6 +78,19 @@ export default function BatchAddModal({
     }
   }, [isOpen, currentDate, defaultCategory]);
 
+  // Prevent dismissing modal with Escape while batch commit is in progress
+  useEffect(() => {
+    if (!isOpen || !submitting) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown, true);
+    return () => window.removeEventListener("keydown", onKeyDown, true);
+  }, [isOpen, submitting]);
+
   const handleAddRow = useCallback(() => {
     setRows((prev) => [...prev, createEmptyRow(defaultCategory)]);
   }, [defaultCategory]);
@@ -114,6 +127,7 @@ export default function BatchAddModal({
 
   // Handle Submit All
   const handleSubmitAll = async () => {
+    if (submitting) return;
     if (validRows.length === 0) {
       setErrorMsg("กรุณาระบุจำนวนเงินอย่างน้อย 1 รายการ");
       return;
@@ -192,7 +206,11 @@ export default function BatchAddModal({
                   type="date"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
-                  className="bg-transparent text-emerald-300 font-semibold underline outline-none cursor-pointer"
+                  disabled={submitting}
+                  className={clsx(
+                    "bg-transparent text-emerald-300 font-semibold underline outline-none",
+                    submitting ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                  )}
                 />
               </div>
             </div>
@@ -200,10 +218,12 @@ export default function BatchAddModal({
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => {
+              if (!submitting) onClose();
+            }}
             disabled={submitting}
-            className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-900 hover:text-white transition-colors"
-            title="ปิดหน้าต่าง"
+            className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-900 hover:text-white transition-colors disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
+            title={submitting ? "กำลังบันทึก กรุณารอสักครู่" : "ปิดหน้าต่าง"}
           >
             <X size={18} />
           </button>
@@ -219,23 +239,37 @@ export default function BatchAddModal({
 
         {/* Saving Progress Bar */}
         {savingProgress && (
-          <div className="border-b border-emerald-500/20 bg-emerald-950/30 px-4 py-2 sm:px-5">
+          <div className="border-b border-emerald-500/20 bg-emerald-950/30 px-4 py-2.5 sm:px-5 space-y-1.5">
             <div className="flex items-center justify-between text-xs text-emerald-300">
               <div className="flex items-center gap-2">
-                <Loader2 size={13} className="animate-spin text-emerald-400" />
+                <Loader2 size={13} className="animate-spin text-emerald-400 shrink-0" />
                 <span>
-                  กำลังบันทึกรายการที่ {savingProgress.current} จาก {savingProgress.total}...
+                  กำลังบันทึกรายการที่ {savingProgress.current} จาก {savingProgress.total} (กรุณารอสักครู่...)
                 </span>
               </div>
-              <span className="font-semibold text-emerald-400 text-[11px]">
-                {Math.round((savingProgress.current / savingProgress.total) * 100)}%
+              <span className="font-semibold text-emerald-400 text-[11px] tabular-nums">
+                {Math.round((savingProgress.current / Math.max(1, savingProgress.total)) * 100)}%
               </span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-900">
+              <div
+                className="h-full bg-emerald-500 transition-all duration-200"
+                style={{
+                  width: `${Math.round((savingProgress.current / Math.max(1, savingProgress.total)) * 100)}%`,
+                }}
+              />
             </div>
           </div>
         )}
 
         {/* Rows Scroll Area */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3">
+        <div
+          aria-busy={submitting}
+          className={clsx(
+            "flex-1 overflow-y-auto p-4 sm:p-5 space-y-3 transition-opacity",
+            submitting && "pointer-events-none opacity-60 select-none"
+          )}
+        >
           {rows.map((row, index) => {
             const hasAmount = parseFloat(row.amount) > 0;
             return (
@@ -260,8 +294,9 @@ export default function BatchAddModal({
                       <button
                         type="button"
                         onClick={() => handleUpdateRow(row.id, { type: "expense" })}
+                        disabled={submitting}
                         className={clsx(
-                          "flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium transition-all",
+                          "flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium transition-all disabled:opacity-50",
                           row.type === "expense"
                             ? "bg-rose-500/20 text-rose-300 border border-rose-500/40"
                             : "text-slate-400 hover:text-slate-200"
@@ -273,8 +308,9 @@ export default function BatchAddModal({
                       <button
                         type="button"
                         onClick={() => handleUpdateRow(row.id, { type: "income" })}
+                        disabled={submitting}
                         className={clsx(
-                          "flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium transition-all",
+                          "flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-medium transition-all disabled:opacity-50",
                           row.type === "income"
                             ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
                             : "text-slate-400 hover:text-slate-200"

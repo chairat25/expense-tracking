@@ -1,16 +1,17 @@
 import { createWorker } from "tesseract.js";
+import { recognizeWithOpenThai } from "./openthai";
 import { preprocessImageForOcr } from "./preprocess";
 
-export async function recognizeReceiptImage(
+async function recognizeWithTesseract(
   file: File | Blob,
   onProgress?: (percent: number, status?: string) => void
 ): Promise<string> {
   onProgress?.(10, "กำลังเตรียมรูปภาพ...");
   const preprocessedDataUrl = await preprocessImageForOcr(file);
 
-  onProgress?.(25, "กำลังเริ่มต้นตัวอ่านสลิป...");
+  onProgress?.(25, "กำลังเริ่มต้นตัวอ่านสลิปสำรอง...");
   const worker = await createWorker(["tha", "eng"], 1, {
-    logger: (m: any) => {
+    logger: (m: { status?: string; progress?: number }) => {
       if (m.status === "recognizing text" && typeof m.progress === "number") {
         const pct = Math.min(95, 30 + Math.round(m.progress * 65));
         onProgress?.(pct, "กำลังถอดข้อความ...");
@@ -32,4 +33,21 @@ export async function recognizeReceiptImage(
       console.warn("Failed to cleanly terminate OCR worker", e);
     }
   }
+}
+
+export async function recognizeReceiptImage(
+  file: File | Blob,
+  onProgress?: (percent: number, status?: string) => void
+): Promise<string> {
+  try {
+    const text = await recognizeWithOpenThai(file, onProgress);
+    if (text.trim().length > 0) {
+      return text;
+    }
+    console.warn("OpenThai OCR returned empty text; falling back to Tesseract.");
+  } catch (err) {
+    console.warn("OpenThai OCR failed; falling back to Tesseract.", err);
+  }
+
+  return recognizeWithTesseract(file, onProgress);
 }

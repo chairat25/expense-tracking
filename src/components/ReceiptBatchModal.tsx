@@ -313,8 +313,9 @@ export default function ReceiptBatchModal({
   const readyCount = items.filter(
     (it) => (it.status === "ready" || it.status === "error") && parseFloat(it.amount) > 0
   ).length;
-  const scanningItem = items.find((it) => it.status === "scanning");
-  const scanningIdx = items.findIndex((it) => it.status === "scanning");
+  const scanningItem = items.find((it) => it?.status === "scanning");
+  const scanningIdx = items.findIndex((it) => it?.status === "scanning");
+  const isAnySaving = savingAll || items.some((it) => it?.status === "saving");
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4">
@@ -355,9 +356,12 @@ export default function ReceiptBatchModal({
 
             <button
               type="button"
-              onClick={onClose}
-              className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-900 hover:text-white transition-colors"
-              title="ปิดหน้าต่าง"
+              onClick={() => {
+                if (!isAnySaving) onClose();
+              }}
+              disabled={isAnySaving}
+              className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-900 hover:text-white transition-colors disabled:opacity-25 disabled:cursor-not-allowed disabled:pointer-events-none"
+              title={isAnySaving ? "กำลังบันทึก กรุณารอสักครู่" : "ปิดหน้าต่าง"}
             >
               <X size={18} />
             </button>

@@ -49,3 +49,6 @@ android/.gradle/
 *.xcworkspace/xcuserdata/
 *.xcodeproj/xcuserdata/
 
+# ONNX Runtime Web WASM (populated by postinstall / build:web)
+/public/ort/
+
