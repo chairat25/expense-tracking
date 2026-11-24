@@ -20,6 +20,7 @@ import { formatDayTH, type Tx } from "@/lib/shared";
 import { recognizeReceiptImage } from "@/lib/receipt/ocr";
 import { parseReceiptText } from "@/lib/receipt/parser";
 import { getSavedPattern, savePattern } from "@/lib/receipt/patterns";
+import { OcrScanOverlay } from "@/components/OcrScanOverlay";
 
 export interface CategoryOption {
   slug: string;
@@ -384,7 +385,7 @@ export default function ReceiptBatchModal({
             </div>
             <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-slate-900">
               <div
-                className="h-full bg-gradient-to-r from-indigo-500 to-emerald-400 transition-all duration-200"
+                className="ocr-shimmer-bar h-full bg-gradient-to-r from-indigo-500 to-emerald-400 transition-all duration-200"
                 style={{ width: `${scanningItem.progressPercent}%` }}
               />
             </div>
@@ -405,7 +406,7 @@ export default function ReceiptBatchModal({
                 className={clsx(
                   "relative rounded-2xl border p-3.5 sm:p-4 transition-all shadow-sm",
                   isScanning
-                    ? "border-indigo-500/50 bg-indigo-950/20"
+                    ? "border-indigo-500/50 bg-indigo-950/20 ocr-scanning-card"
                     : isPending
                     ? "border-slate-800/80 bg-slate-900/30 opacity-75"
                     : "border-slate-800 bg-slate-900/60"
@@ -458,20 +459,23 @@ export default function ReceiptBatchModal({
                 {/* Card Body: Thumbnail + Inputs */}
                 <div className="flex gap-3 items-start">
                   {/* Thumbnail (Click to zoom) */}
-                  <div className="relative shrink-0 group">
+                  <div className="relative shrink-0 group overflow-hidden rounded-xl">
                     <img
                       src={item.previewUrl}
                       alt="สลิป"
                       className="h-20 w-16 sm:h-24 sm:w-20 rounded-xl border border-slate-800 object-cover bg-slate-950"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setZoomedImage(item.previewUrl)}
-                      className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity text-white"
-                      title="แตะเพื่อดูภาพขนาดเต็ม"
-                    >
-                      <ZoomIn size={16} />
-                    </button>
+                    <OcrScanOverlay active={isScanning} />
+                    {!isScanning && (
+                      <button
+                        type="button"
+                        onClick={() => setZoomedImage(item.previewUrl)}
+                        className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity text-white"
+                        title="แตะเพื่อดูภาพขนาดเต็ม"
+                      >
+                        <ZoomIn size={16} />
+                      </button>
+                    )}
                   </div>
 
                   {/* Form fields */}

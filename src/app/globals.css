@@ -261,3 +261,68 @@ body {
 .pop-in {
   animation: pop-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+@keyframes ocr-scan-beam {
+  0%,
+  100% {
+    transform: translateY(-46%);
+  }
+  50% {
+    transform: translateY(46%);
+  }
+}
+
+@keyframes ocr-card-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.35), 0 0 16px rgba(16, 185, 129, 0.08);
+  }
+  50% {
+    box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.5), 0 0 22px rgba(16, 185, 129, 0.18);
+  }
+}
+
+@keyframes ocr-bar-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+.ocr-scan-beam {
+  animation: ocr-scan-beam 1.7s ease-in-out infinite;
+  will-change: transform;
+}
+
+.ocr-scanning-card {
+  animation: ocr-card-glow 1.8s ease-in-out infinite;
+}
+
+.ocr-shimmer-bar {
+  position: relative;
+  overflow: hidden;
+}
+
+.ocr-shimmer-bar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 55%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.45),
+    transparent
+  );
+  animation: ocr-bar-shimmer 1.15s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ocr-scan-beam,
+  .ocr-scanning-card,
+  .ocr-shimmer-bar::after {
+    animation: none;
+  }
+}
