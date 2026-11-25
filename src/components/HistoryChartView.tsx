@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
 import { ArrowUpRight, Flame, TrendingDown, TrendingUp } from "lucide-react";
 import { formatBaht, formatDayTH } from "@/lib/shared";
@@ -75,6 +75,39 @@ export default function HistoryChartView({
     chronologicalItems[chronologicalItems.length - 1] ??
     null;
 
+  const chartScrollRef = useRef<HTMLDivElement | null>(null);
+  const activeBarRef = useRef<HTMLButtonElement | null>(null);
+
+  // Scroll the chart to the active (latest) bar on mount and whenever data loads
+  useLayoutEffect(() => {
+    const scrollToActiveBar = () => {
+      const container = chartScrollRef.current;
+      if (!container) return;
+      const activeEl = activeBarRef.current;
+      if (activeEl) {
+        const elLeft = activeEl.offsetLeft;
+        const elRight = elLeft + activeEl.offsetWidth;
+        const viewLeft = container.scrollLeft;
+        const viewRight = viewLeft + container.clientWidth;
+
+        if (elRight > viewRight) {
+          container.scrollLeft = Math.max(
+            0,
+            elRight - container.clientWidth + 8
+          );
+        } else if (elLeft < viewLeft) {
+          container.scrollLeft = Math.max(0, elLeft - 8);
+        }
+      } else {
+        container.scrollLeft = container.scrollWidth;
+      }
+    };
+
+    scrollToActiveBar();
+    const rafId = requestAnimationFrame(scrollToActiveBar);
+    return () => cancelAnimationFrame(rafId);
+  }, [chronologicalItems, activeItem?.date]);
+
   const activeExpense = Number(activeItem?.expense ?? 0);
   const activeIncome = Number(activeItem?.income ?? 0);
   const activeCount = Number(activeItem?.count ?? 0);
@@ -126,7 +159,10 @@ export default function HistoryChartView({
           <span className="text-[10px] text-slate-500">เก่า → ล่าสุด</span>
         </div>
 
-        <div className="flex items-end justify-between gap-1.5 overflow-x-auto pt-2 pb-1">
+        <div
+          ref={chartScrollRef}
+          className="relative flex items-end justify-between gap-1.5 overflow-x-auto pt-2 pb-1"
+        >
           {chronologicalItems.map((item) => {
             const exp = Number(item?.expense ?? 0);
             const dateStr = item?.date ?? "";
@@ -142,6 +178,7 @@ export default function HistoryChartView({
             return (
               <button
                 key={dateStr}
+                ref={isActive ? activeBarRef : undefined}
                 type="button"
                 onClick={() => setActiveDate(dateStr)}
                 className="group flex min-w-[20px] flex-1 flex-col items-center gap-1.5 focus:outline-none"

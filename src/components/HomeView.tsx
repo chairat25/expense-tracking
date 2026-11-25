@@ -530,7 +530,7 @@ export default function HomeView() {
           (profileOpen || historyOpen || datePickerOpen) ? "z-50" : "z-30"
         )}
       >
-        <div className="mx-auto flex max-w-md items-center justify-between px-4 py-3">
+        <div className="relative mx-auto flex max-w-md items-center justify-between px-4 py-3">
           {/* Logo & App Title */}
           <div className="flex items-center gap-2">
             <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -541,7 +541,7 @@ export default function HomeView() {
 
           {/* Right Action Icons */}
           <div className="flex items-center gap-2">
-            <div className="relative">
+            <div>
               <button
                 type="button"
                 onClick={() => {
@@ -563,12 +563,12 @@ export default function HomeView() {
                 <span>ประวัติ</span>
               </button>
 
-              {/* History Popover */}
+              {/* History Popover (anchored to header container so it never clips off the left edge on mobile) */}
               {historyOpen && (
                 <div
                   role="dialog"
                   aria-label="ประวัติรายวันย้อนหลัง (14 วันล่าสุด)"
-                  className="absolute right-0 top-full mt-2 z-50 w-[min(calc(100vw-2rem),24rem)] max-h-[calc(100vh-5rem)] flex flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 p-4 shadow-2xl ring-1 ring-white/5 backdrop-blur-xl origin-top-right animate-in fade-in zoom-in-95 duration-150"
+                  className="absolute right-4 top-full mt-1 z-50 w-[min(calc(100vw-2rem),24rem)] max-h-[calc(100vh-5rem)] flex flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 p-4 shadow-2xl ring-1 ring-white/5 backdrop-blur-xl origin-top-right animate-in fade-in zoom-in-95 duration-150"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {/* Popover Header */}
@@ -894,7 +894,7 @@ export default function HomeView() {
 
         {/* 2. Compact Mobile-Friendly Date Capsule Bar (Single Row) */}
         <div className="border-t border-slate-900 bg-slate-950/80 px-4 py-2">
-          <div className="mx-auto flex max-w-md items-center justify-between gap-2">
+          <div className="relative mx-auto flex max-w-md items-center justify-between gap-2">
             {/* Prev Day Arrow */}
             <button
               onClick={() => setSelectedDate(shiftDate(selectedDate, -1))}
@@ -905,7 +905,7 @@ export default function HomeView() {
             </button>
 
             {/* Middle Capsule Date Button with Popover anchor */}
-            <div className="relative flex-1">
+            <div className="flex-1">
               <button
                 type="button"
                 onClick={() => {
@@ -939,7 +939,7 @@ export default function HomeView() {
                 )}
               </button>
 
-              {/* DatePicker Popover */}
+              {/* DatePicker Popover (centered to date bar container so it never shifts off-screen) */}
               {datePickerOpen && (
                 <div
                   role="dialog"
