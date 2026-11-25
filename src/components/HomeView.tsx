@@ -511,10 +511,14 @@ export default function HomeView() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 antialiased selection:bg-emerald-500/30">
       {/* Click-outside backdrop rendered outside <header> so backdrop-blur-md does not trap fixed positioning */}
-      {profileOpen && (
+      {(profileOpen || historyOpen || datePickerOpen) && (
         <div
-          className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[1px]"
-          onClick={() => setProfileOpen(false)}
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px]"
+          onClick={() => {
+            setProfileOpen(false);
+            setHistoryOpen(false);
+            setDatePickerOpen(false);
+          }}
           aria-hidden="true"
         />
       )}
@@ -523,7 +527,7 @@ export default function HomeView() {
       <header
         className={clsx(
           "sticky top-0 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-md pt-[env(safe-area-inset-top,0px)]",
-          profileOpen ? "z-50" : "z-30"
+          (profileOpen || historyOpen || datePickerOpen) ? "z-50" : "z-30"
         )}
       >
         <div className="mx-auto flex max-w-md items-center justify-between px-4 py-3">
@@ -537,19 +541,182 @@ export default function HomeView() {
 
           {/* Right Action Icons */}
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setHistoryOpen(true)}
-              className="flex h-9 items-center gap-1.5 rounded-full border border-slate-800 bg-slate-900 px-3 text-xs font-semibold text-slate-300 transition-all hover:border-emerald-500/50 hover:bg-slate-800 hover:text-white active:scale-95"
-              title="ประวัติย้อนหลัง"
-            >
-              <History size={15} className="text-emerald-400" />
-              <span>ประวัติ</span>
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setProfileOpen(false);
+                  setDatePickerOpen(false);
+                  setHistoryOpen((prev) => !prev);
+                }}
+                aria-expanded={historyOpen}
+                aria-haspopup="dialog"
+                className={clsx(
+                  "flex h-9 items-center gap-1.5 rounded-full border bg-slate-900 px-3 text-xs font-semibold text-slate-300 transition-all hover:border-emerald-500/50 hover:bg-slate-800 hover:text-white active:scale-95",
+                  historyOpen
+                    ? "border-emerald-500/60 ring-2 ring-emerald-500/20 text-white"
+                    : "border-slate-800"
+                )}
+                title="ประวัติย้อนหลัง"
+              >
+                <History size={15} className="text-emerald-400" />
+                <span>ประวัติ</span>
+              </button>
+
+              {/* History Popover */}
+              {historyOpen && (
+                <div
+                  role="dialog"
+                  aria-label="ประวัติรายวันย้อนหลัง (14 วันล่าสุด)"
+                  className="absolute right-0 top-full mt-2 z-50 w-[min(calc(100vw-2rem),24rem)] max-h-[calc(100vh-5rem)] flex flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 p-4 shadow-2xl ring-1 ring-white/5 backdrop-blur-xl origin-top-right animate-in fade-in zoom-in-95 duration-150"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Popover Header */}
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <div className="flex items-center gap-2 text-emerald-400">
+                      <History size={18} />
+                      <h3 className="text-sm font-bold text-white">ประวัติรายวัน (14 วันล่าสุด)</h3>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setHistoryOpen(false)}
+                      className="flex h-7 w-7 items-center justify-center rounded-full text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+                      title="ปิด"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+
+                  {/* Segmented View Toggle: List vs Chart */}
+                  <div className="mt-3 grid grid-cols-2 gap-1 rounded-xl border border-slate-800 bg-slate-950 p-1">
+                    <button
+                      type="button"
+                      onClick={() => setHistoryViewMode("list")}
+                      className={clsx(
+                        "flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold transition-all",
+                        historyViewMode === "list"
+                          ? "bg-slate-800 text-white shadow-sm"
+                          : "text-slate-400 hover:text-slate-200"
+                      )}
+                    >
+                      <List size={14} />
+                      <span>รายการ</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setHistoryViewMode("chart")}
+                      className={clsx(
+                        "flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold transition-all",
+                        historyViewMode === "chart"
+                          ? "bg-emerald-600 text-white shadow-sm"
+                          : "text-slate-400 hover:text-slate-200"
+                      )}
+                    >
+                      <BarChart3 size={14} />
+                      <span>กราฟ</span>
+                    </button>
+                  </div>
+
+                  {/* Popover Body: Daily Summary List / Chart */}
+                  <div className="mt-3 flex-1 overflow-y-auto space-y-2 pr-1 max-h-[55vh]">
+                    {loadingHistory ? (
+                      <div className="space-y-2" aria-busy="true" aria-label="กำลังโหลดประวัติ">
+                        {[0, 1, 2, 3, 4].map((idx) => (
+                          <Skeleton
+                            key={idx}
+                            className="h-14 w-full rounded-xl bg-slate-800/70"
+                          />
+                        ))}
+                      </div>
+                    ) : historyList.length === 0 ? (
+                      <p className="text-center text-xs text-slate-500 py-8">ไม่พบประวัติรายการย้อนหลัง</p>
+                    ) : historyViewMode === "chart" ? (
+                      <HistoryChartView
+                        historyList={historyList}
+                        selectedDate={selectedDate}
+                        today={today}
+                        yesterday={yesterday}
+                        onSelectDate={(d) => {
+                          setSelectedDate(d);
+                          setHistoryOpen(false);
+                        }}
+                      />
+                    ) : (
+                      historyList.map((item) => {
+                        const isCurrent = item.date === selectedDate;
+                        const itemIsToday = item.date === today;
+                        const itemIsYesterday = item.date === yesterday;
+
+                        return (
+                          <button
+                            key={item.date}
+                            type="button"
+                            onClick={() => {
+                              setSelectedDate(item.date);
+                              setHistoryOpen(false);
+                            }}
+                            className={clsx(
+                              "w-full flex items-center justify-between rounded-xl border p-2.5 text-left transition-all active:scale-[0.99]",
+                              isCurrent
+                                ? "border-emerald-500/60 bg-emerald-950/30 text-emerald-300"
+                                : "border-slate-800/80 bg-slate-950 hover:border-slate-700 hover:bg-slate-800/40 text-slate-300"
+                            )}
+                          >
+                            <div className="flex flex-col">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-xs font-bold text-white">
+                                  {formatDayTH(item.date)}
+                                </span>
+                                {(itemIsToday || itemIsYesterday) && (
+                                  <span
+                                    className={clsx(
+                                      "rounded px-1.5 py-0.5 text-[9px] font-bold uppercase",
+                                      itemIsToday
+                                        ? "bg-emerald-500/20 text-emerald-400"
+                                        : "bg-amber-500/20 text-amber-400"
+                                    )}
+                                  >
+                                    {itemIsToday ? "วันนี้" : "เมื่อวาน"}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-[10px] text-slate-500 mt-0.5">
+                                {item.count > 0 ? `${item.count} รายการ` : "ไม่มีรายการ"}
+                              </span>
+                            </div>
+
+                            <div className="flex flex-col items-end">
+                              {item.expense > 0 && (
+                                <span className="text-xs font-bold text-rose-400">
+                                  -฿{formatBaht(item.expense)}
+                                </span>
+                              )}
+                              {item.income > 0 && (
+                                <span className="text-[11px] font-semibold text-emerald-400">
+                                  +฿{formatBaht(item.income)}
+                                </span>
+                              )}
+                              {item.expense === 0 && item.income === 0 && (
+                                <span className="text-xs font-medium text-slate-600">-</span>
+                              )}
+                            </div>
+                          </button>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
 
             <div className="relative">
               <button
                 type="button"
-                onClick={() => setProfileOpen((prev) => !prev)}
+                onClick={() => {
+                  setHistoryOpen(false);
+                  setDatePickerOpen(false);
+                  setProfileOpen((prev) => !prev);
+                }}
                 aria-expanded={profileOpen}
                 aria-haspopup="dialog"
                 className={clsx(
@@ -737,28 +904,60 @@ export default function HomeView() {
               <ChevronLeft size={18} />
             </button>
 
-            {/* Middle Capsule Date Button */}
-            <button
-              type="button"
-              onClick={() => setDatePickerOpen(true)}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900/90 py-2 px-3 text-xs font-semibold text-slate-200 transition-all hover:border-emerald-500/50 hover:bg-slate-800 active:scale-[0.98] shadow-sm"
-            >
-              <span
+            {/* Middle Capsule Date Button with Popover anchor */}
+            <div className="relative flex-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setProfileOpen(false);
+                  setHistoryOpen(false);
+                  setDatePickerOpen((prev) => !prev);
+                }}
+                aria-expanded={datePickerOpen}
+                aria-haspopup="dialog"
                 className={clsx(
-                  "flex h-2 w-2 rounded-full",
-                  isToday ? "bg-emerald-400" : isYesterday ? "bg-amber-400" : "bg-indigo-400"
+                  "flex w-full items-center justify-center gap-2 rounded-xl border bg-slate-900/90 py-2 px-3 text-xs font-semibold transition-all hover:bg-slate-800 active:scale-[0.98] shadow-sm",
+                  datePickerOpen
+                    ? "border-emerald-500/60 ring-2 ring-emerald-500/20 text-white"
+                    : "border-slate-800 text-slate-200 hover:border-emerald-500/50"
                 )}
-              />
-              <span className="font-bold text-white">
-                {isToday ? "วันนี้" : isYesterday ? "เมื่อวาน" : "ย้อนหลัง"}:
-              </span>
-              <span className="text-slate-300">{formatDayTH(selectedDate)}</span>
-              {loading ? (
-                <Loader2 size={14} className="animate-spin text-emerald-400 shrink-0 ml-0.5" />
-              ) : (
-                <CalendarDays size={14} className="text-emerald-400 shrink-0 ml-0.5" />
+              >
+                <span
+                  className={clsx(
+                    "flex h-2 w-2 rounded-full",
+                    isToday ? "bg-emerald-400" : isYesterday ? "bg-amber-400" : "bg-indigo-400"
+                  )}
+                />
+                <span className="font-bold text-white">
+                  {isToday ? "วันนี้" : isYesterday ? "เมื่อวาน" : "ย้อนหลัง"}:
+                </span>
+                <span className="text-slate-300">{formatDayTH(selectedDate)}</span>
+                {loading ? (
+                  <Loader2 size={14} className="animate-spin text-emerald-400 shrink-0 ml-0.5" />
+                ) : (
+                  <CalendarDays size={14} className="text-emerald-400 shrink-0 ml-0.5" />
+                )}
+              </button>
+
+              {/* DatePicker Popover */}
+              {datePickerOpen && (
+                <div
+                  role="dialog"
+                  aria-label="เลือกวันที่"
+                  className="absolute left-1/2 -translate-x-1/2 top-full mt-2 z-50 w-[min(calc(100vw-2rem),22.5rem)] rounded-2xl border border-slate-800 bg-slate-900 p-4 shadow-2xl ring-1 ring-white/5 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 origin-top"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MobileDatePicker
+                    selectedDate={selectedDate}
+                    onSelectDate={(date) => {
+                      setSelectedDate(date);
+                      setDatePickerOpen(false);
+                    }}
+                    onClose={() => setDatePickerOpen(false)}
+                  />
+                </div>
               )}
-            </button>
+            </div>
 
             {/* Next Day Arrow */}
             <button
@@ -923,7 +1122,12 @@ export default function HomeView() {
 
                 <button
                   type="button"
-                  onClick={() => setDatePickerOpen(true)}
+                  onClick={() => {
+                    setProfileOpen(false);
+                    setHistoryOpen(false);
+                    setDatePickerOpen(true);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
                   className="inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg border border-slate-800 bg-slate-950 px-2.5 py-1 text-[11px] font-semibold text-slate-400 hover:text-emerald-400 hover:border-slate-700 transition-colors"
                 >
                   <CalendarSearch size={13} className="shrink-0" />
@@ -1262,157 +1466,6 @@ export default function HomeView() {
           )}
         </section>
       </main>
-
-      {/* 7. Mobile Date Picker Bottom Sheet Modal */}
-      <MobileDatePicker
-        isOpen={datePickerOpen}
-        selectedDate={selectedDate}
-        onSelectDate={(date) => setSelectedDate(date)}
-        onClose={() => setDatePickerOpen(false)}
-      />
-
-      {/* 8. History Drawer / Modal (ประวัติย้อนหลัง 14 วัน) */}
-      {historyOpen && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4 animate-in fade-in duration-200">
-          <div
-            className="w-full max-w-md max-h-[85vh] flex flex-col rounded-t-3xl border border-slate-800 bg-slate-900 p-6 shadow-2xl sm:rounded-3xl animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div className="flex items-center gap-2 text-emerald-400">
-                <History size={20} />
-                <h3 className="text-base font-bold text-white">ประวัติรายวันย้อนหลัง (14 วันล่าสุด)</h3>
-              </div>
-              <button
-                onClick={() => setHistoryOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-slate-400 hover:bg-slate-800 hover:text-white"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Segmented View Toggle: List vs Chart */}
-            <div className="mt-3 grid grid-cols-2 gap-1 rounded-xl border border-slate-800 bg-slate-950 p-1">
-              <button
-                type="button"
-                onClick={() => setHistoryViewMode("list")}
-                className={clsx(
-                  "flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold transition-all",
-                  historyViewMode === "list"
-                    ? "bg-slate-800 text-white shadow-sm"
-                    : "text-slate-400 hover:text-slate-200"
-                )}
-              >
-                <List size={14} />
-                <span>รายการ</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setHistoryViewMode("chart")}
-                className={clsx(
-                  "flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs font-semibold transition-all",
-                  historyViewMode === "chart"
-                    ? "bg-emerald-600 text-white shadow-sm"
-                    : "text-slate-400 hover:text-slate-200"
-                )}
-              >
-                <BarChart3 size={14} />
-                <span>กราฟ</span>
-              </button>
-            </div>
-
-            {/* Modal Body: Daily Summary List / Chart */}
-            <div className="mt-3 flex-1 overflow-y-auto space-y-2 pr-1">
-              {loadingHistory ? (
-                <div className="space-y-2" aria-busy="true" aria-label="กำลังโหลดประวัติ">
-                  {[0, 1, 2, 3, 4].map((idx) => (
-                    <Skeleton
-                      key={idx}
-                      className="h-16 w-full rounded-xl bg-slate-800/70"
-                    />
-                  ))}
-                </div>
-              ) : historyList.length === 0 ? (
-                <p className="text-center text-xs text-slate-500 py-8">ไม่พบประวัติรายการย้อนหลัง</p>
-              ) : historyViewMode === "chart" ? (
-                <HistoryChartView
-                  historyList={historyList}
-                  selectedDate={selectedDate}
-                  today={today}
-                  yesterday={yesterday}
-                  onSelectDate={(d) => {
-                    setSelectedDate(d);
-                    setHistoryOpen(false);
-                  }}
-                />
-              ) : (
-                historyList.map((item) => {
-                  const isCurrent = item.date === selectedDate;
-                  const itemIsToday = item.date === today;
-                  const itemIsYesterday = item.date === yesterday;
-
-                  return (
-                    <button
-                      key={item.date}
-                      type="button"
-                      onClick={() => {
-                        setSelectedDate(item.date);
-                        setHistoryOpen(false);
-                      }}
-                      className={clsx(
-                        "w-full flex items-center justify-between rounded-xl border p-3 text-left transition-all active:scale-[0.99]",
-                        isCurrent
-                          ? "border-emerald-500/60 bg-emerald-950/30 text-emerald-300"
-                          : "border-slate-800/80 bg-slate-950 hover:border-slate-700 hover:bg-slate-800/40 text-slate-300"
-                      )}
-                    >
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-white">
-                            {formatDayTH(item.date)}
-                          </span>
-                          {(itemIsToday || itemIsYesterday) && (
-                            <span
-                              className={clsx(
-                                "rounded px-1.5 py-0.5 text-[9px] font-bold uppercase",
-                                itemIsToday
-                                  ? "bg-emerald-500/20 text-emerald-400"
-                                  : "bg-amber-500/20 text-amber-400"
-                              )}
-                            >
-                              {itemIsToday ? "วันนี้" : "เมื่อวาน"}
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-[11px] text-slate-500 mt-0.5">
-                          {item.count > 0 ? `${item.count} รายการ` : "ไม่มีรายการ"}
-                        </span>
-                      </div>
-
-                      <div className="flex flex-col items-end">
-                        {item.expense > 0 && (
-                          <span className="text-xs font-bold text-rose-400">
-                            -฿{formatBaht(item.expense)}
-                          </span>
-                        )}
-                        {item.income > 0 && (
-                          <span className="text-[11px] font-semibold text-emerald-400">
-                            +฿{formatBaht(item.income)}
-                          </span>
-                        )}
-                        {item.expense === 0 && item.income === 0 && (
-                          <span className="text-xs font-medium text-slate-600">-</span>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Batch Receipt Review Modal */}
       <ReceiptBatchModal
