@@ -53,6 +53,7 @@ import ReceiptBatchModal from "@/components/ReceiptBatchModal";
 import BatchAddModal from "@/components/BatchAddModal";
 import HistoryChartView, { type DailyHistoryItem } from "@/components/HistoryChartView";
 import { useWebTheme } from "@/lib/useWebTheme";
+import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
 
 interface CategoryOption {
   slug: string;
@@ -123,16 +124,21 @@ export default function HomeView() {
     setAvatarError(false);
   }, [profile?.avatarUrl]);
 
+  const anyHeaderPopoverOpen = profileOpen || historyOpen || datePickerOpen;
+  useBodyScrollLock(anyHeaderPopoverOpen);
+
   useEffect(() => {
-    if (!profileOpen) return;
+    if (!anyHeaderPopoverOpen) return;
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         setProfileOpen(false);
+        setHistoryOpen(false);
+        setDatePickerOpen(false);
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [profileOpen]);
+  }, [anyHeaderPopoverOpen]);
 
   const amountInputRef = useRef<HTMLInputElement>(null);
   const activeDateRef = useRef<string>(today);
@@ -513,7 +519,7 @@ export default function HomeView() {
       {/* Click-outside backdrop rendered outside <header> so backdrop-blur-md does not trap fixed positioning */}
       {(profileOpen || historyOpen || datePickerOpen) && (
         <div
-          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px]"
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] touch-none overscroll-none"
           onClick={() => {
             setProfileOpen(false);
             setHistoryOpen(false);
@@ -618,7 +624,7 @@ export default function HomeView() {
                   </div>
 
                   {/* Popover Body: Daily Summary List / Chart */}
-                  <div className="mt-3 flex-1 overflow-y-auto space-y-2 pr-1 max-h-[55vh]">
+                  <div className="mt-3 flex-1 overflow-y-auto overscroll-contain space-y-2 pr-1 max-h-[55vh]">
                     {loadingHistory ? (
                       <div className="space-y-2" aria-busy="true" aria-label="กำลังโหลดประวัติ">
                         {[0, 1, 2, 3, 4].map((idx) => (
@@ -742,7 +748,7 @@ export default function HomeView() {
                 <div
                   role="dialog"
                   aria-label="โปรไฟล์และงบประมาณ"
-                  className="absolute right-0 top-full mt-2 z-50 w-[min(calc(100vw-2rem),22rem)] max-h-[calc(100vh-5rem)] overflow-y-auto rounded-2xl border border-slate-800 bg-slate-900 p-4 shadow-2xl ring-1 ring-white/5 origin-top-right animate-in fade-in zoom-in-95 duration-150"
+                  className="absolute right-0 top-full mt-2 z-50 w-[min(calc(100vw-2rem),22rem)] max-h-[calc(100vh-5rem)] overflow-y-auto overscroll-contain rounded-2xl border border-slate-800 bg-slate-900 p-4 shadow-2xl ring-1 ring-white/5 origin-top-right animate-in fade-in zoom-in-95 duration-150"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {/* Popover Header */}

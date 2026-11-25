@@ -23,6 +23,7 @@ import { recognizeReceiptImage } from "@/lib/receipt/ocr";
 import { parseReceiptText } from "@/lib/receipt/parser";
 import { getSavedPattern, savePattern } from "@/lib/receipt/patterns";
 import { OcrScanOverlay } from "@/components/OcrScanOverlay";
+import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
 
 export interface CategoryOption {
   slug: string;
@@ -120,6 +121,9 @@ export default function BatchAddModal({
       revokeAllUrls();
     };
   }, [isOpen, currentDate, defaultCategory, revokeAllUrls]);
+
+  // Prevent background page scrolling on mobile / iOS PWA while popover is open
+  useBodyScrollLock(isOpen);
 
   // Prevent dismissing modal with Escape while batch commit is in progress
   useEffect(() => {
@@ -350,7 +354,12 @@ export default function BatchAddModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-4 overscroll-none animate-in fade-in duration-150"
+      onClick={() => {
+        if (!submitting) onClose();
+      }}
+    >
       {/* Shared hidden file input for per-row slip attachment */}
       <input
         ref={rowFileInputRef}
@@ -368,8 +377,14 @@ export default function BatchAddModal({
         }}
       />
 
-      {/* Container */}
-      <div className="flex max-h-[92vh] w-full max-w-2xl flex-col rounded-t-3xl sm:rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl">
+      {/* Popover Dialog Container */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="เพิ่มหลายรายการพร้อมกัน"
+        onClick={(e) => e.stopPropagation()}
+        className="flex max-h-[85dvh] sm:max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl ring-1 ring-white/5 animate-in zoom-in-95 duration-150"
+      >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-800/80 px-4 py-3.5 sm:px-5">
           <div className="flex items-center gap-2.5">
@@ -447,7 +462,7 @@ export default function BatchAddModal({
         <div
           aria-busy={submitting}
           className={clsx(
-            "flex-1 overflow-y-auto p-4 sm:p-5 space-y-3 transition-opacity",
+            "flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-3 transition-opacity",
             submitting && "pointer-events-none opacity-60 select-none"
           )}
         >

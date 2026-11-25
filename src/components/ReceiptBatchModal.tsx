@@ -21,6 +21,7 @@ import { recognizeReceiptImage } from "@/lib/receipt/ocr";
 import { parseReceiptText } from "@/lib/receipt/parser";
 import { getSavedPattern, savePattern } from "@/lib/receipt/patterns";
 import { OcrScanOverlay } from "@/components/OcrScanOverlay";
+import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
 
 export interface CategoryOption {
   slug: string;
@@ -308,7 +309,10 @@ export default function ReceiptBatchModal({
     onClose();
   }, [items, onTransactionAdded, onClose]);
 
-  if (!isOpen || items.length === 0) return null;
+  const visible = isOpen && items.length > 0;
+  useBodyScrollLock(visible);
+
+  if (!visible) return null;
 
   const totalCount = items.length;
   const readyCount = items.filter(
@@ -319,9 +323,20 @@ export default function ReceiptBatchModal({
   const isAnySaving = savingAll || items.some((it) => it?.status === "saving");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4">
-      {/* Container */}
-      <div className="flex max-h-[92vh] w-full max-w-xl flex-col rounded-t-3xl sm:rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-3 sm:p-4 overscroll-none animate-in fade-in duration-150"
+      onClick={() => {
+        if (!isAnySaving) onClose();
+      }}
+    >
+      {/* Popover Dialog Container */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="จัดการสลิป"
+        onClick={(e) => e.stopPropagation()}
+        className="flex max-h-[85dvh] sm:max-h-[90vh] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 shadow-2xl ring-1 ring-white/5 animate-in zoom-in-95 duration-150"
+      >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-slate-800/80 px-4 py-3.5 sm:px-5">
           <div className="flex items-center gap-2">
@@ -393,7 +408,7 @@ export default function ReceiptBatchModal({
         )}
 
         {/* Cards Scrollable Tray */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5">
+        <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-3.5">
           {items.map((item, index) => {
             const isScanning = item.status === "scanning";
             const isPending = item.status === "pending";
