@@ -21,12 +21,12 @@ describe("LandingHubView Workspace Cards", () => {
     expect(debts?.accentColor).toBe("rose");
     expect(salary?.accentColor).toBe("indigo");
 
-    expect(daily?.textColor).toContain("emerald");
-    expect(debts?.textColor).toContain("rose");
-    expect(salary?.textColor).toContain("indigo");
+    expect(daily?.buttonBg).toContain("emerald");
+    expect(debts?.buttonBg).toContain("rose");
+    expect(salary?.buttonBg).toContain("indigo");
   });
 
-  it("includes clean title and icon for each large action button", () => {
+  it("includes clean title and icon for each action button", () => {
     for (const card of WORKSPACE_CARDS) {
       expect(card.title.length).toBeGreaterThan(0);
       expect(card.href.startsWith("/")).toBe(true);
