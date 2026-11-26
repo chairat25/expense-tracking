@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
+import Link from "next/link";
 import clsx from "clsx";
 import {
   User,
@@ -19,6 +20,7 @@ import {
   Loader2,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   History,
   RotateCcw,
   AlertCircle,
@@ -31,6 +33,9 @@ import {
   ListPlus,
   BarChart3,
   List,
+  WalletCards,
+  LayoutGrid,
+  Check,
 } from "lucide-react";
 import {
   todayKey,
@@ -54,6 +59,7 @@ import BatchAddModal from "@/components/BatchAddModal";
 import HistoryChartView, { type DailyHistoryItem } from "@/components/HistoryChartView";
 import { useWebTheme } from "@/lib/useWebTheme";
 import { useBodyScrollLock } from "@/lib/useBodyScrollLock";
+import { WORKSPACES } from "./WorkspaceHeader";
 
 interface CategoryOption {
   slug: string;
@@ -120,11 +126,14 @@ export default function HomeView() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [editName, setEditName] = useState("");
 
+  const [workspaceSwitcherOpen, setWorkspaceSwitcherOpen] = useState(false);
+
   useEffect(() => {
     setAvatarError(false);
   }, [profile?.avatarUrl]);
 
-  const anyHeaderPopoverOpen = profileOpen || historyOpen || datePickerOpen;
+  const anyHeaderPopoverOpen =
+    profileOpen || historyOpen || datePickerOpen || workspaceSwitcherOpen;
   useBodyScrollLock(anyHeaderPopoverOpen);
 
   useEffect(() => {
@@ -134,6 +143,7 @@ export default function HomeView() {
         setProfileOpen(false);
         setHistoryOpen(false);
         setDatePickerOpen(false);
+        setWorkspaceSwitcherOpen(false);
       }
     };
     window.addEventListener("keydown", onKeyDown);
@@ -517,13 +527,14 @@ export default function HomeView() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 antialiased selection:bg-emerald-500/30">
       {/* Click-outside backdrop rendered outside <header> so backdrop-blur-md does not trap fixed positioning */}
-      {(profileOpen || historyOpen || datePickerOpen) && (
+      {(profileOpen || historyOpen || datePickerOpen || workspaceSwitcherOpen) && (
         <div
           className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[1px] touch-none overscroll-none"
           onClick={() => {
             setProfileOpen(false);
             setHistoryOpen(false);
             setDatePickerOpen(false);
+            setWorkspaceSwitcherOpen(false);
           }}
           aria-hidden="true"
         />
@@ -533,16 +544,114 @@ export default function HomeView() {
       <header
         className={clsx(
           "sticky top-0 border-b border-slate-800/80 bg-slate-950/90 backdrop-blur-md pt-[env(safe-area-inset-top,0px)]",
-          (profileOpen || historyOpen || datePickerOpen) ? "z-50" : "z-30"
+          (profileOpen || historyOpen || datePickerOpen || workspaceSwitcherOpen) ? "z-50" : "z-30"
         )}
       >
         <div className="relative mx-auto flex max-w-md items-center justify-between px-4 py-3">
-          {/* Logo & App Title */}
+          {/* Logo & Workspace Switcher */}
           <div className="flex items-center gap-2">
-            <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-              Expense Tracking
-            </span>
+            <Link
+              href="/"
+              className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-300 hover:text-white transition-colors"
+              title="กลับหน้าหลัก Landing Hub"
+            >
+              <span className="flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span>EXPENSE</span>
+            </Link>
+
+            {/* Switcher Pill */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => {
+                  setProfileOpen(false);
+                  setHistoryOpen(false);
+                  setDatePickerOpen(false);
+                  setWorkspaceSwitcherOpen((prev) => !prev);
+                }}
+                aria-expanded={workspaceSwitcherOpen}
+                aria-haspopup="dialog"
+                aria-label="สลับ Workspace"
+                className={clsx(
+                  "flex h-7 items-center gap-1.5 rounded-full border px-2 text-[11px] font-semibold transition-all active:scale-95 shadow-sm",
+                  workspaceSwitcherOpen
+                    ? "border-emerald-500/60 bg-slate-800 text-white ring-2 ring-emerald-500/20"
+                    : "border-emerald-500/30 bg-emerald-950/40 text-emerald-300 hover:border-emerald-500/50 hover:bg-slate-800"
+                )}
+              >
+                <WalletCards size={12} className="text-emerald-400" />
+                <span>รายวัน</span>
+                <ChevronDown
+                  size={10}
+                  className={clsx(
+                    "text-emerald-400/80 transition-transform duration-200",
+                    workspaceSwitcherOpen && "rotate-180"
+                  )}
+                />
+              </button>
+
+              {/* Workspace Switcher Popover */}
+              {workspaceSwitcherOpen && (
+                <div
+                  role="dialog"
+                  aria-label="เลือก Workspace"
+                  className="absolute left-0 top-full mt-2 z-50 w-[min(calc(100vw-2rem),18.5rem)] overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/98 p-2.5 shadow-2xl ring-1 ring-white/5 backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 origin-top-left"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    พื้นที่จัดการ (Workspaces)
+                  </div>
+
+                  <div className="space-y-1">
+                    <Link
+                      href="/"
+                      onClick={() => setWorkspaceSwitcherOpen(false)}
+                      className="flex items-center justify-between rounded-xl p-2 text-xs font-semibold text-slate-300 hover:bg-slate-800/60 hover:text-white transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-800 border border-slate-700 text-slate-300">
+                          <LayoutGrid size={14} />
+                        </div>
+                        <span>หน้าหลัก (Hub)</span>
+                      </div>
+                    </Link>
+
+                    {WORKSPACES.map((w) => {
+                      const isCurrent = w.id === "daily";
+                      const Icon = w.icon;
+                      return (
+                        <Link
+                          key={w.id}
+                          href={w.href}
+                          onClick={() => setWorkspaceSwitcherOpen(false)}
+                          className={clsx(
+                            "flex items-center justify-between rounded-xl p-2 text-xs font-semibold transition-colors",
+                            isCurrent
+                              ? "bg-slate-800 text-white"
+                              : "text-slate-300 hover:bg-slate-800/60 hover:text-white"
+                          )}
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <div
+                              className={clsx(
+                                "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border",
+                                w.badgeClass
+                              )}
+                            >
+                              <Icon size={14} className={w.colorClass} />
+                            </div>
+                            <span className="truncate">{w.title}</span>
+                          </div>
+                          {isCurrent && (
+                            <Check size={14} className="text-emerald-400 shrink-0 ml-1.5" />
+                          )}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Right Action Icons */}
@@ -553,6 +662,7 @@ export default function HomeView() {
                 onClick={() => {
                   setProfileOpen(false);
                   setDatePickerOpen(false);
+                  setWorkspaceSwitcherOpen(false);
                   setHistoryOpen((prev) => !prev);
                 }}
                 aria-expanded={historyOpen}
@@ -721,6 +831,7 @@ export default function HomeView() {
                 onClick={() => {
                   setHistoryOpen(false);
                   setDatePickerOpen(false);
+                  setWorkspaceSwitcherOpen(false);
                   setProfileOpen((prev) => !prev);
                 }}
                 aria-expanded={profileOpen}
@@ -917,6 +1028,7 @@ export default function HomeView() {
                 onClick={() => {
                   setProfileOpen(false);
                   setHistoryOpen(false);
+                  setWorkspaceSwitcherOpen(false);
                   setDatePickerOpen((prev) => !prev);
                 }}
                 aria-expanded={datePickerOpen}
