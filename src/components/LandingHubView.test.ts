@@ -26,13 +26,18 @@ describe("LandingHubView Workspace Cards", () => {
     expect(salary?.textColor).toContain("indigo");
   });
 
-  it("includes description and highlights for every card", () => {
+  it("includes clean title and icon for each large action button", () => {
     for (const card of WORKSPACE_CARDS) {
       expect(card.title.length).toBeGreaterThan(0);
-      expect(card.badge.length).toBeGreaterThan(0);
-      expect(card.description.length).toBeGreaterThan(0);
-      expect(card.highlights.length).toBeGreaterThanOrEqual(2);
+      expect(card.href.startsWith("/")).toBe(true);
       expect(typeof card.icon).toBe("object");
     }
+
+    const titles = WORKSPACE_CARDS.map((c) => c.title);
+    expect(titles).toEqual([
+      "รายรับ-รายจ่าย รายวัน",
+      "หนี้สินรายเดือน",
+      "เงินเดือน",
+    ]);
   });
 });

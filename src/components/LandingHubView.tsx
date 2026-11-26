@@ -8,79 +8,56 @@ import {
   Coins,
   ArrowRight,
   ShieldCheck,
-  Sparkles,
-  TrendingUp,
-  CreditCard,
-  Layers,
-  ChevronRight,
 } from "lucide-react";
 
 export interface WorkspaceCardItem {
   id: "daily" | "debts" | "salary";
   title: string;
-  badge: string;
-  description: string;
   href: string;
-  accentColor: string;
+  accentColor: "emerald" | "rose" | "indigo";
   gradientBg: string;
   borderColor: string;
   textColor: string;
-  buttonClass: string;
+  iconBg: string;
   icon: typeof WalletCards;
-  highlights: string[];
 }
 
 export const WORKSPACE_CARDS: WorkspaceCardItem[] = [
   {
     id: "daily",
     title: "รายรับ-รายจ่าย รายวัน",
-    badge: "บันทึกเร็ว / สแกนสลิป",
-    description:
-      "บันทึกรายรับ-รายจ่ายประจำวัน สแกนสลิปธนาคารอัตโนมัติ และตรวจดูกราฟประวัติย้อนหลัง 14 วัน",
     href: "/daily",
     accentColor: "emerald",
     gradientBg:
-      "bg-gradient-to-br from-emerald-950/60 via-slate-900/90 to-slate-950",
-    borderColor: "border-emerald-500/40 hover:border-emerald-400",
+      "bg-gradient-to-r from-emerald-950/70 via-slate-900/90 to-slate-950 hover:from-emerald-900/60 hover:to-slate-900",
+    borderColor: "border-emerald-500/40 hover:border-emerald-400/80 shadow-emerald-950/20",
     textColor: "text-emerald-400",
-    buttonClass:
-      "bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30",
+    iconBg: "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 group-hover:bg-emerald-500 group-hover:text-slate-950",
     icon: WalletCards,
-    highlights: ["สแกนสลิป OCR ภาษาไทย", "ประวัติย้อนหลัง 14 วัน", "สรุปยอดประจำวัน"],
   },
   {
     id: "debts",
     title: "หนี้สินรายเดือน",
-    badge: "ภาระผ่อน / รอบบิล",
-    description:
-      "จัดการรายการผ่อนชำระ บิลรายเดือน ค่างวด และติดตามกำหนดวันตัดรอบชำระอย่างเป็นระบบ",
     href: "/debts",
     accentColor: "rose",
     gradientBg:
-      "bg-gradient-to-br from-rose-950/50 via-slate-900/90 to-slate-950",
-    borderColor: "border-rose-500/40 hover:border-rose-400",
+      "bg-gradient-to-r from-rose-950/70 via-slate-900/90 to-slate-950 hover:from-rose-900/60 hover:to-slate-900",
+    borderColor: "border-rose-500/40 hover:border-rose-400/80 shadow-rose-950/20",
     textColor: "text-rose-400",
-    buttonClass:
-      "bg-rose-600 hover:bg-rose-500 text-white shadow-lg shadow-rose-600/30",
+    iconBg: "bg-rose-500/10 border-rose-500/30 text-rose-400 group-hover:bg-rose-500 group-hover:text-slate-950",
     icon: ReceiptText,
-    highlights: ["ยอดภาระหนี้สินคงค้าง", "แจ้งเตือนวันครบกำหนด", "ติดตามค่างวดรายเดือน"],
   },
   {
     id: "salary",
-    title: "เงินเดือนและการจัดสรร",
-    badge: "เงินเดือน / จัดสรร Pocket",
-    description:
-      "บันทึกเงินเดือนเข้า จัดสรรงบประมาณเป็นกระเป๋า Pocket และแบ่งซองใช้จ่ายรายสัปดาห์",
+    title: "เงินเดือน",
     href: "/salary",
     accentColor: "indigo",
     gradientBg:
-      "bg-gradient-to-br from-indigo-950/60 via-slate-900/90 to-slate-950",
-    borderColor: "border-indigo-500/40 hover:border-indigo-400",
+      "bg-gradient-to-r from-indigo-950/70 via-slate-900/90 to-slate-950 hover:from-indigo-900/60 hover:to-slate-900",
+    borderColor: "border-indigo-500/40 hover:border-indigo-400/80 shadow-indigo-950/20",
     textColor: "text-indigo-400",
-    buttonClass:
-      "bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30",
+    iconBg: "bg-indigo-500/10 border-indigo-500/30 text-indigo-400 group-hover:bg-indigo-500 group-hover:text-slate-950",
     icon: Coins,
-    highlights: ["จัดสรร Pocket แยกหมวด", "ซองงบสัปดาห์ Envelope", "วางแผนเงินออมคงเหลือ"],
   },
 ];
 
@@ -105,39 +82,35 @@ export default function LandingHubView() {
       </header>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-md px-4 py-6 sm:max-w-xl space-y-5">
-        {/* Hero Section */}
-        <div className="space-y-1.5 text-center sm:text-left pt-2">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 text-xs font-semibold text-emerald-300">
-            <Sparkles size={13} />
-            <span>เลือกพื้นที่จัดการการเงินของคุณ</span>
-          </div>
+      <main className="mx-auto max-w-md px-4 py-8 sm:max-w-xl space-y-6">
+        {/* Heading */}
+        <div className="space-y-1 text-center sm:text-left">
           <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
             Financial Workspaces
           </h1>
-          <p className="text-xs text-slate-400 leading-relaxed max-w-md">
-            แยกหน้าจัดการออกเป็น 3 หมวดชัดเจน เพื่อความสะดวก รวดเร็ว
-            และโฟกัสเฉพาะงานที่ต้องการ
+          <p className="text-xs text-slate-400">
+            เลือกหน้าจัดการที่ต้องการ
           </p>
         </div>
 
-        {/* 3 Large Action Cards */}
+        {/* 3 Prominent Action Buttons */}
         <div className="space-y-3.5 pt-1">
           {WORKSPACE_CARDS.map((card) => {
             const Icon = card.icon;
             return (
-              <div
+              <Link
                 key={card.id}
+                href={card.href}
                 className={clsx(
-                  "group relative overflow-hidden rounded-2xl border p-4 sm:p-5 transition-all duration-200 shadow-xl",
+                  "group relative flex items-center justify-between overflow-hidden rounded-2xl border p-4 sm:p-5 transition-all duration-200 shadow-lg",
                   card.gradientBg,
                   card.borderColor,
-                  "hover:shadow-2xl hover:-translate-y-0.5 active:scale-[0.99]"
+                  "hover:shadow-xl hover:-translate-y-0.5 active:scale-[0.98]"
                 )}
               >
                 {/* Ambient glow accent */}
                 <div
-                  className="pointer-events-none absolute -right-12 -top-12 h-36 w-36 rounded-full blur-3xl opacity-20 transition-opacity group-hover:opacity-35"
+                  className="pointer-events-none absolute -right-8 -top-8 h-28 w-28 rounded-full blur-2xl opacity-20 transition-opacity group-hover:opacity-40"
                   style={{
                     backgroundColor:
                       card.accentColor === "emerald"
@@ -148,61 +121,31 @@ export default function LandingHubView() {
                   }}
                 />
 
-                <div className="relative flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-                  <div className="space-y-2 min-w-0 flex-1">
-                    <div className="flex items-center gap-2.5">
-                      <div
-                        className={clsx(
-                          "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border bg-slate-950/80 shadow-md",
-                          card.borderColor
-                        )}
-                      >
-                        <Icon size={20} className={card.textColor} />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h2 className="text-base font-bold text-white">
-                            {card.title}
-                          </h2>
-                        </div>
-                        <span className="text-[11px] font-semibold text-slate-400">
-                          {card.badge}
-                        </span>
-                      </div>
-                    </div>
-
-                    <p className="text-xs text-slate-300 leading-relaxed pr-2">
-                      {card.description}
-                    </p>
-
-                    {/* Feature Chips */}
-                    <div className="flex flex-wrap gap-1.5 pt-1">
-                      {card.highlights.map((item, idx) => (
-                        <span
-                          key={idx}
-                          className="inline-flex items-center rounded-md border border-slate-800 bg-slate-950/70 px-2 py-0.5 text-[10px] font-medium text-slate-300"
-                        >
-                          {item}
-                        </span>
-                      ))}
-                    </div>
+                <div className="relative flex items-center gap-3.5 sm:gap-4 min-w-0">
+                  <div
+                    className={clsx(
+                      "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border transition-all duration-200 shadow-md",
+                      card.iconBg
+                    )}
+                  >
+                    <Icon size={24} />
                   </div>
+                  <span className="text-base sm:text-lg font-bold text-white tracking-wide truncate">
+                    {card.title}
+                  </span>
+                </div>
 
-                  {/* Action Link Button */}
-                  <div className="pt-2 sm:pt-0 shrink-0">
-                    <Link
-                      href={card.href}
-                      className={clsx(
-                        "flex items-center justify-center gap-2 rounded-xl py-2.5 px-4 text-xs font-bold transition-all active:scale-95 w-full sm:w-auto",
-                        card.buttonClass
-                      )}
-                    >
-                      <span>เข้าจัดการ</span>
-                      <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
-                    </Link>
+                <div className="relative flex items-center gap-1 shrink-0">
+                  <div
+                    className={clsx(
+                      "flex h-9 w-9 items-center justify-center rounded-full border border-slate-700/60 bg-slate-900/80 transition-transform group-hover:translate-x-1 group-hover:border-slate-500",
+                      card.textColor
+                    )}
+                  >
+                    <ArrowRight size={18} />
                   </div>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
